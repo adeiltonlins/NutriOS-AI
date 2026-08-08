@@ -1,0 +1,44 @@
+[
+  {
+    "id": "d1",
+    "titulo": "Hidratação diária",
+    "conteudo": "O Guia Alimentar para a População Brasileira recomenda priorizar a água como principal fonte de hidratação, evitando substituí-la por refrigerantes e sucos industrializados. A necessidade varia por peso, clima e nível de atividade física, mas uma referência comum é cerca de 35ml por kg de peso corporal ao dia para adultos saudáveis.",
+    "tags": ["água", "hidratação", "líquidos"]
+  },
+  {
+    "id": "d2",
+    "titulo": "Alimentos in natura vs ultraprocessados",
+    "conteudo": "O Guia Alimentar para a População Brasileira recomenda que a base da alimentação seja composta por alimentos in natura ou minimamente processados (como arroz, feijão, frutas e legumes), com uso moderado de óleos, sal e açúcar, e o menor consumo possível de alimentos ultraprocessados.",
+    "tags": ["ultraprocessados", "guia alimentar", "processamento"]
+  },
+  {
+    "id": "d3",
+    "titulo": "Distribuição de refeições",
+    "conteudo": "Não existe um número mágico de refeições por dia válido para todas as pessoas. O importante é a qualidade e o total calórico/nutricional do dia, adaptado à rotina e preferências de cada um. Pular refeições não é necessariamente prejudicial nem fazer 6 refeições é necessariamente melhor — isso depende do contexto individual.",
+    "tags": ["frequência de refeições", "jejum", "rotina alimentar"]
+  },
+  {
+    "id": "d4",
+    "titulo": "Proteína e ganho de massa muscular",
+    "conteudo": "De forma geral, pessoas fisicamente ativas que buscam ganho de massa muscular costumam se beneficiar de uma ingestão de proteína acima da recomendação mínima geral para sedentários, mas a quantidade ideal varia conforme peso, tipo de treino e objetivo — por isso o acompanhamento com um nutricionista é indicado para ajustar isso com precisão.",
+    "tags": ["proteína", "hipertrofia", "treino", "massa muscular"]
+  },
+  {
+    "id": "d5",
+    "titulo": "Fibras alimentares",
+    "conteudo": "Fibras alimentares, presentes em leguminosas, frutas, vegetais e grãos integrais, auxiliam no funcionamento intestinal, na saciedade e no controle glicêmico. O Guia Alimentar recomenda priorizar essas fontes naturais de fibra no dia a dia.",
+    "tags": ["fibra", "intestino", "saciedade"]
+  },
+  {
+    "id": "d6",
+    "titulo": "Sódio e alimentação",
+    "conteudo": "O consumo excessivo de sódio, comum em alimentos industrializados e embutidos, está associado a maior risco de hipertensão. Recomenda-se preferir temperos naturais (ervas, alho, limão) no lugar do excesso de sal e produtos prontos com alto teor de sódio.",
+    "tags": ["sódio", "sal", "hipertensão"]
+  },
+  {
+    "id": "d7",
+    "titulo": "O que este chatbot não faz",
+    "conteudo": "Este assistente fornece informações educativas gerais sobre alimentos e nutrição, mas não substitui a avaliação individualizada de um nutricionista ou médico. Ele não prescreve dietas fechadas, não calcula necessidades calóricas individuais definitivas e não deve ser usado para condições de saúde específicas (diabetes, doenças renais, transtornos alimentares, gestação, entre outras) sem acompanhamento profissional.",
+    "tags": ["limitações", "disclaimer", "prescrição"]
+  }
+]
