@@ -1,20 +1,23 @@
 """
 API do chatbot nutricional — MVP com RAG (retrieval por TF-IDF) + Anthropic API.
+
+Rodar localmente:
+    export ANTHROPIC_API_KEY=sua_chave_aqui
+    uvicorn app.main:app --reload
+
+Depois acesse http://localhost:8000/docs para testar pela interface Swagger.
 """
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta
 
-# BASE_DIR aponta para a raiz do repositório
-BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_DIR = BASE_DIR / "static"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(
     title="Nutri Chatbot API",
@@ -22,6 +25,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Libera CORS pra facilitar testes com um frontend separado (ajuste em produção)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -29,25 +33,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Servir arquivos estáticos (CSS, JS, imagens)
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-
 
 @app.get("/")
 def servir_interface():
     """Serve a interface de chat (HTML) na URL raiz do site."""
-    index_path = STATIC_DIR / "index.html"
-    if not index_path.exists():
-        raise HTTPException(
-            status_code=404, 
-            detail=f"Arquivo index.html não encontrado em {STATIC_DIR}"
-        )
-    return FileResponse(index_path)
+    return FileResponse(STATIC_DIR / "index.html")
+
+
+class MensagemHistorico(BaseModel):
+    autor: str  # "user" ou "bot"
+    texto: str
 
 
 class PerguntaRequest(BaseModel):
     pergunta: str = Field(..., min_length=1, max_length=1000, description="Pergunta do usuário")
+    historico: list[MensagemHistorico] = Field(default_factory=list, description="Mensagens anteriores da conversa, em ordem")
 
 
 class RespostaResponse(BaseModel):
@@ -68,8 +68,10 @@ def chat(req: PerguntaRequest):
     resultados = base_conhecimento.buscar_contexto(req.pergunta, top_k=5)
     contexto = base_conhecimento.formatar_contexto_para_prompt(resultados)
 
+    historico_dict = [{"autor": m.autor, "texto": m.texto} for m in req.historico]
+
     try:
-        resposta = gerar_resposta(req.pergunta, contexto)
+        resposta = gerar_resposta(req.pergunta, contexto, historico_dict)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
 
