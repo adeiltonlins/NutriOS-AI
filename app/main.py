@@ -31,7 +31,7 @@ allow_headers=["*"],
 
 # Servir arquivos estáticos (CSS, JS, imagens)
 if STATIC_DIR.exists():
-   app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/")
