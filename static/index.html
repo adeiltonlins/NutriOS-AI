@@ -317,6 +317,7 @@
 
 <script>
   const API_URL = window.location.origin + '/chat';
+  let historicoConversa = [];
 
   const conversation = document.getElementById('conversation');
   const emptyState = document.getElementById('emptyState');
@@ -396,7 +397,7 @@
       const resp = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta })
+        body: JSON.stringify({ pergunta, historico: historicoConversa })
       });
 
       removerPensando();
@@ -410,6 +411,10 @@
       const dados = await resp.json();
       const { bubble } = adicionarMensagem(dados.resposta, 'bot');
       adicionarFontes(bubble, dados.fontes_utilizadas);
+
+      // Atualiza a memória da conversa pras próximas mensagens
+      historicoConversa.push({ autor: 'user', texto: pergunta });
+      historicoConversa.push({ autor: 'bot', texto: dados.resposta });
 
     } catch (e) {
       removerPensando();

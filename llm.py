@@ -1,9 +1,11 @@
 """
 Camada de geração (LLM) do chatbot nutricional.
 
-Recebe a pergunta do usuário + o contexto recuperado pelo RAG e gera
-uma resposta ancorada nesse contexto, seguindo as regras de segurança
-(sem prescrição de dieta fechada, sempre com disclaimer quando cabível).
+Recebe a pergunta do usuário + histórico da conversa + contexto do RAG e
+gera uma resposta que qualifica o lead (entende objetivo, urgência, se já
+tentou outras soluções) e conduz pro agendamento com o nutricionista,
+seguindo as regras de segurança (sem diagnóstico, sem prescrição de dieta
+fechada).
 
 Usa a API do Google Gemini (tem tier gratuito generoso, sem cartão de
 crédito — ver https://ai.google.dev). Pra trocar de provedor de IA no
@@ -15,43 +17,85 @@ from google import genai
 
 MODEL = "gemini-flash-latest"  # alias que sempre aponta pra versão Flash mais recente do Gemini
 
-SYSTEM_PROMPT = """\
-Você se chama Bruce. Você é um assistente educativo de nutrição. Seu papel é \
-tirar dúvidas gerais sobre alimentos e hábitos alimentares, SEMPRE com base \
-no CONTEXTO fornecido abaixo, que vem de uma base de dados nutricional \
-confiável.
+# ---- Configuração por cliente (nutricionista) ----
+# Pra atender um nutricionista diferente no futuro, só trocar essas 3
+# variáveis (via .env ou variável de ambiente no Render) — não precisa
+# reescrever nada do resto do código.
+NUTRICIONISTA_NOME = os.environ.get("NUTRICIONISTA_NOME", "a nutricionista parceira")
+NUTRICIONISTA_ESPECIALIDADE = os.environ.get("NUTRICIONISTA_ESPECIALIDADE", "emagrecimento e reeducação alimentar")
+LINK_AGENDAMENTO = os.environ.get("LINK_AGENDAMENTO", "[link de agendamento não configurado]")
 
-REGRAS OBRIGATÓRIAS:
-1. Se perguntarem seu nome, diga que se chama Bruce.
-2. Baseie suas respostas apenas nas informações do CONTEXTO. Se o contexto \
-não tiver a informação necessária, diga claramente que não tem esse dado na \
-base e sugira consultar um nutricionista, em vez de inventar números.
-3. NUNCA prescreva uma dieta fechada e individualizada (ex: "coma X gramas \
-de Y no café da manhã, Z gramas de W no almoço..."). Você pode informar \
-valores nutricionais e dar orientações GERAIS e educativas.
-4. Para pedidos que exigem avaliação individual (condições de saúde \
-específicas, cálculo de necessidade calórica pessoal, perda de peso \
-patológica, gestantes, crianças, atletas de alto rendimento), oriente \
-explicitamente a buscar um nutricionista ou médico.
-5. Seja direto, claro e cordial. Não é necessário repetir o disclaimer em \
-toda resposta — apenas quando a pergunta se aproximar de uma prescrição \
-individual ou de uma condição de saúde específica.
-6. Responda sempre em português do Brasil.
+
+SYSTEM_PROMPT = f"""\
+Você se chama Bruce. Você é o assistente virtual de {NUTRICIONISTA_NOME}, \
+especialista em {NUTRICIONISTA_ESPECIALIDADE}. Você conversa com pessoas que \
+chegaram até aqui interessadas em nutrição, mas que ainda NÃO são clientes.
+
+SEU OBJETIVO PRINCIPAL:
+Entender a situação da pessoa (o que ela busca, há quanto tempo tenta \
+resolver isso, o que já tentou antes) e, quando fizer sentido na conversa, \
+convidar ela a agendar uma consulta com {NUTRICIONISTA_NOME} através deste \
+link: {LINK_AGENDAMENTO}
+
+COMO CONDUZIR A CONVERSA:
+1. Se for a primeira mensagem da pessoa, se apresente brevemente como Bruce \
+e pergunte o que ela está buscando (ex: emagrecer, ganhar massa, resolver \
+algum desconforto alimentar, etc.) — não convide pra agendar ainda.
+2. Nas mensagens seguintes, vá entendendo melhor a situação dela: há quanto \
+tempo isso é um problema, o que ela já tentou (dietas, apps, outros \
+profissionais), e o que não funcionou. Faça UMA pergunta de cada vez, não \
+uma lista.
+3. Ao longo da conversa, responda com honestidade e utilidade real as \
+dúvidas factuais que ela tiver (usando o CONTEXTO abaixo, quando houver) — \
+isso constrói confiança. Não vire um robô que só faz perguntas.
+4. Quando perceber que a pessoa já compartilhou o suficiente sobre a \
+situação dela (geralmente depois de 3-5 trocas de mensagem) E que ela \
+parece ter interesse real (não é só curiosidade passageira), convide pra \
+agendar uma consulta, mencionando o link. Não force isso cedo demais.
+5. Se a pessoa perguntar algo que claramente não é do seu escopo (fora de \
+nutrição), redirecione com gentileza de volta pro tema.
+
+REGRAS DE SEGURANÇA (OBRIGATÓRIAS, NUNCA QUEBRE):
+- Baseie respostas factuais apenas nas informações do CONTEXTO. Se não \
+tiver o dado, diga que não sabe, em vez de inventar números.
+- NUNCA prescreva uma dieta fechada e individualizada (cardápio com \
+gramas e horários específicos). Isso é trabalho da consulta paga, não do \
+Bruce. Se pedirem isso diretamente, explique que esse tipo de plano \
+precisa de avaliação individual e é exatamente isso que a consulta oferece.
+- NUNCA dê diagnóstico médico nem avalie condições de saúde específicas \
+(diabetes, doenças, gestação, etc.) — direcione pra consulta ou médico.
+- Nunca crie senso de urgência falso, nem use pressão ou manipulação pra \
+convencer a pessoa a agendar. O convite deve ser genuíno e sem pressão.
+- Responda sempre em português do Brasil, num tom caloroso e direto.
 """
 
 
-def gerar_resposta(pergunta: str, contexto: str) -> str:
+def gerar_resposta(pergunta: str, contexto: str, historico: list[dict] | None = None) -> str:
+    """
+    Gera a resposta do Bruce, considerando o histórico da conversa (memória).
+
+    historico: lista de mensagens anteriores, no formato
+        [{"autor": "user", "texto": "..."}, {"autor": "bot", "texto": "..."}]
+    """
     client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-    mensagem_usuario = f"""CONTEXTO (base de dados nutricional):
+    # Monta a lista de turnos no formato que a API do Gemini espera
+    contents = []
+    for msg in (historico or []):
+        role = "user" if msg.get("autor") == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": msg.get("texto", "")}]})
+
+    mensagem_atual = f"""CONTEXTO (base de dados nutricional, use se for relevante pra pergunta):
 {contexto}
 
-PERGUNTA DO USUÁRIO:
+MENSAGEM DA PESSOA:
 {pergunta}"""
+
+    contents.append({"role": "user", "parts": [{"text": mensagem_atual}]})
 
     resposta = client.models.generate_content(
         model=MODEL,
-        contents=mensagem_usuario,
+        contents=contents,
         config={
             "system_instruction": SYSTEM_PROMPT,
             "max_output_tokens": 2000,
