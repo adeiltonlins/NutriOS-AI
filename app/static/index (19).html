@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bruce — seu assistente de nutrição</title>
+<style>
+  :root {
+    --paper: #F2F1E6;
+    --paper-line: #DAD8C4;
+    --ink: #1C2620;
+    --ink-soft: #4A5147;
+    --mustard: #DFA320;
+    --brick: #B7402F;
+    --sage: #4E6B57;
+    --white: #FFFDF6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 640px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    border-left: 1px solid var(--paper-line);
+    border-right: 1px solid var(--paper-line);
+  }
+
+  /* ---- Header, estilo "rótulo de tabela nutricional" ---- */
+  header {
+    padding: 28px 24px 20px;
+    border-bottom: 8px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: 'Archivo', 'Inter', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sage);
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+
+  h1 {
+    font-family: 'Archivo', 'Inter', sans-serif;
+    font-weight: 900;
+    font-size: 34px;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px;
+    line-height: 1.05;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  .disclaimer-strip {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    padding: 10px 24px;
+    border-bottom: 1px solid var(--ink);
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- Área de conversa ---- */
+  .conversation {
+    flex: 1;
+    padding: 20px 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 88%;
+    animation: rise 0.25s ease-out;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot  { align-self: flex-start; align-items: flex-start; }
+
+  .msg-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+    padding: 0 2px;
+  }
+
+  .bubble {
+    padding: 12px 14px;
+    font-size: 15px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .msg.user .bubble {
+    background: var(--ink);
+    color: var(--white);
+    border-radius: 3px 3px 3px 14px;
+  }
+
+  .msg.bot .bubble {
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 3px 14px 3px 3px;
+  }
+
+  .fontes {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--paper-line);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--sage);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .fonte-tag {
+    border: 1px solid var(--sage);
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .thinking {
+    display: flex;
+    gap: 5px;
+    padding: 14px;
+  }
+  .thinking span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink-soft);
+    animation: bounce 1.1s infinite ease-in-out;
+  }
+  .thinking span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-soft);
+  }
+
+  .empty-state .big-num {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 900;
+    font-size: 15px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brick);
+    margin-bottom: 10px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 18px;
+  }
+
+  .chip {
+    font-size: 12.5px;
+    padding: 7px 12px;
+    border: 1px solid var(--ink);
+    border-radius: 20px;
+    background: var(--white);
+    cursor: pointer;
+    color: var(--ink);
+    transition: background 0.15s, color 0.15s;
+  }
+  .chip:hover { background: var(--ink); color: var(--white); }
+  .chip:focus-visible { outline: 2px solid var(--mustard); outline-offset: 2px; }
+
+  /* ---- Barra de digitação ---- */
+  form.composer {
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    border-top: 8px solid var(--ink);
+    background: var(--paper);
+  }
+
+  .composer input {
+    flex: 1;
+    padding: 13px 14px;
+    font-size: 15px;
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    background: var(--white);
+    color: var(--ink);
+    font-family: inherit;
+  }
+  .composer input:focus-visible {
+    outline: 2px solid var(--mustard);
+    outline-offset: 1px;
+  }
+  .composer input::placeholder { color: #A7A493; }
+
+  .composer button {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0 20px;
+    border: none;
+    border-radius: 3px;
+    background: var(--brick);
+    color: var(--white);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .composer button:hover:not(:disabled) { background: #942F22; }
+  .composer button:disabled { background: #C9C6B4; cursor: not-allowed; }
+  .composer button:focus-visible { outline: 2px solid var(--mustard); outline-offset: 2px; }
+
+  .error-banner {
+    margin: 0 20px;
+    padding: 10px 12px;
+    background: #FBEAE6;
+    border: 1px solid var(--brick);
+    color: var(--brick);
+    font-size: 13px;
+    border-radius: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .msg, .thinking span { animation: none !important; }
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 26px; }
+    .conversation { padding: 16px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header>
+    <p class="eyebrow">Assistente de nutrição</p>
+    <h1>Oi, eu sou o<br>Bruce.</h1>
+    <p class="subtitle">Pode me perguntar sobre alimentos, calorias e hábitos alimentares. Estou aqui pra ajudar a esclarecer suas dúvidas do dia a dia.</p>
+  </header>
+
+  <div class="disclaimer-strip">
+    <span>Não substitui uma consulta com nutricionista</span>
+  </div>
+
+  <div class="conversation" id="conversation">
+    <div class="empty-state" id="emptyState">
+      <p class="big-num">Pergunte o que quiser</p>
+      <p style="font-size:14px; max-width:34ch; margin:0 auto;">Sobre calorias, nutrientes de um alimento específico, ou dúvidas do dia a dia sobre alimentação.</p>
+      <div class="chips">
+        <button class="chip" type="button" data-q="Quantas calorias tem uma banana?">Calorias da banana</button>
+        <button class="chip" type="button" data-q="Quanto de proteína tem o peito de frango?">Proteína no frango</button>
+        <button class="chip" type="button" data-q="Quanto de água devo beber por dia?">Hidratação diária</button>
+      </div>
+    </div>
+  </div>
+
+  <form class="composer" id="composer">
+    <input
+      type="text"
+      id="pergunta"
+      placeholder="Digite sua pergunta..."
+      autocomplete="off"
+      maxlength="500"
+      aria-label="Sua pergunta sobre nutrição"
+    >
+    <button type="submit" id="enviarBtn">Enviar</button>
+  </form>
+</div>
+
+<script>
+  const API_URL = window.location.origin + '/chat';
+  let historicoConversa = [];
+  const sessionId = crypto.randomUUID();
+
+  const conversation = document.getElementById('conversation');
+  const emptyState = document.getElementById('emptyState');
+  const composer = document.getElementById('composer');
+  const input = document.getElementById('pergunta');
+  const enviarBtn = document.getElementById('enviarBtn');
+
+  function esconderEstadoVazio() {
+    if (emptyState) emptyState.remove();
+  }
+
+  function adicionarMensagem(texto, autor) {
+    const msg = document.createElement('div');
+    msg.className = 'msg ' + autor;
+
+    const label = document.createElement('div');
+    label.className = 'msg-label';
+    label.textContent = autor === 'user' ? 'Você' : 'Bruce';
+    msg.appendChild(label);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = texto;
+    msg.appendChild(bubble);
+
+    conversation.appendChild(msg);
+    conversation.scrollTop = conversation.scrollHeight;
+    return { msg, bubble };
+  }
+
+  function adicionarFontes(bubbleEl, fontes) {
+    if (!fontes || fontes.length === 0) return;
+    const div = document.createElement('div');
+    div.className = 'fontes';
+    fontes.forEach(f => {
+      const tag = document.createElement('span');
+      tag.className = 'fonte-tag';
+      tag.textContent = f;
+      div.appendChild(tag);
+    });
+    bubbleEl.parentElement.appendChild(div);
+  }
+
+  function mostrarPensando() {
+    const msg = document.createElement('div');
+    msg.className = 'msg bot';
+    msg.id = 'thinkingMsg';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble thinking';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    msg.appendChild(bubble);
+    conversation.appendChild(msg);
+    conversation.scrollTop = conversation.scrollHeight;
+  }
+
+  function removerPensando() {
+    const el = document.getElementById('thinkingMsg');
+    if (el) el.remove();
+  }
+
+  function mostrarErro(texto) {
+    const banner = document.createElement('div');
+    banner.className = 'error-banner';
+    banner.textContent = texto;
+    conversation.appendChild(banner);
+    conversation.scrollTop = conversation.scrollHeight;
+  }
+
+  async function enviarPergunta(pergunta) {
+    esconderEstadoVazio();
+    adicionarMensagem(pergunta, 'user');
+    input.value = '';
+    enviarBtn.disabled = true;
+    mostrarPensando();
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId })
+      });
+
+      removerPensando();
+
+      if (!resp.ok) {
+        const erro = await resp.json().catch(() => ({}));
+        mostrarErro('Não consegui responder agora. ' + (erro.detail ? erro.detail.slice(0, 140) : 'Tenta de novo em instantes.'));
+        return;
+      }
+
+      const dados = await resp.json();
+      const { bubble } = adicionarMensagem(dados.resposta, 'bot');
+      adicionarFontes(bubble, dados.fontes_utilizadas);
+
+      // Atualiza a memória da conversa pras próximas mensagens
+      historicoConversa.push({ autor: 'user', texto: pergunta });
+      historicoConversa.push({ autor: 'bot', texto: dados.resposta });
+
+    } catch (e) {
+      removerPensando();
+      mostrarErro('Não consegui me conectar ao servidor. Verifique sua internet e tente de novo.');
+    } finally {
+      enviarBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  composer.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pergunta = input.value.trim();
+    if (!pergunta) return;
+    enviarPergunta(pergunta);
+  });
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      enviarPergunta(chip.dataset.q);
+    });
+  });
+</script>
+
+</body>
+</html>
