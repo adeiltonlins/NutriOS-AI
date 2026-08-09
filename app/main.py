@@ -69,9 +69,6 @@ def health_check():
         "status": "ok",
         "alimentos_carregados": len(base_conhecimento.alimentos),
         "armazenamento_leads_ativo": leads_store.ARMAZENAMENTO_ATIVO,
-        "pagamento_ativo": pagamento.PAGAMENTO_ATIVO,
-        "url_base_configurada": bool(pagamento.URL_BASE),
-        "mp_token_configurado": bool(pagamento.MP_ACCESS_TOKEN),
     }
 
 
@@ -85,25 +82,49 @@ def chat(req: PerguntaRequest):
 
     historico_dict = [{"autor": m.autor, "texto": m.texto} for m in req.historico]
 
+    # ---- Calcula o estado do convite/pagamento ANTES de chamar o modelo ----
+    # O modelo nunca vê o link real (só o marcador), então ele sozinho não
+    # tem como saber se já convidou ou se o pagamento já caiu — isso é
+    # calculado aqui, com base no histórico e no Supabase, e passado pra
+    # ele como contexto extra.
+    lead_atual = leads_store.buscar_lead(req.session_id) if req.session_id else None
+    ja_pago = bool(lead_atual and lead_atual.get("pago"))
+
+    def _mensagem_ja_tem_link(texto: str) -> bool:
+        return "mercadopago.com" in texto or (LINK_AGENDAMENTO and LINK_AGENDAMENTO in texto)
+
+    ja_convidou_antes = any(
+        m.autor == "bot" and _mensagem_ja_tem_link(m.texto) for m in req.historico
+    )
+
+    if ja_pago:
+        estado_convite = "pago"
+    elif ja_convidou_antes:
+        estado_convite = "convidou_pendente"
+    else:
+        estado_convite = "nunca_convidou"
+
     try:
-        resposta = gerar_resposta(req.pergunta, contexto, historico_dict)
+        resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
 
     # O Bruce usa um marcador em vez de escrever o link — aqui a gente
     # detecta a intenção de convidar pra consulta e troca pelo link real.
+    #
+    # TRAVA DE SEGURANÇA (independe do modelo obedecer a instrução ou não):
+    # se o pagamento já foi confirmado, NUNCA gera uma preferência nova no
+    # Mercado Pago — troca o marcador pelo contato de verdade direto. Isso
+    # evita duplicar links/preferências e evita confundir quem já pagou.
     quis_agendar = MARCADOR_LINK_PAGAMENTO in resposta
     if quis_agendar:
-        link_real = None
-        print(
-            f"[main] Convite gerado. PAGAMENTO_ATIVO={pagamento.PAGAMENTO_ATIVO} "
-            f"session_id={req.session_id!r} MP_ACCESS_TOKEN_definido={bool(pagamento.MP_ACCESS_TOKEN)} "
-            f"URL_BASE={pagamento.URL_BASE!r}"
-        )
-        if pagamento.PAGAMENTO_ATIVO and req.session_id:
-            link_real = pagamento.criar_link_pagamento(req.session_id)
-            print(f"[main] Link real retornado: {link_real!r}")
-        resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or LINK_AGENDAMENTO)
+        if ja_pago:
+            resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, CONTATO_NUTRICIONISTA)
+        else:
+            link_real = None
+            if pagamento.PAGAMENTO_ATIVO and req.session_id:
+                link_real = pagamento.criar_link_pagamento(req.session_id)
+            resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or LINK_AGENDAMENTO)
 
     fontes = []
     for r in resultados:
@@ -210,6 +231,22 @@ async def pagamento_webhook(request: Request):
             leads_store.marcar_pago(session_id, payment_id)
 
     return {"status": "ok"}
+
+
+@app.get("/agendar")
+def agendar(session_id: str = Query(default="")):
+    """
+    Usado pelo botão fixo "Agendar consulta" do front-end. Reaproveita a
+    MESMA lógica de geração de link do fluxo de chat (nunca cria um
+    caminho paralelo sem tracking): se o pagamento estiver ativo e a
+    sessão for válida, gera uma preferência real do Mercado Pago
+    (com external_reference = session_id, pra manter o webhook
+    funcionando); caso contrário, cai no link fixo de agendamento.
+    """
+    link = None
+    if pagamento.PAGAMENTO_ATIVO and session_id:
+        link = pagamento.criar_link_pagamento(session_id)
+    return {"url": link or LINK_AGENDAMENTO}
 
 
 @app.get("/contato")
