@@ -23,7 +23,15 @@ MODEL = "gemini-flash-latest"  # alias que sempre aponta pra versão Flash mais 
 # reescrever nada do resto do código.
 NUTRICIONISTA_NOME = os.environ.get("NUTRICIONISTA_NOME", "a nutricionista parceira")
 NUTRICIONISTA_ESPECIALIDADE = os.environ.get("NUTRICIONISTA_ESPECIALIDADE", "emagrecimento e reeducação alimentar")
+# Fallback só usado se o pagamento (Mercado Pago) não estiver configurado —
+# nesse caso o Bruce ainda convida, mas com um link fixo simples.
 LINK_AGENDAMENTO = os.environ.get("LINK_AGENDAMENTO", "[link de agendamento não configurado]")
+
+# Marcador especial: o Bruce usa ESSE texto literal quando decide convidar
+# pra consulta. O backend (main.py) detecta o marcador e o substitui pelo
+# link REAL de pagamento gerado na hora pela API do Mercado Pago — o
+# modelo de IA nunca inventa nem vê o link de verdade.
+MARCADOR_LINK_PAGAMENTO = "{{LINK_PAGAMENTO}}"
 
 
 SYSTEM_PROMPT = f"""\
@@ -34,8 +42,9 @@ chegaram até aqui interessadas em nutrição, mas que ainda NÃO são clientes.
 SEU OBJETIVO PRINCIPAL:
 Entender a situação da pessoa (o que ela busca, há quanto tempo tenta \
 resolver isso, o que já tentou antes) e, quando fizer sentido na conversa, \
-convidar ela a agendar uma consulta com {NUTRICIONISTA_NOME} através deste \
-link: {LINK_AGENDAMENTO}
+convidar ela a agendar e pagar a consulta com {NUTRICIONISTA_NOME}. Depois \
+da confirmação do pagamento, ela recebe o contato direto para marcar o \
+horário.
 
 COMO CONDUZIR A CONVERSA:
 1. Se for a primeira mensagem da pessoa, se apresente brevemente como Bruce \
@@ -51,7 +60,10 @@ isso constrói confiança. Não vire um robô que só faz perguntas.
 4. Quando perceber que a pessoa já compartilhou o suficiente sobre a \
 situação dela (geralmente depois de 3-5 trocas de mensagem) E que ela \
 parece ter interesse real (não é só curiosidade passageira), convide pra \
-agendar uma consulta, mencionando o link. Não force isso cedo demais.
+agendar a consulta. Escreva o convite naturalmente e inclua, no lugar do \
+link, EXATAMENTE este texto (sem alterar nada): {MARCADOR_LINK_PAGAMENTO}. \
+O sistema substitui esse texto pelo link de pagamento de verdade — nunca \
+escreva um link você mesmo. Não force o convite cedo demais.
 5. Se a pessoa perguntar algo que claramente não é do seu escopo (fora de \
 nutrição), redirecione com gentileza de volta pro tema.
 

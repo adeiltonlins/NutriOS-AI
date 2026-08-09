@@ -32,16 +32,15 @@ def _headers():
     }
 
 
-def salvar_lead(session_id: str, historico: list[dict], resposta_bot: str, link_agendamento: str) -> None:
+def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool) -> None:
     """
     Salva (ou atualiza) o registro do lead dessa sessão.
-    Detecta se o Bruce já convidou pra agendar checando se o link de
-    agendamento apareceu na resposta mais recente dele.
+    quis_agendar é decidido por quem chama (main.py), com base em se o
+    Bruce sinalizou o convite de pagamento nessa resposta — não fica mais
+    escondido aqui dentro checando texto.
     """
     if not ARMAZENAMENTO_ATIVO:
         return
-
-    quis_agendar = bool(link_agendamento) and link_agendamento in resposta_bot
 
     payload = {
         "session_id": session_id,
@@ -61,6 +60,53 @@ def salvar_lead(session_id: str, historico: list[dict], resposta_bot: str, link_
     except requests.RequestException as e:
         # Nunca deixa uma falha no armazenamento derrubar a resposta do chat
         print(f"[leads_store] Falha ao salvar lead: {e}")
+
+
+def marcar_pago(session_id: str, payment_id: str) -> None:
+    """
+    Marca o lead como pago, depois de o pagamento ter sido CONFIRMADO
+    (status "approved") direto na API do Mercado Pago — nunca chamar isso
+    só com base em parâmetro de URL, sem checar antes.
+    """
+    if not ARMAZENAMENTO_ATIVO:
+        return
+
+    payload = {
+        "pago": True,
+        "payment_id": payment_id,
+        "pago_em": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        resp = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/{TABELA}",
+            headers=_headers(),
+            params={"session_id": f"eq.{session_id}"},
+            json=payload,
+            timeout=5,
+        )
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        print(f"[leads_store] Falha ao marcar lead como pago: {e}")
+
+
+def buscar_lead(session_id: str) -> dict | None:
+    """Busca um lead específico pelo session_id (usado pra checar se já está pago)."""
+    if not ARMAZENAMENTO_ATIVO:
+        return None
+    try:
+        resp = requests.get(
+            f"{SUPABASE_URL}/rest/v1/{TABELA}",
+            headers=_headers(),
+            params={"select": "*", "session_id": f"eq.{session_id}"},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        resultados = resp.json()
+        return resultados[0] if resultados else None
+    except requests.RequestException as e:
+        print(f"[leads_store] Falha ao buscar lead: {e}")
+        return None
 
 
 def listar_leads(limite: int = 100) -> list[dict]:

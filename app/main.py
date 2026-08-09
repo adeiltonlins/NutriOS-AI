@@ -9,15 +9,20 @@ Depois acesse http://localhost:8000/docs para testar pela interface Swagger.
 """
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from app.knowledge_base import base_conhecimento
-from app.llm import gerar_resposta, LINK_AGENDAMENTO
+from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
+from app import pagamento
 import os
+
+# Contato liberado pro paciente só depois do pagamento confirmado —
+# ex: link do WhatsApp pessoal/profissional do nutricionista.
+CONTATO_NUTRICIONISTA = os.environ.get("CONTATO_NUTRICIONISTA", LINK_AGENDAMENTO)
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
@@ -82,6 +87,15 @@ def chat(req: PerguntaRequest):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
 
+    # O Bruce usa um marcador em vez de escrever o link — aqui a gente
+    # detecta a intenção de convidar pra consulta e troca pelo link real.
+    quis_agendar = MARCADOR_LINK_PAGAMENTO in resposta
+    if quis_agendar:
+        link_real = None
+        if pagamento.PAGAMENTO_ATIVO and req.session_id:
+            link_real = pagamento.criar_link_pagamento(req.session_id)
+        resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or LINK_AGENDAMENTO)
+
     fontes = []
     for r in resultados:
         if r["tipo"] == "alimento":
@@ -95,9 +109,116 @@ def chat(req: PerguntaRequest):
             {"autor": "user", "texto": req.pergunta},
             {"autor": "bot", "texto": resposta},
         ]
-        leads_store.salvar_lead(req.session_id, historico_completo, resposta, LINK_AGENDAMENTO)
+        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar)
 
     return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes)
+
+
+@app.get("/pagamento/sucesso", response_class=HTMLResponse)
+def pagamento_sucesso(
+    payment_id: str = Query(default="", alias="payment_id"),
+    external_reference: str = Query(default=""),
+    status: str = Query(default=""),
+):
+    """
+    Página de retorno do Mercado Pago após o pagamento. NUNCA confia só
+    nesses parâmetros de URL (dá pra forjar) — sempre confere o status
+    real direto na API antes de liberar qualquer contato.
+    """
+    pagamento_confirmado = False
+    dados_pagamento = None
+
+    if payment_id:
+        dados_pagamento = pagamento.consultar_pagamento(payment_id)
+    elif external_reference:
+        resultados = pagamento.buscar_pagamentos_por_referencia(external_reference)
+        dados_pagamento = resultados[0] if resultados else None
+
+    if dados_pagamento and dados_pagamento.get("status") == "approved":
+        pagamento_confirmado = True
+        session_id_confirmado = dados_pagamento.get("external_reference") or external_reference
+        if session_id_confirmado:
+            leads_store.marcar_pago(session_id_confirmado, str(dados_pagamento.get("id", payment_id)))
+
+    if pagamento_confirmado:
+        corpo = f"""
+        <h1>✅ Pagamento confirmado!</h1>
+        <p>Obrigado! Aqui está o contato de {NUTRICIONISTA_NOME} pra combinar o melhor horário:</p>
+        <p><a href="{CONTATO_NUTRICIONISTA}" style="font-size:18px;">Falar agora →</a></p>
+        """
+    else:
+        corpo = """
+        <h1>Pagamento em processamento</h1>
+        <p>Assim que for confirmado, o contato é liberado automaticamente.
+        Se você já pagou e essa mensagem não mudar em alguns minutos, chama a gente.</p>
+        """
+
+    return HTMLResponse(f"""
+    <html>
+    <head><meta charset="UTF-8"><title>Pagamento — Bruce</title></head>
+    <body style="font-family: sans-serif; max-width: 600px; margin: 60px auto; padding: 0 20px; text-align: center;">
+        {corpo}
+    </body>
+    </html>
+    """)
+
+
+@app.get("/pagamento/pendente", response_class=HTMLResponse)
+def pagamento_pendente():
+    return HTMLResponse("<h2>Pagamento pendente</h2><p>Assim que for aprovado, o contato é liberado.</p>")
+
+
+@app.get("/pagamento/erro", response_class=HTMLResponse)
+def pagamento_erro():
+    return HTMLResponse("<h2>Pagamento não concluído</h2><p>Você pode tentar novamente na conversa com o Bruce.</p>")
+
+
+@app.post("/pagamento/webhook")
+async def pagamento_webhook(request: Request):
+    """
+    Webhook assíncrono do Mercado Pago — é a fonte da verdade sobre
+    pagamentos (pode chegar mesmo que a pessoa feche a aba antes do
+    redirecionamento). O Mercado Pago manda o id do pagamento como query
+    param (?type=payment&data.id=XXXX) ou no corpo, dependendo da
+    configuração — tratamos os dois casos.
+    """
+    payment_id = request.query_params.get("data.id") or request.query_params.get("id")
+
+    if not payment_id:
+        try:
+            body = await request.json()
+            payment_id = str(body.get("data", {}).get("id", ""))
+        except Exception:
+            payment_id = None
+
+    if not payment_id:
+        return {"status": "ignorado", "motivo": "sem payment_id"}
+
+    dados = pagamento.consultar_pagamento(payment_id)
+    if dados and dados.get("status") == "approved":
+        session_id = dados.get("external_reference")
+        if session_id:
+            leads_store.marcar_pago(session_id, payment_id)
+
+    return {"status": "ok"}
+
+
+@app.get("/contato")
+def verificar_contato(session_id: str = Query(default="")):
+    """
+    Endpoint que o frontend pode consultar pra saber se já pode mostrar o
+    contato do nutricionista pra essa sessão (só libera se pago=true).
+    """
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id é obrigatório.")
+
+    lead = leads_store.buscar_lead(session_id)
+    liberado = bool(lead and lead.get("pago"))
+
+    return {
+        "liberado": liberado,
+        "contato": CONTATO_NUTRICIONISTA if liberado else None,
+    }
 
 
 @app.get("/painel", response_class=HTMLResponse)
