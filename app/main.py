@@ -70,6 +70,8 @@ def health_check():
         "alimentos_carregados": len(base_conhecimento.alimentos),
         "armazenamento_leads_ativo": leads_store.ARMAZENAMENTO_ATIVO,
         "pagamento_ativo": pagamento.PAGAMENTO_ATIVO,
+        "url_base_configurada": bool(pagamento.URL_BASE),
+        "mp_token_configurado": bool(pagamento.MP_ACCESS_TOKEN),
     }
 
 
@@ -93,8 +95,14 @@ def chat(req: PerguntaRequest):
     quis_agendar = MARCADOR_LINK_PAGAMENTO in resposta
     if quis_agendar:
         link_real = None
+        print(
+            f"[main] Convite gerado. PAGAMENTO_ATIVO={pagamento.PAGAMENTO_ATIVO} "
+            f"session_id={req.session_id!r} MP_ACCESS_TOKEN_definido={bool(pagamento.MP_ACCESS_TOKEN)} "
+            f"URL_BASE={pagamento.URL_BASE!r}"
+        )
         if pagamento.PAGAMENTO_ATIVO and req.session_id:
             link_real = pagamento.criar_link_pagamento(req.session_id)
+            print(f"[main] Link real retornado: {link_real!r}")
         resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or LINK_AGENDAMENTO)
 
     fontes = []
