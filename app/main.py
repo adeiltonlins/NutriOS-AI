@@ -69,6 +69,7 @@ def health_check():
         "status": "ok",
         "alimentos_carregados": len(base_conhecimento.alimentos),
         "armazenamento_leads_ativo": leads_store.ARMAZENAMENTO_ATIVO,
+        "pagamento_ativo": pagamento.PAGAMENTO_ATIVO,
     }
 
 
