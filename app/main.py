@@ -112,13 +112,14 @@ class PerguntaRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    code: str = Field(..., min_length=8, max_length=32)
+    code: str = Field(..., min_length=8, max_length=256)
 
 
 class ClienteRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=120)
     identifier: str = Field(..., min_length=3, max_length=160)
     plan: str | None = Field(default=None, max_length=60)
+    duration_days: int = Field(default=30, ge=1, le=3650)
 
 
 class CodigoRequest(BaseModel):
@@ -149,7 +150,7 @@ def login_page():
 @limiter.limit(os.getenv("LOGIN_RATE_LIMIT", "5/minute"))
 def login(request: Request, payload: LoginRequest, response: Response):
     try:
-        user = auth.authenticate_code(payload.code)
+        user = auth.authenticate_master(payload.code) or auth.authenticate_code(payload.code)
     except RuntimeError as exc:
         raise HTTPException(503, str(exc))
     if not user:
@@ -174,14 +175,38 @@ def client_app(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "app.html")
 
 
+@app.get("/app/chat")
+def client_chat(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "index.html")
+
+
 @app.get("/app/leads")
 def own_leads(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-leads.html")
+
+
+@app.get("/app/api/leads")
+def own_leads_data(user: dict = Depends(auth.current_user)):
     return leads_store.listar_leads(limite=500, client_id=None if user["role"] == "admin" else user["id"])
 
 
 @app.get("/app/configuracoes")
 def own_config(user: dict = Depends(auth.current_user)):
-    return {"name": user["name"], "identifier": user["identifier"], "ai_config": user.get("ai_config") or {}}
+    return FileResponse(STATIC_DIR / "client-config.html")
+
+
+@app.get("/app/api/configuracoes")
+def own_config_data(user: dict = Depends(auth.current_user)):
+    return {"name": user["name"], "identifier": user["identifier"], "plan": user.get("plan"), "expires_at": user.get("expires_at"), "ai_config": user.get("ai_config") or {}}
+
+
+@app.patch("/app/api/configuracoes")
+def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
+    current = user.get("ai_config") or {}
+    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt"}}
+    current.update(allowed)
+    updated = saas_store.update_user(user["id"], {"ai_config": current})
+    return {"ok": True, "ai_config": updated.get("ai_config") if updated else current}
 
 
 @app.get("/admin")
@@ -211,7 +236,22 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
 
 @app.post("/admin/clientes")
 def create_client(payload: ClienteRequest, admin: dict = Depends(auth.require_admin)):
-    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan})
+    expires_at = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
+    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "expires_at": expires_at.isoformat()})
+
+
+@app.post("/admin/clientes/{user_id}/renovar")
+def renew_client(user_id: str, payload: CodigoRequest, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Cliente não encontrado")
+    base = datetime.now(timezone.utc)
+    if client.get("expires_at"):
+        current_expiry = datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00"))
+        if current_expiry > base:
+            base = current_expiry
+    days = max(1, (payload.hours or 720) // 24)
+    return saas_store.update_user(user_id, {"active": True, "expires_at": (base + timedelta(days=days)).isoformat()})
 
 
 @app.patch("/admin/clientes/{user_id}")

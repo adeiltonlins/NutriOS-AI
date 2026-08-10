@@ -68,6 +68,15 @@ def authenticate_code(raw_code: str) -> dict | None:
     return None
 
 
+def authenticate_master(raw_code: str) -> dict | None:
+    """Acesso permanente do ADMIN mestre, mantido somente no backend."""
+    expected = os.getenv("ADMIN_TOKEN", "")
+    if not expected or not secrets.compare_digest(raw_code.strip(), expected):
+        return None
+    user = saas_store.get_user_by_identifier(os.getenv("ADMIN_IDENTIFIER", "admin").lower())
+    return user if user and user.get("role") == "admin" and user.get("active") else None
+
+
 def create_session(user: dict, response: Response) -> None:
     raw = secrets.token_urlsafe(48)
     now = datetime.now(timezone.utc)
