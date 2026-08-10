@@ -185,9 +185,28 @@ def own_config(user: dict = Depends(auth.current_user)):
 
 
 @app.get("/admin")
+def admin_page(user: dict = Depends(auth.require_admin)):
+    return FileResponse(STATIC_DIR / "admin.html")
+
+
+@app.get("/admin/api/dashboard")
 def admin_dashboard(user: dict = Depends(auth.require_admin)):
     clients = [u for u in saas_store.list_users() if u["role"] == "client"]
-    return {"clients_total": len(clients), "clients_active": sum(bool(c["active"]) for c in clients), "clients": clients}
+    leads = leads_store.listar_leads(limite=1000)
+    now = datetime.now(timezone.utc)
+
+    def expired(client: dict) -> bool:
+        value = client.get("expires_at")
+        return bool(value and datetime.fromisoformat(value.replace("Z", "+00:00")) <= now)
+
+    return {
+        "clients_total": len(clients),
+        "clients_active": sum(bool(c["active"]) and not expired(c) for c in clients),
+        "clients_expired": sum(expired(c) for c in clients),
+        "leads_total": len(leads),
+        "ai_active": os.getenv("IA_ATIVA", "true").lower() == "true",
+        "clients": clients,
+    }
 
 
 @app.post("/admin/clientes")
