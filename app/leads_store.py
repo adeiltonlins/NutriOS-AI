@@ -66,7 +66,7 @@ def _log_erro(prefixo: str, e: requests.RequestException) -> None:
         print(f"[leads_store] {prefixo}: {e}")
 
 
-def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool) -> None:
+def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool, client_id: str | None = None) -> None:
     """
     Salva (ou atualiza) o registro do lead dessa sessão.
     quis_agendar é decidido por quem chama (main.py), com base em se o
@@ -82,6 +82,8 @@ def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool) -> N
         "quis_agendar": quis_agendar,
         "atualizado_em": datetime.now(timezone.utc).isoformat(),
     }
+    if client_id:
+        payload["client_id"] = client_id
 
     try:
         resp = requests.post(
@@ -143,16 +145,19 @@ def buscar_lead(session_id: str) -> dict | None:
         return None
 
 
-def listar_leads(limite: int = 100) -> list[dict]:
+def listar_leads(limite: int = 100, client_id: str | None = None) -> list[dict]:
     """Retorna os leads mais recentes, pro painel administrativo."""
     if not ARMAZENAMENTO_ATIVO:
         return []
 
     try:
+        params = {"select": "*", "order": "atualizado_em.desc", "limit": str(limite)}
+        if client_id:
+            params["client_id"] = f"eq.{client_id}"
         resp = requests.get(
             f"{SUPABASE_URL}/rest/v1/{TABELA}",
             headers=_headers_read(),
-            params={"select": "*", "order": "atualizado_em.desc", "limit": str(limite)},
+            params=params,
             timeout=5,
         )
         resp.raise_for_status()

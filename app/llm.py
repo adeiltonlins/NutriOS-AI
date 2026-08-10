@@ -34,7 +34,7 @@ LINK_AGENDAMENTO = os.environ.get("LINK_AGENDAMENTO", "[link de agendamento não
 MARCADOR_LINK_PAGAMENTO = "{{LINK_PAGAMENTO}}"
 
 
-SYSTEM_PROMPT = f"""\
+SYSTEM_PROMPT_TEMPLATE = """\
 Você se chama NutriBot. Você é a assistente virtual de {NUTRICIONISTA_NOME}, \
 especialista em {NUTRICIONISTA_ESPECIALIDADE}. Você conversa com pessoas que \
 chegaram até aqui interessadas em nutrição, mas que ainda NÃO são clientes.
@@ -120,11 +120,23 @@ confiante — nunca hesitante ou robótico.
 """
 
 
+def montar_system_prompt(config: dict | None = None) -> str:
+    config = config or {}
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        NUTRICIONISTA_NOME=config.get("nome") or NUTRICIONISTA_NOME,
+        NUTRICIONISTA_ESPECIALIDADE=config.get("especialidade") or NUTRICIONISTA_ESPECIALIDADE,
+        MARCADOR_LINK_PAGAMENTO=MARCADOR_LINK_PAGAMENTO,
+    ) + (f"\nIDENTIDADE/MENSAGEM ADICIONAL DO CLIENTE:\n{config.get('prompt', '')}" if config.get("prompt") else "")
+
+SYSTEM_PROMPT = montar_system_prompt()
+
+
 def gerar_resposta(
     pergunta: str,
     contexto: str,
     historico: list[dict] | None = None,
     estado_convite: str = "nunca_convidou",
+    client_config: dict | None = None,
 ) -> str:
     """
     Gera a resposta do Bruce, considerando o histórico da conversa (memória).
@@ -181,7 +193,7 @@ MENSAGEM DA PESSOA:
         model=MODEL,
         contents=contents,
         config={
-            "system_instruction": SYSTEM_PROMPT,
+            "system_instruction": montar_system_prompt(client_config),
             "max_output_tokens": 2000,
         },
     )

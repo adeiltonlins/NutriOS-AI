@@ -88,7 +88,7 @@
         <svg viewBox="0 0 24 24" class="w-6 h-6 text-brand dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10l-1 8a4 4 0 0 1-4 4 4 4 0 0 1-4-4L7 4Z"/><path d="M5 4h14"/></svg>
       </div>
       <h2 class="text-2xl sm:text-[26px] font-extrabold tracking-tight mb-2">Seu nutricionista com IA</h2>
-      <p class="text-sm sm:text-[15px] text-slate-500 dark:text-slate-400 max-w-sm mb-7">Pergunte sobre dietas, calorias e alimentação saudável.</p>
+      <p class="text-sm sm:text-[15px] text-slate-500 dark:text-slate-400 max-w-sm mb-7">Pergunte sobre dietas, calorias e alimentação saudável — sem enrolação.</p>
 
       <div class="grid grid-cols-2 gap-2.5 w-full max-w-sm">
         <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
@@ -134,28 +134,8 @@
 (() => {
   const API_URL = window.location.origin + '/chat';
   const CONTATO_URL = window.location.origin + '/contato';
-  const STORAGE_KEY_SESSION = 'nutribot-session-id';
-  const STORAGE_KEY_HISTORICO = 'nutribot-historico';
-
-  function carregarHistoricoSalvo() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_HISTORICO);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
-  }
-
-  function salvarHistorico() {
-    try {
-      localStorage.setItem(STORAGE_KEY_HISTORICO, JSON.stringify(historicoConversa));
-    } catch (e) { /* localStorage indisponível/cheio — segue sem persistir */ }
-  }
-
-  // sessionId agora sobrevive a reload: só é gerado uma vez e reaproveitado
-  // enquanto a conversa continuar (evita perder o vínculo com o lead/pagamento
-  // quando o navegador mobile recarrega a aba sozinho ao voltar do background).
-  let historicoConversa = carregarHistoricoSalvo();
-  let sessionId = localStorage.getItem(STORAGE_KEY_SESSION) || crypto.randomUUID();
-  localStorage.setItem(STORAGE_KEY_SESSION, sessionId);
+  let historicoConversa = [];
+  let sessionId = crypto.randomUUID();
   let pollInterval = null;
   let pollAttempts = 0;
 
@@ -190,8 +170,6 @@
   function novaConversa() {
     historicoConversa = [];
     sessionId = crypto.randomUUID();
-    localStorage.setItem(STORAGE_KEY_SESSION, sessionId);
-    localStorage.removeItem(STORAGE_KEY_HISTORICO);
     pararPolling();
     conversation.innerHTML = '';
     conversation.classList.add('hidden');
@@ -391,7 +369,6 @@
 
       historicoConversa.push({ autor: 'user', texto: pergunta });
       historicoConversa.push({ autor: 'bot', texto: dados.resposta });
-      salvarHistorico();
 
     } catch (e) {
       removerPensando();
@@ -412,44 +389,6 @@
   document.querySelectorAll('.quick-action').forEach(btn => {
     btn.addEventListener('click', () => enviarPergunta(btn.dataset.q));
   });
-
-  /* ---- Restaurar conversa após reload (ex: app voltou do background) ---- */
-  function renderizarMensagemSalva(autor, texto) {
-    const col = criarLinha(autor);
-    const bubble = bolhaBase(autor === 'user');
-    if (autor === 'user') bubble.textContent = texto;
-    else bubble.innerHTML = linkify(texto);
-    col.appendChild(bubble);
-    adicionarTimestamp(col);
-  }
-
-  async function restaurarConversa() {
-    if (historicoConversa.length === 0) return;
-    mostrarChat();
-    historicoConversa.forEach(m => renderizarMensagemSalva(m.autor, m.texto));
-
-    // Enquanto a página estava fechada/recarregada o pagamento pode ter sido
-    // aprovado — confere direto no backend antes de decidir se falta liberar.
-    try {
-      const resp = await fetch(`${CONTATO_URL}?session_id=${sessionId}`);
-      if (resp.ok) {
-        const dados = await resp.json();
-        if (dados.liberado && dados.contato) {
-          mostrarContatoLiberado(dados.contato);
-          return;
-        }
-      }
-    } catch (e) { /* segue sem bloquear a restauração */ }
-
-    // Se a última resposta do bot já continha o link de pagamento e ainda
-    // não foi liberado, retoma o polling que o reload tinha derrubado.
-    const ultimaDoBot = [...historicoConversa].reverse().find(m => m.autor === 'bot');
-    if (ultimaDoBot && detectarLinkPagamento(ultimaDoBot.texto)) {
-      iniciarPollingContato();
-    }
-  }
-
-  restaurarConversa();
 
 })();
 </script>

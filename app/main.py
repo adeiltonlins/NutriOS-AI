@@ -1,8 +1,8 @@
 """
-API do chatbot nutricional — MVP com RAG (retrieval por TF-IDF) + Anthropic API.
+API do chatbot nutricional — MVP com RAG (retrieval por TF-IDF) + Gemini API.
 
 Rodar localmente:
-    export ANTHROPIC_API_KEY=sua_chave_aqui
+    export GEMINI_API_KEY=sua_chave_aqui
     uvicorn app.main:app --reload
 
 Depois acesse http://localhost:8000/docs para testar pela interface Swagger.
@@ -14,7 +14,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -26,6 +26,7 @@ from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
 from app import pagamento
+from app import auth, saas_store
 import os
 
 
@@ -67,9 +68,29 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["*"],
 )
+
+MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "1048576"))
+
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    length = request.headers.get("content-length")
+    if length and int(length) > MAX_BODY_BYTES:
+        return Response("Corpo da requisição excede o limite", status_code=413)
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path != "/pagamento/webhook":
+        origin = request.headers.get("origin")
+        if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
+            return Response("Origem não autorizada", status_code=403)
+        if request.url.path != "/auth/logout" and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
+            return Response("Content-Type inválido", status_code=415)
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
 
 
 @app.get("/")
@@ -87,6 +108,22 @@ class PerguntaRequest(BaseModel):
     pergunta: str = Field(..., min_length=1, max_length=1000, description="Pergunta do usuário")
     historico: list[MensagemHistorico] = Field(default_factory=list, max_length=40, description="Mensagens anteriores da conversa, em ordem (limitado pra evitar payloads gigantes)")
     session_id: str = Field(default="", max_length=100, description="Identificador único da conversa, gerado pelo navegador")
+    client_id: str | None = Field(default=None, max_length=64)
+
+
+class LoginRequest(BaseModel):
+    code: str = Field(..., min_length=8, max_length=32)
+
+
+class ClienteRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120)
+    identifier: str = Field(..., min_length=3, max_length=160)
+    plan: str | None = Field(default=None, max_length=60)
+
+
+class CodigoRequest(BaseModel):
+    hours: int | None = Field(default=None, ge=1, le=24 * 365)
+    expires_at: datetime | None = None
 
 
 class RespostaResponse(BaseModel):
@@ -103,9 +140,94 @@ def health_check():
     }
 
 
+@app.get("/login")
+def login_page():
+    return FileResponse(STATIC_DIR / "login.html")
+
+
+@app.post("/auth/login")
+@limiter.limit(os.getenv("LOGIN_RATE_LIMIT", "5/minute"))
+def login(request: Request, payload: LoginRequest, response: Response):
+    try:
+        user = auth.authenticate_code(payload.code)
+    except RuntimeError as exc:
+        raise HTTPException(503, str(exc))
+    if not user:
+        raise HTTPException(401, "Credenciais inválidas")
+    auth.create_session(user, response)
+    return {"redirect": "/admin" if user["role"] == "admin" else "/app"}
+
+
+@app.post("/auth/logout")
+def logout(request: Request, response: Response):
+    auth.logout(request, response)
+    return {"ok": True}
+
+
+@app.get("/api/me")
+def me(user: dict = Depends(auth.current_user)):
+    return {"id": user["id"], "name": user["name"], "role": user["role"], "active": user["active"]}
+
+
+@app.get("/app")
+def client_app(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "app.html")
+
+
+@app.get("/app/leads")
+def own_leads(user: dict = Depends(auth.current_user)):
+    return leads_store.listar_leads(limite=500, client_id=None if user["role"] == "admin" else user["id"])
+
+
+@app.get("/app/configuracoes")
+def own_config(user: dict = Depends(auth.current_user)):
+    return {"name": user["name"], "identifier": user["identifier"], "ai_config": user.get("ai_config") or {}}
+
+
+@app.get("/admin")
+def admin_dashboard(user: dict = Depends(auth.require_admin)):
+    clients = [u for u in saas_store.list_users() if u["role"] == "client"]
+    return {"clients_total": len(clients), "clients_active": sum(bool(c["active"]) for c in clients), "clients": clients}
+
+
+@app.post("/admin/clientes")
+def create_client(payload: ClienteRequest, admin: dict = Depends(auth.require_admin)):
+    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan})
+
+
+@app.patch("/admin/clientes/{user_id}")
+def edit_client(user_id: str, payload: dict, admin: dict = Depends(auth.require_admin)):
+    allowed = {k: v for k, v in payload.items() if k in {"name", "identifier", "plan", "active", "expires_at", "ai_config"}}
+    if "active" in allowed and not allowed["active"]:
+        saas_store.revoke_user_sessions(user_id)
+    return saas_store.update_user(user_id, allowed)
+
+
+@app.post("/admin/clientes/{user_id}/codigos")
+@limiter.limit(os.getenv("CODE_GENERATION_RATE_LIMIT", "10/minute"))
+def generate_code(request: Request, user_id: str, payload: CodigoRequest, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client["role"] != "client":
+        raise HTTPException(404, "Cliente não encontrado")
+    expires = payload.expires_at or (datetime.now(timezone.utc) + timedelta(hours=payload.hours or 24 * 30))
+    if expires <= datetime.now(timezone.utc):
+        raise HTTPException(400, "A expiração deve estar no futuro")
+    code = auth.issue_code(user_id, expires, admin["id"])
+    return {"code": code, "expires_at": expires, "show_once": True}
+
+
+@app.post("/admin/clientes/{user_id}/revogar")
+def revoke_client_access(user_id: str, admin: dict = Depends(auth.require_admin)):
+    saas_store.revoke_codes(user_id)
+    saas_store.revoke_user_sessions(user_id)
+    return {"ok": True}
+
+
 @app.post("/chat", response_model=RespostaResponse)
 @limiter.limit("15/minute")
 def chat(request: Request, req: PerguntaRequest):
+    if os.getenv("IA_ATIVA", "true").lower() != "true":
+        raise HTTPException(503, "Assistente temporariamente indisponível")
     if not req.pergunta.strip():
         raise HTTPException(status_code=400, detail="Pergunta vazia.")
 
@@ -136,8 +258,14 @@ def chat(request: Request, req: PerguntaRequest):
     else:
         estado_convite = "nunca_convidou"
 
+    client_config = {}
+    if req.client_id:
+        client = saas_store.get_user(req.client_id)
+        if not client or not client.get("active") or client.get("role") != "client":
+            raise HTTPException(404, "Assistente indisponível")
+        client_config = client.get("ai_config") or {}
     try:
-        resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite)
+        resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
 
@@ -171,7 +299,7 @@ def chat(request: Request, req: PerguntaRequest):
             {"autor": "user", "texto": req.pergunta},
             {"autor": "bot", "texto": resposta},
         ]
-        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar)
+        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, req.client_id)
 
     return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes)
 
@@ -352,14 +480,23 @@ def verificar_contato(session_id: str = Query(default="")):
     }
 
 
+def painel_autorizado(request: Request, token: str) -> bool:
+    if token_valido(token):
+        return True
+    try:
+        return auth.user_from_token(request, request.cookies.get(auth.COOKIE_NAME)).get("role") == "admin"
+    except HTTPException:
+        return False
+
+
 @app.get("/painel", response_class=HTMLResponse)
-def painel_leads(token: str = Query(default="")):
+def painel_leads(request: Request, token: str = Query(default="")):
     """
     Painel simples pro nutricionista ver os leads que conversaram com o Bruce.
     Protegido por um token simples (não é autenticação robusta — dá pra
     melhorar depois, mas serve bem pro MVP).
     """
-    if not token_valido(token):
+    if not painel_autorizado(request, token):
         return HTMLResponse(
             "<h2>Acesso negado</h2><p>Adicione ?token=SEU_TOKEN na URL.</p>",
             status_code=401,
@@ -437,9 +574,9 @@ def painel_leads(token: str = Query(default="")):
 
 
 @app.get("/painel/exportar")
-def exportar_leads_csv(token: str = Query(default="")):
+def exportar_leads_csv(request: Request, token: str = Query(default="")):
     """Exporta os leads em CSV pro nutricionista abrir no Excel/Sheets."""
-    if not token_valido(token):
+    if not painel_autorizado(request, token):
         raise HTTPException(status_code=401, detail="Acesso negado.")
 
     def _campo_seguro(valor: str) -> str:
@@ -475,14 +612,14 @@ def exportar_leads_csv(token: str = Query(default="")):
 
 
 @app.get("/painel/lembretes", response_class=HTMLResponse)
-def leads_para_lembrete(token: str = Query(default=""), dias: int = Query(default=2)):
+def leads_para_lembrete(request: Request, token: str = Query(default=""), dias: int = Query(default=2)):
     """
     Lista quem pediu agendamento, ainda não pagou, e está parado há X dias
     (padrão 2) — pra você mandar uma mensagem manual por enquanto. Quando
     quiser automatizar o envio (e-mail/WhatsApp), essa é a lista que serve
     de base.
     """
-    if not token_valido(token):
+    if not painel_autorizado(request, token):
         return HTMLResponse("<h2>Acesso negado</h2>", status_code=401)
 
     leads = leads_store.listar_leads(limite=1000)
@@ -541,9 +678,9 @@ def leads_para_lembrete(token: str = Query(default=""), dias: int = Query(defaul
 
 
 @app.get("/painel/conversa", response_class=HTMLResponse)
-def painel_conversa(token: str = Query(default=""), session_id: str = Query(default="")):
+def painel_conversa(request: Request, token: str = Query(default=""), session_id: str = Query(default="")):
     """Mostra a conversa completa de um lead específico."""
-    if not token_valido(token):
+    if not painel_autorizado(request, token):
         return HTMLResponse("<h2>Acesso negado</h2>", status_code=401)
 
     leads = leads_store.listar_leads(limite=200)
