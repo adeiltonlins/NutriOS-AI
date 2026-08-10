@@ -11,7 +11,9 @@ import csv
 import html
 import io
 import json
+import re
 import secrets
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -110,6 +112,7 @@ class PerguntaRequest(BaseModel):
     historico: list[MensagemHistorico] = Field(default_factory=list, max_length=40, description="Mensagens anteriores da conversa, em ordem (limitado pra evitar payloads gigantes)")
     session_id: str = Field(default="", max_length=100, description="Identificador único da conversa, gerado pelo navegador")
     client_id: str | None = Field(default=None, max_length=64)
+    client_slug: str | None = Field(default=None, max_length=160)
 
 
 class LoginRequest(BaseModel):
@@ -156,6 +159,12 @@ def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = Fals
         status = "duvida"
     resumo = " | ".join(falas[-3:])[:600] or "Conversa iniciada"
     return {"lead_status": status, "lead_score": score, "lead_summary": resumo, "message_count": len(falas)}
+
+
+def criar_slug_publico(name: str) -> str:
+    normalized = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    base = re.sub(r"[^a-z0-9]+", "-", normalized).strip("-")[:60] or "nutricionista"
+    return f"{base}-{secrets.token_hex(2)}"
 
 
 @app.get("/health")
@@ -231,6 +240,16 @@ def client_chat(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/n/{public_slug}")
+def public_client_chat(public_slug: str):
+    client = saas_store.get_user_by_slug(public_slug)
+    if not client or client.get("role") != "client" or not client.get("active"):
+        raise HTTPException(404, "Assistente indisponível")
+    if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
+        raise HTTPException(404, "Assistente indisponível")
+    return FileResponse(STATIC_DIR / "index.html")
+
+
 @app.get("/app/leads")
 def own_leads(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-leads.html")
@@ -247,8 +266,8 @@ def own_config(user: dict = Depends(auth.current_user)):
 
 
 @app.get("/app/api/configuracoes")
-def own_config_data(user: dict = Depends(auth.current_user)):
-    return {"name": user["name"], "identifier": user["identifier"], "plan": user.get("plan"), "expires_at": user.get("expires_at"), "ai_config": user.get("ai_config") or {}}
+def own_config_data(request: Request, user: dict = Depends(auth.current_user)):
+    return {"name": user["name"], "identifier": user["identifier"], "plan": user.get("plan"), "expires_at": user.get("expires_at"), "public_slug": user.get("public_slug"), "public_url": f"{str(request.base_url).rstrip('/')}/n/{user.get('public_slug')}" if user.get("public_slug") else None, "ai_config": user.get("ai_config") or {}}
 
 
 @app.patch("/app/api/configuracoes")
@@ -290,7 +309,7 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
 @app.post("/admin/clientes")
 def create_client(payload: ClienteRequest, admin: dict = Depends(auth.require_admin)):
     expires_at = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
-    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "expires_at": expires_at.isoformat()})
+    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "expires_at": expires_at.isoformat(), "public_slug": criar_slug_publico(payload.name)})
 
 
 @app.post("/admin/clientes/{user_id}/renovar")
@@ -383,9 +402,17 @@ def chat(request: Request, req: PerguntaRequest):
         estado_convite = "nunca_convidou"
 
     client_config = {}
-    if req.client_id:
+    resolved_client_id = req.client_id
+    client = None
+    if req.client_slug:
+        client = saas_store.get_user_by_slug(req.client_slug)
+        resolved_client_id = client.get("id") if client else None
+    elif req.client_id:
         client = saas_store.get_user(req.client_id)
+    if req.client_slug or req.client_id:
         if not client or not client.get("active") or client.get("role") != "client":
+            raise HTTPException(404, "Assistente indisponível")
+        if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
             raise HTTPException(404, "Assistente indisponível")
         client_config = client.get("ai_config") or {}
     limite_gratuito = int(client_config.get("free_message_limit") or os.getenv("FREE_MESSAGE_LIMIT", "8"))
@@ -401,7 +428,7 @@ def chat(request: Request, req: PerguntaRequest):
     cta_cliente = client_config.get("link_consulta") or client_config.get("whatsapp")
     fallback_cliente = cta_cliente or "O canal de agendamento deste profissional ainda não foi configurado. Solicite o contato diretamente à clínica."
     if atingiu_limite and not ja_pago:
-        resposta = "Já consegui entender melhor o que você busca. Para continuar com uma orientação realmente personalizada, o próximo passo é conversar com a nutricionista e avaliar seu caso com segurança. " + (fallback_cliente if req.client_id else LINK_AGENDAMENTO)
+        resposta = "Já consegui entender melhor o que você busca. Para continuar com uma orientação realmente personalizada, o próximo passo é conversar com a nutricionista e avaliar seu caso com segurança. " + (fallback_cliente if resolved_client_id else LINK_AGENDAMENTO)
     else:
         try:
             resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
@@ -420,10 +447,10 @@ def chat(request: Request, req: PerguntaRequest):
         if ja_pago:
             resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, CONTATO_NUTRICIONISTA)
         else:
-            link_real = cta_cliente if req.client_id else None
-            if not req.client_id and not link_real and pagamento.PAGAMENTO_ATIVO and req.session_id:
+            link_real = cta_cliente if resolved_client_id else None
+            if not resolved_client_id and not link_real and pagamento.PAGAMENTO_ATIVO and req.session_id:
                 link_real = pagamento.criar_link_pagamento(req.session_id)
-            resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or (fallback_cliente if req.client_id else LINK_AGENDAMENTO))
+            resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or (fallback_cliente if resolved_client_id else LINK_AGENDAMENTO))
 
     fontes = []
     for r in resultados:
@@ -439,7 +466,7 @@ def chat(request: Request, req: PerguntaRequest):
             {"autor": "bot", "texto": resposta},
         ]
         qualification = qualificar_lead(historico_completo, quis_agendar, ja_pago)
-        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, req.client_id, qualification)
+        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, resolved_client_id, qualification)
 
     return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes)
 

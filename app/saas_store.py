@@ -37,6 +37,11 @@ def get_user_by_identifier(identifier: str) -> dict | None:
     return rows[0] if rows else None
 
 
+def get_user_by_slug(public_slug: str) -> dict | None:
+    rows = _request("GET", "saas_users", params={"select": "*", "public_slug": f"eq.{public_slug.lower().strip()}", "limit": "1"})
+    return rows[0] if rows else None
+
+
 def list_users() -> list[dict]:
     return _request("GET", "saas_users", params={"select": "*", "order": "created_at.desc"}) or []
 
@@ -88,4 +93,3 @@ def revoke_session(session_id: str) -> None:
 
 def revoke_user_sessions(user_id: str) -> None:
     _request("PATCH", "user_sessions", params={"user_id": f"eq.{user_id}", "revoked_at": "is.null"}, payload={"revoked_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
-
