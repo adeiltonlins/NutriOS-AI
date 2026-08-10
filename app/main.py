@@ -250,6 +250,27 @@ def public_client_chat(public_slug: str):
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/public/clientes/{public_slug}")
+def public_client_branding(public_slug: str):
+    client = saas_store.get_user_by_slug(public_slug)
+    if not client or client.get("role") != "client" or not client.get("active"):
+        raise HTTPException(404, "Assistente indisponível")
+    if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
+        raise HTTPException(404, "Assistente indisponível")
+    config = client.get("ai_config") or {}
+    safe_keys = {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
+    safe = {k: config.get(k) for k in safe_keys if config.get(k)}
+    safe["nome"] = safe.get("nome") or client.get("name")
+    color = safe.get("cor_principal", "#2563eb")
+    safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#2563eb"
+    if safe.get("logo_url") and not str(safe["logo_url"]).startswith("https://"):
+        safe.pop("logo_url", None)
+    for key in ("whatsapp", "link_consulta", "instagram"):
+        if safe.get(key) and not str(safe[key]).startswith("https://"):
+            safe.pop(key, None)
+    return safe
+
+
 @app.get("/app/leads")
 def own_leads(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-leads.html")
@@ -273,7 +294,7 @@ def own_config_data(request: Request, user: dict = Depends(auth.current_user)):
 @app.patch("/app/api/configuracoes")
 def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
     current = user.get("ai_config") or {}
-    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit"}}
+    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas"}}
     if "free_message_limit" in allowed:
         allowed["free_message_limit"] = max(1, min(50, int(allowed["free_message_limit"] or 8)))
     current.update(allowed)

@@ -35,7 +35,7 @@ MARCADOR_LINK_PAGAMENTO = "{{LINK_PAGAMENTO}}"
 
 
 SYSTEM_PROMPT_TEMPLATE = """\
-Você se chama NutriBot. Você é a assistente virtual de {NUTRICIONISTA_NOME}, \
+Você se chama {ASSISTENTE_NOME}. Você é a assistente virtual de {NUTRICIONISTA_NOME}, \
 especialista em {NUTRICIONISTA_ESPECIALIDADE}. Você conversa com pessoas que \
 chegaram até aqui interessadas em nutrição, mas que ainda NÃO são clientes.
 
@@ -123,10 +123,11 @@ confiante — nunca hesitante ou robótico.
 def montar_system_prompt(config: dict | None = None) -> str:
     config = config or {}
     return SYSTEM_PROMPT_TEMPLATE.format(
+        ASSISTENTE_NOME=config.get("identidade_ia") or "NutriBot",
         NUTRICIONISTA_NOME=config.get("nome") or NUTRICIONISTA_NOME,
         NUTRICIONISTA_ESPECIALIDADE=config.get("especialidade") or NUTRICIONISTA_ESPECIALIDADE,
         MARCADOR_LINK_PAGAMENTO=MARCADOR_LINK_PAGAMENTO,
-    ) + (f"\nIDENTIDADE/MENSAGEM ADICIONAL DO CLIENTE:\n{config.get('prompt', '')}" if config.get("prompt") else "")
+    ) + (f"\nMENSAGEM DE BOAS-VINDAS PREFERIDA:\n{config.get('mensagem_inicial', '')}" if config.get("mensagem_inicial") else "") + (f"\nIDENTIDADE/MENSAGEM ADICIONAL DO CLIENTE:\n{config.get('prompt', '')}" if config.get("prompt") else "")
 
 SYSTEM_PROMPT = montar_system_prompt()
 

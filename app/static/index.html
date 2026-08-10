@@ -51,15 +51,15 @@
   <!-- Top bar -->
   <header class="flex items-center justify-between mb-3 sm:mb-4 shrink-0">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-emerald-500 flex items-center justify-center shadow-sm shrink-0">
+      <div id="brandLogo" class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand to-emerald-500 flex items-center justify-center shadow-sm shrink-0 overflow-hidden">
         <svg viewBox="0 0 24 24" class="w-5 h-5 text-white" fill="none">
           <path d="M12 3C8 3 5 6.5 5 10.8C5 15.6 8.5 19.5 12 21C15.5 19.5 19 15.6 19 10.8C19 6.5 16 3 12 3Z" fill="white" fill-opacity=".95"/>
           <path d="M12 7.5V14.5M9 10.5C9 10.5 9.8 12 12 12C14.2 12 15 10.5 15 10.5" stroke="#2563eb" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
       </div>
       <div>
-        <h1 class="font-bold text-[15px] sm:text-base tracking-tight leading-tight">NutriBot AI</h1>
-        <p class="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Assistente virtual de nutrição</p>
+        <h1 id="brandName" class="font-bold text-[15px] sm:text-base tracking-tight leading-tight">NutriBot AI</h1>
+        <p id="brandSpecialty" class="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Assistente virtual de nutrição</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -87,10 +87,11 @@
       <div class="w-14 h-14 rounded-2xl bg-brand-soft dark:bg-slate-800 flex items-center justify-center mb-5">
         <svg viewBox="0 0 24 24" class="w-6 h-6 text-brand dark:text-blue-400" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10l-1 8a4 4 0 0 1-4 4 4 4 0 0 1-4-4L7 4Z"/><path d="M5 4h14"/></svg>
       </div>
-      <h2 class="text-2xl sm:text-[26px] font-extrabold tracking-tight mb-2">Seu nutricionista com IA</h2>
-      <p class="text-sm sm:text-[15px] text-slate-500 dark:text-slate-400 max-w-sm mb-7">Pergunte sobre dietas, calorias e alimentação saudável — sem enrolação.</p>
+      <h2 id="heroTitle" class="text-2xl sm:text-[26px] font-extrabold tracking-tight mb-2">Seu nutricionista com IA</h2>
+      <p id="welcomeText" class="text-sm sm:text-[15px] text-slate-500 dark:text-slate-400 max-w-sm mb-3">Pergunte sobre dietas, calorias e alimentação saudável — sem enrolação.</p>
+      <div id="professionalLinks" class="flex gap-3 text-xs mb-5"></div>
 
-      <div class="grid grid-cols-2 gap-2.5 w-full max-w-sm">
+      <div id="quickActions" class="grid grid-cols-2 gap-2.5 w-full max-w-sm">
         <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
           data-q="Pode me ajudar a montar uma dieta?">
           <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-blue-400">Montar dieta</span>
@@ -125,7 +126,7 @@
           <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
         </button>
       </form>
-      <p class="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-2">Informações baseadas em referências nutricionais confiáveis. Para um plano personalizado, converse com uma nutricionista.</p>
+      <p id="legalText" class="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-2">Informações educativas. A IA não substitui avaliação de nutricionista ou médico.</p>
     </div>
   </main>
 </div>
@@ -136,6 +137,7 @@
   let clientId = null;
   const slugMatch = window.location.pathname.match(/^\/n\/([^/]+)$/);
   const clientSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
+  let tenantColor = '#2563eb';
   const clientReady = window.location.pathname === '/app/chat'
     ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
     : Promise.resolve();
@@ -152,6 +154,30 @@
   const enviarBtn = document.getElementById('enviarBtn');
   const newChatBtn = document.getElementById('newChatBtn');
   const themeToggle = document.getElementById('themeToggle');
+
+  async function carregarIdentidadePublica() {
+    if (!clientSlug) return;
+    const resp = await fetch('/public/clientes/' + encodeURIComponent(clientSlug));
+    if (!resp.ok) return;
+    const cfg = await resp.json();
+    tenantColor = cfg.cor_principal || tenantColor;
+    document.title = `${cfg.identidade_ia || 'Assistente'} — ${cfg.nome}`;
+    document.getElementById('brandName').textContent = cfg.identidade_ia || `Assistente da ${cfg.nome}`;
+    document.getElementById('brandSpecialty').textContent = [cfg.nome, cfg.especialidade].filter(Boolean).join(' • ');
+    document.getElementById('heroTitle').textContent = cfg.identidade_ia || `Atendimento da ${cfg.nome}`;
+    document.getElementById('welcomeText').textContent = cfg.mensagem_inicial || `Olá! Sou a assistente virtual de ${cfg.nome}. Como posso ajudar você hoje?`;
+    document.getElementById('enviarBtn').style.backgroundColor = tenantColor;
+    const logo = document.getElementById('brandLogo'); logo.style.background = tenantColor;
+    if (cfg.logo_url) logo.innerHTML = `<img src="${cfg.logo_url.replace(/"/g, '&quot;')}" alt="Logo de ${cfg.nome.replace(/"/g, '&quot;')}" class="w-full h-full object-cover">`;
+    const links = document.getElementById('professionalLinks');
+    if (cfg.crn) links.insertAdjacentHTML('beforeend', `<span>CRN ${String(cfg.crn).replace(/[<>&]/g,'')}</span>`);
+    if (cfg.instagram) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.instagram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Instagram</a>`);
+    if (cfg.whatsapp) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.whatsapp).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">WhatsApp</a>`);
+    const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+    if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors shadow-sm" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
+    document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;
+  }
+  carregarIdentidadePublica();
 
   /* ---- Tema ---- */
   function aplicarTema(tema) {
@@ -208,6 +234,7 @@
     const avatar = document.createElement('div');
     avatar.className = `w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[11px] font-bold text-white mt-0.5 ${isUser ? 'bg-slate-400 dark:bg-slate-600' : 'bg-gradient-to-br from-brand to-emerald-500'}`;
     avatar.textContent = isUser ? 'Eu' : 'NB';
+    if (!isUser) avatar.style.background = tenantColor;
     row.appendChild(avatar);
 
     const col = document.createElement('div');
@@ -393,8 +420,9 @@
     enviarPergunta(pergunta);
   });
 
-  document.querySelectorAll('.quick-action').forEach(btn => {
-    btn.addEventListener('click', () => enviarPergunta(btn.dataset.q));
+  document.getElementById('quickActions').addEventListener('click', (e) => {
+    const btn = e.target.closest('.quick-action');
+    if (btn) enviarPergunta(btn.dataset.q);
   });
 
 })();
