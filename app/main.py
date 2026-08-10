@@ -8,13 +8,18 @@ Rodar localmente:
 Depois acesse http://localhost:8000/docs para testar pela interface Swagger.
 """
 import csv
+import html
 import io
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
 
 from app.knowledge_base import base_conhecimento
@@ -22,6 +27,16 @@ from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, N
 from app import leads_store
 from app import pagamento
 import os
+
+
+def token_valido(token: str) -> bool:
+    """Compara o token do admin usando comparação de tempo constante
+    (evita timing attack) e nunca autoriza se ADMIN_TOKEN não estiver
+    configurado."""
+    token_esperado = os.environ.get("ADMIN_TOKEN", "")
+    if not token_esperado:
+        return False
+    return secrets.compare_digest(token, token_esperado)
 
 # Contato liberado pro paciente só depois do pagamento confirmado —
 # ex: link do WhatsApp pessoal/profissional do nutricionista.
@@ -35,11 +50,24 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Libera CORS pra facilitar testes com um frontend separado (ajuste em produção)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Restringe CORS ao(s) domínio(s) reais do site (configure ALLOWED_ORIGINS
+# no .env, separado por vírgula, ex: "https://seusite.com,https://www.seusite.com").
+# Sem configurar, cai pra URL_BASE (Render) — nunca "*" em produção.
+_origens_env = os.environ.get("ALLOWED_ORIGINS", "")
+if _origens_env:
+    ALLOWED_ORIGINS = [o.strip() for o in _origens_env.split(",") if o.strip()]
+else:
+    _url_base = os.environ.get("URL_BASE", "").rstrip("/")
+    ALLOWED_ORIGINS = [_url_base] if _url_base else []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -57,7 +85,7 @@ class MensagemHistorico(BaseModel):
 
 class PerguntaRequest(BaseModel):
     pergunta: str = Field(..., min_length=1, max_length=1000, description="Pergunta do usuário")
-    historico: list[MensagemHistorico] = Field(default_factory=list, description="Mensagens anteriores da conversa, em ordem")
+    historico: list[MensagemHistorico] = Field(default_factory=list, max_length=40, description="Mensagens anteriores da conversa, em ordem (limitado pra evitar payloads gigantes)")
     session_id: str = Field(default="", max_length=100, description="Identificador único da conversa, gerado pelo navegador")
 
 
@@ -76,7 +104,8 @@ def health_check():
 
 
 @app.post("/chat", response_model=RespostaResponse)
-def chat(req: PerguntaRequest):
+@limiter.limit("15/minute")
+def chat(request: Request, req: PerguntaRequest):
     if not req.pergunta.strip():
         raise HTTPException(status_code=400, detail="Pergunta vazia.")
 
@@ -289,7 +318,8 @@ async def pagamento_webhook(request: Request):
 
 
 @app.get("/agendar")
-def agendar(session_id: str = Query(default="")):
+@limiter.limit("10/minute")
+def agendar(request: Request, session_id: str = Query(default="")):
     """
     Usado pelo botão fixo "Agendar consulta" do front-end. Reaproveita a
     MESMA lógica de geração de link do fluxo de chat (nunca cria um
@@ -329,8 +359,7 @@ def painel_leads(token: str = Query(default="")):
     Protegido por um token simples (não é autenticação robusta — dá pra
     melhorar depois, mas serve bem pro MVP).
     """
-    token_esperado = os.environ.get("ADMIN_TOKEN", "")
-    if not token_esperado or token != token_esperado:
+    if not token_valido(token):
         return HTMLResponse(
             "<h2>Acesso negado</h2><p>Adicione ?token=SEU_TOKEN na URL.</p>",
             status_code=401,
@@ -349,15 +378,17 @@ def painel_leads(token: str = Query(default="")):
     for lead in leads:
         agendou = "✅ Sim" if lead.get("quis_agendar") else "—"
         pago = "💰 Sim" if lead.get("pago") else "—"
-        atualizado = lead.get("atualizado_em", "")[:16].replace("T", " ")
-        session_curta = lead.get("session_id", "")[:8]
+        atualizado = html.escape(lead.get("atualizado_em", "")[:16].replace("T", " "))
+        session_id_raw = lead.get("session_id", "")
+        session_curta = html.escape(session_id_raw[:8])
+        link_conversa = f"/painel/conversa?token={html.escape(token, quote=True)}&session_id={html.escape(session_id_raw, quote=True)}"
         linhas_html += f"""
         <tr>
             <td>{session_curta}</td>
             <td>{atualizado}</td>
             <td>{agendou}</td>
             <td>{pago}</td>
-            <td><a href="/painel/conversa?token={token}&session_id={lead.get('session_id', '')}">Ver conversa</a></td>
+            <td><a href="{link_conversa}">Ver conversa</a></td>
         </tr>"""
 
     return f"""
@@ -408,9 +439,16 @@ def painel_leads(token: str = Query(default="")):
 @app.get("/painel/exportar")
 def exportar_leads_csv(token: str = Query(default="")):
     """Exporta os leads em CSV pro nutricionista abrir no Excel/Sheets."""
-    token_esperado = os.environ.get("ADMIN_TOKEN", "")
-    if not token_esperado or token != token_esperado:
+    if not token_valido(token):
         raise HTTPException(status_code=401, detail="Acesso negado.")
+
+    def _campo_seguro(valor: str) -> str:
+        # Evita "CSV injection": se um campo controlado pelo usuário (ex:
+        # session_id) começar com =, +, - ou @, o Excel/Sheets pode
+        # interpretar como fórmula ao abrir o arquivo.
+        if valor and valor[0] in ("=", "+", "-", "@"):
+            return "'" + valor
+        return valor
 
     leads = leads_store.listar_leads(limite=1000)
 
@@ -419,7 +457,7 @@ def exportar_leads_csv(token: str = Query(default="")):
     escritor.writerow(["session_id", "criado_em", "atualizado_em", "quis_agendar", "pago", "payment_id", "pago_em"])
     for lead in leads:
         escritor.writerow([
-            lead.get("session_id", ""),
+            _campo_seguro(lead.get("session_id", "")),
             lead.get("criado_em", ""),
             lead.get("atualizado_em", ""),
             lead.get("quis_agendar", False),
@@ -444,8 +482,7 @@ def leads_para_lembrete(token: str = Query(default=""), dias: int = Query(defaul
     quiser automatizar o envio (e-mail/WhatsApp), essa é a lista que serve
     de base.
     """
-    token_esperado = os.environ.get("ADMIN_TOKEN", "")
-    if not token_esperado or token != token_esperado:
+    if not token_valido(token):
         return HTMLResponse("<h2>Acesso negado</h2>", status_code=401)
 
     leads = leads_store.listar_leads(limite=1000)
@@ -467,13 +504,15 @@ def leads_para_lembrete(token: str = Query(default=""), dias: int = Query(defaul
 
     linhas_html = ""
     for lead in candidatos:
-        atualizado = lead.get("atualizado_em", "")[:16].replace("T", " ")
-        session_curta = lead.get("session_id", "")[:8]
+        atualizado = html.escape(lead.get("atualizado_em", "")[:16].replace("T", " "))
+        session_id_raw = lead.get("session_id", "")
+        session_curta = html.escape(session_id_raw[:8])
+        link_conversa = f"/painel/conversa?token={html.escape(token, quote=True)}&session_id={html.escape(session_id_raw, quote=True)}"
         linhas_html += f"""
         <tr>
             <td>{session_curta}</td>
             <td>{atualizado}</td>
-            <td><a href="/painel/conversa?token={token}&session_id={lead.get('session_id', '')}">Ver conversa</a></td>
+            <td><a href="{link_conversa}">Ver conversa</a></td>
         </tr>"""
 
     return f"""
@@ -504,8 +543,7 @@ def leads_para_lembrete(token: str = Query(default=""), dias: int = Query(defaul
 @app.get("/painel/conversa", response_class=HTMLResponse)
 def painel_conversa(token: str = Query(default=""), session_id: str = Query(default="")):
     """Mostra a conversa completa de um lead específico."""
-    token_esperado = os.environ.get("ADMIN_TOKEN", "")
-    if not token_esperado or token != token_esperado:
+    if not token_valido(token):
         return HTMLResponse("<h2>Acesso negado</h2>", status_code=401)
 
     leads = leads_store.listar_leads(limite=200)
@@ -519,18 +557,24 @@ def painel_conversa(token: str = Query(default=""), session_id: str = Query(defa
 
     mensagens_html = ""
     for msg in historico:
-        autor = "Pessoa" if msg.get("autor") == "user" else "Bruce"
-        cor = "#EEE" if msg.get("autor") == "user" else "#F2F1E6"
+        # texto e autor vêm do histórico salvo, que é 100% controlado pelo
+        # navegador do visitante — NUNCA jogar direto no HTML sem escapar,
+        # ou vira XSS armazenado (rouba o token do admin via document.location).
+        autor_raw = msg.get("autor")
+        autor = "Pessoa" if autor_raw == "user" else "Bruce"
+        cor = "#EEE" if autor_raw == "user" else "#F2F1E6"
+        texto_seguro = html.escape(str(msg.get("texto", ""))).replace("\n", "<br>")
         mensagens_html += f"""
         <div style="background:{cor}; padding:12px; border-radius:8px; margin-bottom:10px;">
-            <strong>{autor}:</strong><br>{msg.get('texto', '')}
+            <strong>{autor}:</strong><br>{texto_seguro}
         </div>"""
 
+    link_voltar = f"/painel?token={html.escape(token, quote=True)}"
     return f"""
     <html>
     <head><meta charset="UTF-8"><title>Conversa — Bruce</title></head>
     <body style="font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px;">
-        <p><a href="/painel?token={token}">&larr; Voltar pro painel</a></p>
+        <p><a href="{link_voltar}">&larr; Voltar pro painel</a></p>
         <h1>Conversa completa</h1>
         {mensagens_html}
     </body>

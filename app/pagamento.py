@@ -21,10 +21,6 @@ import os
 import requests
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
-# DEBUG TEMPORÁRIO — remover depois de resolver
-print(f"[debug] MP_ACCESS_TOKEN repr (só pontas): {MP_ACCESS_TOKEN[:8]!r}...{MP_ACCESS_TOKEN[-8:]!r}")
-print(f"[debug] MP_ACCESS_TOKEN len: {len(MP_ACCESS_TOKEN)}")
-print(f"[debug] PAGAMENTO_ATIVO: {bool(MP_ACCESS_TOKEN and os.environ.get('URL_BASE', ''))}")
 VALOR_CONSULTA = float(os.environ.get("VALOR_CONSULTA", "150.00"))
 NOME_ITEM = os.environ.get("NOME_ITEM_PAGAMENTO", "Consulta nutricional")
 # URL pública do seu serviço no Render, ex: https://nutri-chatbot-8h6k.onrender.com
