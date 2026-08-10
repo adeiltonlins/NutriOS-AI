@@ -66,7 +66,7 @@ def _log_erro(prefixo: str, e: requests.RequestException) -> None:
         print(f"[leads_store] {prefixo}: {e}")
 
 
-def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool, client_id: str | None = None) -> None:
+def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool, client_id: str | None = None, qualification: dict | None = None) -> None:
     """
     Salva (ou atualiza) o registro do lead dessa sessão.
     quis_agendar é decidido por quem chama (main.py), com base em se o
@@ -84,6 +84,8 @@ def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool, clie
     }
     if client_id:
         payload["client_id"] = client_id
+    if qualification:
+        payload.update({k: v for k, v in qualification.items() if k in {"lead_status", "lead_score", "lead_summary", "message_count"}})
 
     try:
         resp = requests.post(
@@ -109,6 +111,8 @@ def marcar_pago(session_id: str, payment_id: str) -> None:
 
     payload = {
         "pago": True,
+        "lead_status": "convertido",
+        "lead_score": 100,
         "payment_id": payment_id,
         "pago_em": datetime.now(timezone.utc).isoformat(),
     }

@@ -10,6 +10,7 @@ Depois acesse http://localhost:8000/docs para testar pela interface Swagger.
 import csv
 import html
 import io
+import json
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -132,6 +133,25 @@ class RespostaResponse(BaseModel):
     fontes_utilizadas: list[str]
 
 
+def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
+    """Classificação comercial local: rápida e sem consumir outra chamada do Gemini."""
+    falas = [str(m.get("texto", "")).strip() for m in historico if m.get("autor") == "user"]
+    texto = " ".join(falas).lower()
+    quentes = ("preço", "valor", "quanto custa", "agendar", "consulta", "pagamento", "pagar", "quero marcar", "horário")
+    interesse = ("emagrecer", "ganhar massa", "não consigo", "já tentei", "dificuldade", "preciso", "objetivo", "compulsão", "acompanhamento")
+    score = min(100, len(falas) * 4 + sum(14 for k in quentes if k in texto) + sum(6 for k in interesse if k in texto) + (25 if quis_agendar else 0))
+    if pago:
+        status, score = "convertido", 100
+    elif quis_agendar or any(k in texto for k in quentes):
+        status = "quente"
+    elif any(k in texto for k in interesse) or len(falas) >= 3:
+        status = "interessado"
+    else:
+        status = "duvida"
+    resumo = " | ".join(falas[-3:])[:600] or "Conversa iniciada"
+    return {"lead_status": status, "lead_score": score, "lead_summary": resumo, "message_count": len(falas)}
+
+
 @app.get("/health")
 def health_check():
     return {
@@ -203,7 +223,9 @@ def own_config_data(user: dict = Depends(auth.current_user)):
 @app.patch("/app/api/configuracoes")
 def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
     current = user.get("ai_config") or {}
-    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt"}}
+    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit"}}
+    if "free_message_limit" in allowed:
+        allowed["free_message_limit"] = max(1, min(50, int(allowed["free_message_limit"] or 8)))
     current.update(allowed)
     updated = saas_store.update_user(user["id"], {"ai_config": current})
     return {"ok": True, "ai_config": updated.get("ai_config") if updated else current}
@@ -323,10 +345,25 @@ def chat(request: Request, req: PerguntaRequest):
         if not client or not client.get("active") or client.get("role") != "client":
             raise HTTPException(404, "Assistente indisponível")
         client_config = client.get("ai_config") or {}
-    try:
-        resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
+    limite_gratuito = int(client_config.get("free_message_limit") or os.getenv("FREE_MESSAGE_LIMIT", "8"))
+    historico_salvo = []
+    if lead_atual:
+        raw = lead_atual.get("historico") or []
+        try:
+            historico_salvo = json.loads(raw) if isinstance(raw, str) else raw
+        except (ValueError, TypeError):
+            historico_salvo = []
+    mensagens_anteriores = sum(1 for m in historico_salvo if m.get("autor") == "user")
+    atingiu_limite = mensagens_anteriores >= limite_gratuito
+    cta_cliente = client_config.get("link_consulta") or client_config.get("whatsapp")
+    fallback_cliente = cta_cliente or "O canal de agendamento deste profissional ainda não foi configurado. Solicite o contato diretamente à clínica."
+    if atingiu_limite and not ja_pago:
+        resposta = "Já consegui entender melhor o que você busca. Para continuar com uma orientação realmente personalizada, o próximo passo é conversar com a nutricionista e avaliar seu caso com segurança. " + (fallback_cliente if req.client_id else LINK_AGENDAMENTO)
+    else:
+        try:
+            resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
 
     # O Bruce usa um marcador em vez de escrever o link — aqui a gente
     # detecta a intenção de convidar pra consulta e troca pelo link real.
@@ -335,15 +372,15 @@ def chat(request: Request, req: PerguntaRequest):
     # se o pagamento já foi confirmado, NUNCA gera uma preferência nova no
     # Mercado Pago — troca o marcador pelo contato de verdade direto. Isso
     # evita duplicar links/preferências e evita confundir quem já pagou.
-    quis_agendar = MARCADOR_LINK_PAGAMENTO in resposta
+    quis_agendar = atingiu_limite or MARCADOR_LINK_PAGAMENTO in resposta
     if quis_agendar:
         if ja_pago:
             resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, CONTATO_NUTRICIONISTA)
         else:
-            link_real = None
-            if pagamento.PAGAMENTO_ATIVO and req.session_id:
+            link_real = cta_cliente if req.client_id else None
+            if not req.client_id and not link_real and pagamento.PAGAMENTO_ATIVO and req.session_id:
                 link_real = pagamento.criar_link_pagamento(req.session_id)
-            resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or LINK_AGENDAMENTO)
+            resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or (fallback_cliente if req.client_id else LINK_AGENDAMENTO))
 
     fontes = []
     for r in resultados:
@@ -358,7 +395,8 @@ def chat(request: Request, req: PerguntaRequest):
             {"autor": "user", "texto": req.pergunta},
             {"autor": "bot", "texto": resposta},
         ]
-        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, req.client_id)
+        qualification = qualificar_lead(historico_completo, quis_agendar, ja_pago)
+        leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, req.client_id, qualification)
 
     return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes)
 
