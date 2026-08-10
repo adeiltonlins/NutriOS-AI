@@ -113,7 +113,13 @@ class PerguntaRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    code: str = Field(..., min_length=8, max_length=256)
+    code: str | None = Field(default=None, max_length=256)
+    identifier: str | None = Field(default=None, max_length=160)
+    password: str | None = Field(default=None, max_length=128)
+
+
+class PasswordSetupRequest(BaseModel):
+    password: str = Field(..., min_length=10, max_length=128)
 
 
 class ClienteRequest(BaseModel):
@@ -170,13 +176,19 @@ def login_page():
 @limiter.limit(os.getenv("LOGIN_RATE_LIMIT", "5/minute"))
 def login(request: Request, payload: LoginRequest, response: Response):
     try:
-        user = auth.authenticate_master(payload.code) or auth.authenticate_code(payload.code)
+        if payload.code:
+            user = auth.authenticate_master(payload.code) or auth.authenticate_code(payload.code)
+        elif payload.identifier and payload.password:
+            user = auth.authenticate_password(payload.identifier.lower().strip(), payload.password)
+        else:
+            user = None
     except RuntimeError as exc:
         raise HTTPException(503, str(exc))
     if not user:
         raise HTTPException(401, "Credenciais inválidas")
     auth.create_session(user, response)
-    return {"redirect": "/admin" if user["role"] == "admin" else "/app"}
+    redirect = "/admin" if user["role"] == "admin" else ("/app/primeiro-acesso" if not user.get("password_hash") else "/app")
+    return {"redirect": redirect}
 
 
 @app.post("/auth/logout")
@@ -193,6 +205,25 @@ def me(user: dict = Depends(auth.current_user)):
 @app.get("/app")
 def client_app(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "app.html")
+
+
+@app.get("/app/primeiro-acesso")
+def password_setup_page(user: dict = Depends(auth.current_user)):
+    if user.get("role") != "client":
+        raise HTTPException(403, "Somente clientes")
+    return FileResponse(STATIC_DIR / "setup-password.html")
+
+
+@app.post("/app/primeiro-acesso")
+def password_setup(payload: PasswordSetupRequest, user: dict = Depends(auth.current_user)):
+    if user.get("role") != "client":
+        raise HTTPException(403, "Somente clientes")
+    try:
+        password_hash = auth.hash_password(payload.password)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    saas_store.update_user(user["id"], {"password_hash": password_hash, "password_created_at": datetime.now(timezone.utc).isoformat()})
+    return {"ok": True, "redirect": "/app"}
 
 
 @app.get("/app/chat")
@@ -301,7 +332,19 @@ def generate_code(request: Request, user_id: str, payload: CodigoRequest, admin:
 def revoke_client_access(user_id: str, admin: dict = Depends(auth.require_admin)):
     saas_store.revoke_codes(user_id)
     saas_store.revoke_user_sessions(user_id)
+    saas_store.update_user(user_id, {"password_hash": None, "password_created_at": None})
     return {"ok": True}
+
+
+@app.post("/admin/clientes/{user_id}/resetar-senha")
+def reset_client_password(user_id: str, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Cliente não encontrado")
+    saas_store.update_user(user_id, {"password_hash": None, "password_created_at": None})
+    saas_store.revoke_user_sessions(user_id)
+    saas_store.revoke_codes(user_id)
+    return {"ok": True, "message": "Senha removida. Gere um novo código de primeiro acesso."}
 
 
 @app.post("/chat", response_model=RespostaResponse)

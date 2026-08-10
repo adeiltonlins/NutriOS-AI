@@ -8,6 +8,8 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Cookie, Depends, HTTPException, Request, Response
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHashError, VerifyMismatchError
 
 from app import saas_store
 
@@ -15,6 +17,7 @@ COOKIE_NAME = "nutribot_session"
 SESSION_SECONDS = int(os.getenv("SESSION_DURATION", "28800"))
 CODE_MAX_ATTEMPTS = int(os.getenv("ACCESS_CODE_MAX_ATTEMPTS", "5"))
 SECRET = os.getenv("SESSION_SECRET") or os.getenv("APP_TOKEN_SECRET", "")
+PASSWORD_HASHER = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
 
 
 def _require_secret() -> bytes:
@@ -75,6 +78,24 @@ def authenticate_master(raw_code: str) -> dict | None:
         return None
     user = saas_store.get_user_by_identifier(os.getenv("ADMIN_IDENTIFIER", "admin").lower())
     return user if user and user.get("role") == "admin" and user.get("active") else None
+
+
+def authenticate_password(identifier: str, password: str) -> dict | None:
+    user = saas_store.get_user_by_identifier(identifier)
+    if not user or user.get("role") != "client" or not user.get("active") or not user.get("password_hash"):
+        return None
+    try:
+        if not PASSWORD_HASHER.verify(user["password_hash"], password):
+            return None
+    except (VerifyMismatchError, InvalidHashError):
+        return None
+    return user
+
+
+def hash_password(password: str) -> str:
+    if len(password) < 10 or len(password) > 128:
+        raise ValueError("A senha deve ter entre 10 e 128 caracteres")
+    return PASSWORD_HASHER.hash(password)
 
 
 def create_session(user: dict, response: Response) -> None:
