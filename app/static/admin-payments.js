@@ -14,12 +14,48 @@
   `;
   document.head.appendChild(style);
 
+  async function copyMasterChatLink(button) {
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = 'Gerando link…';
+    try {
+      const response = await fetch('/admin/api/chatbot-mestre/link-publico', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.public_url) throw new Error(data.detail || 'Não foi possível gerar o link');
+      await navigator.clipboard.writeText(data.public_url);
+      button.textContent = 'Link copiado ✓';
+      button.title = data.public_url;
+    } catch (error) {
+      button.textContent = 'Falhou — tentar novamente';
+      alert(error.message);
+    } finally {
+      button.disabled = false;
+      setTimeout(() => { button.textContent = original; }, 3500);
+    }
+  }
+
+  const topActions = document.querySelector('.top > div:last-child');
+  if (topActions && !document.getElementById('copyMasterChatTop')) {
+    const topShare = document.createElement('button');
+    topShare.id = 'copyMasterChatTop';
+    topShare.className = 'primary';
+    topShare.type = 'button';
+    topShare.textContent = 'Copiar link do meu chatbot';
+    topShare.title = 'Copia o link público para você enviar a qualquer pessoa';
+    topShare.addEventListener('click', () => copyMasterChatLink(topShare));
+    topActions.prepend(topShare);
+  }
+
   const nutritionists = document.getElementById('nutritionists');
   if (!nutritionists) return;
   const section = document.createElement('section');
   section.className = 'panel finance-panel';
   section.innerHTML = `
-    <div class="panel-head"><div class="finance-copy"><h2 style="margin:0">Pagamentos do meu chatbot</h2><span class="muted">Vendas dos pacientes no seu link mestre — separado das mensalidades dos nutricionistas</span></div><button class="ghost" id="refreshMasterPayments">Atualizar pagamentos</button></div>
+    <div class="panel-head"><div class="finance-copy"><h2 style="margin:0">Pagamentos do meu chatbot</h2><span class="muted">Vendas dos pacientes no seu link mestre — separado das mensalidades dos nutricionistas</span></div><div class="finance-actions"><button class="primary" id="copyMasterChatFinance">Copiar link do chatbot</button><button class="ghost" id="refreshMasterPayments">Atualizar pagamentos</button></div></div>
     <div class="table"><table class="finance-table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Status Mercado Pago</th><th>Valor</th><th>Data</th><th>Liberação</th><th>Ação</th></tr></thead><tbody id="masterPaymentRows"><tr><td colspan="7" class="finance-empty">Carregando pagamentos…</td></tr></tbody></table></div>
     <div class="finance-note">“Receita mensal” é o que os nutricionistas pagam pelo SaaS. “Receita gerada” são as vendas realizadas pelos chatbots.</div>`;
   nutritionists.parentNode.insertBefore(section, nutritionists);
@@ -62,5 +98,6 @@
     } catch (error) { alert(error.message); button.disabled = false; button.textContent = 'Tentar novamente'; }
   });
   document.getElementById('refreshMasterPayments').addEventListener('click', loadMasterPayments);
+  document.getElementById('copyMasterChatFinance').addEventListener('click', event => copyMasterChatLink(event.currentTarget));
   loadMasterPayments();
 })();
