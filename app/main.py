@@ -196,6 +196,11 @@ class AppointmentRequest(BaseModel):
     patient_phone: str = Field(..., min_length=8, max_length=30)
 
 
+class DataRequestPayload(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=100)
+    request_type: str = Field(..., pattern=r"^(export|delete)$")
+
+
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
     """Classificação comercial local: rápida e sem consumir outra chamada do Gemini."""
     falas = [str(m.get("texto", "")).strip() for m in historico if m.get("autor") == "user"]
@@ -282,7 +287,17 @@ def me(user: dict = Depends(auth.current_user)):
 
 
 @app.get("/app")
-def client_app(user: dict = Depends(auth.current_user)):
+def client_app(background_tasks: BackgroundTasks, user: dict = Depends(auth.current_user)):
+    if user.get("role") == "client" and "@" in str((user.get("ai_config") or {}).get("notification_email") or user.get("identifier") or ""):
+        last = _parse_data_lead(user.get("last_weekly_report_at")) if user.get("last_weekly_report_at") else None
+        if not last or last < datetime.now(timezone.utc) - timedelta(days=7):
+            leads = leads_store.listar_leads(limite=5000, client_id=user["id"])
+            start, end = datetime.now(timezone.utc) - timedelta(days=7), datetime.now(timezone.utc)
+            metrics = _metricas_periodo(leads, start, end)
+            address = str((user.get("ai_config") or {}).get("notification_email") or user.get("identifier"))
+            body = f"Resumo dos últimos 7 dias\nConversas: {metrics['conversations']}\nVendas: {metrics['sales']}\nFaturamento: R$ {metrics['revenue']:.2f}\nConversão: {metrics['conversion_rate']}%\nAgendamentos: {metrics['scheduled']}"
+            background_tasks.add_task(emailer.send_notification, address, "Seu relatório semanal — NutriBot AI", body)
+            saas_store.update_user(user["id"], {"last_weekly_report_at": datetime.now(timezone.utc).isoformat()})
     return FileResponse(STATIC_DIR / "app.html")
 
 
@@ -364,6 +379,44 @@ def own_crm(user: dict = Depends(auth.current_user)):
 @app.get("/app/gestao")
 def own_management(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-management.html")
+
+
+@app.get("/app/onboarding")
+def onboarding_page(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-onboarding.html")
+
+
+@app.get("/app/api/onboarding")
+def onboarding_status(user: dict = Depends(auth.current_user)):
+    config = user.get("ai_config") or {}
+    services = business_store.list_rows("client_services", user["id"])
+    availability = business_store.list_rows("availability", user["id"])
+    checks = [
+        {"id": "identity", "label": "Identidade profissional", "done": bool(config.get("nome") and config.get("especialidade")), "href": "/app/configuracoes"},
+        {"id": "branding", "label": "Logo e mensagem inicial", "done": bool(config.get("logo_url") and config.get("mensagem_inicial")), "href": "/app/configuracoes"},
+        {"id": "notification", "label": "E-mail de notificações", "done": bool(config.get("notification_email") or "@" in str(user.get("identifier"))), "href": "/app/configuracoes"},
+        {"id": "service", "label": "Primeiro serviço ou plano", "done": bool(services), "href": "/app/gestao"},
+        {"id": "availability", "label": "Disponibilidade da agenda", "done": bool(availability), "href": "/app/gestao"},
+    ]
+    done = sum(x["done"] for x in checks)
+    return {"checks": checks, "completed": done, "total": len(checks), "percentage": round(done / len(checks) * 100)}
+
+
+@app.get("/app/api/insights")
+def lead_insights(user: dict = Depends(auth.current_user)):
+    leads = leads_store.listar_leads(limite=500, client_id=user["id"])
+    ranked = sorted((x for x in leads if not x.get("pago")), key=lambda x: (int(x.get("lead_score") or 0), bool(x.get("claimed_paid_at")), str(x.get("atualizado_em") or "")), reverse=True)
+    return [{"session_id": x.get("session_id"), "name": x.get("lead_name") or "Visitante", "phone": x.get("lead_phone"), "score": x.get("lead_score") or 0, "reason": "Pagamento informado" if x.get("claimed_paid_at") else "Alta intenção de compra" if int(x.get("lead_score") or 0) >= 60 else "Conversa recente"} for x in ranked[:10]]
+
+
+@app.get("/app/api/data-requests")
+def list_data_requests(user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("data_requests", user["id"], order="requested_at.desc")
+
+
+@app.get("/admin/api/audit")
+def admin_audit(admin: dict = Depends(auth.require_admin)):
+    return saas_store._request("GET", "audit_logs", params={"select": "*", "order": "created_at.desc", "limit": "500"}) or []
 
 
 @app.get("/app/api/services")
@@ -502,6 +555,7 @@ def update_lead_workflow(session_id: str, payload: LeadWorkflowRequest, user: di
     updated = leads_store.atualizar_lead(session_id, actions[payload.action], client_id)
     if not updated:
         raise HTTPException(503, "Não foi possível atualizar o lead")
+    business_store.audit(user["id"], updated.get("client_id"), f"lead.{payload.action}", "lead", session_id, {"stage": payload.stage, "amount": payload.amount})
     return updated
 
 
@@ -585,6 +639,22 @@ def submit_anamnesis(request: Request, public_slug: str, payload: AnamnesisReque
     return {"ok": True, "id": row["id"]}
 
 
+@app.get("/privacidade")
+def privacy_page():
+    return FileResponse(STATIC_DIR / "privacy.html")
+
+
+@app.post("/public/clientes/{public_slug}/dados")
+@limiter.limit("3/hour")
+def request_personal_data(request: Request, public_slug: str, payload: DataRequestPayload):
+    client = resolver_cliente_publico(public_slug, None)
+    if not leads_store.buscar_lead(payload.session_id, client["id"]):
+        raise HTTPException(404, "Atendimento não encontrado")
+    row = business_store.create_row("data_requests", client["id"], {"session_id": payload.session_id, "request_type": payload.request_type, "status": "pending"})
+    business_store.audit(None, client["id"], f"lgpd.{payload.request_type}_requested", "data_request", row["id"])
+    return {"ok": True, "message": "Solicitação registrada. A clínica analisará o pedido com segurança."}
+
+
 @app.get("/n/{public_slug}/agenda")
 def public_schedule_page(public_slug: str, session_id: str = Query(default="")):
     resolver_cliente_publico(public_slug, None)
@@ -641,6 +711,7 @@ def create_public_appointment(request: Request, public_slug: str, payload: Appoi
     except Exception:
         raise HTTPException(409, "Este horário acabou de ser ocupado. Escolha outro.")
     leads_store.atualizar_lead(payload.session_id, {"workflow_status": "scheduled", "scheduled_at": payload.starts_at.isoformat()}, client["id"])
+    business_store.audit(None, client["id"], "appointment.created", "appointment", row["id"], {"starts_at": payload.starts_at.isoformat()})
     config = client.get("ai_config") or {}
     notify_email = str(config.get("notification_email") or client.get("identifier") or "")
     if "@" in notify_email:
@@ -650,7 +721,7 @@ def create_public_appointment(request: Request, public_slug: str, payload: Appoi
 
 @app.get("/admin")
 def admin_page(user: dict = Depends(auth.require_admin)):
-    return FileResponse(STATIC_DIR / "admin.html")
+    return FileResponse(STATIC_DIR / "admin-v2.html")
 
 
 @app.get("/admin/api/dashboard")
@@ -669,6 +740,11 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
         "clients_expired": sum(expired(c) for c in clients),
         "leads_total": len(leads),
         "ai_active": os.getenv("IA_ATIVA", "true").lower() == "true",
+        "mrr": round(sum(float(c.get("monthly_price") or 0) for c in clients if c.get("billing_status") == "paid" and c.get("active")), 2),
+        "billing_paid": sum(c.get("billing_status") == "paid" for c in clients),
+        "billing_trial": sum((c.get("billing_status") or "trial") == "trial" for c in clients),
+        "billing_overdue": sum(c.get("billing_status") == "overdue" for c in clients),
+        "billing_due_soon": sum(bool(c.get("next_billing_at")) and now <= datetime.fromisoformat(str(c["next_billing_at"]).replace("Z", "+00:00")) <= now + timedelta(days=7) for c in clients),
         "clients": clients,
     }
 
@@ -676,7 +752,7 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
 @app.post("/admin/clientes")
 def create_client(payload: ClienteRequest, admin: dict = Depends(auth.require_admin)):
     expires_at = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
-    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "expires_at": expires_at.isoformat(), "public_slug": criar_slug_publico(payload.name)})
+    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "expires_at": expires_at.isoformat(), "public_slug": criar_slug_publico(payload.name), "billing_status": "trial", "monthly_price": 0})
 
 
 @app.post("/admin/clientes/{user_id}/renovar")
@@ -695,10 +771,12 @@ def renew_client(user_id: str, payload: CodigoRequest, admin: dict = Depends(aut
 
 @app.patch("/admin/clientes/{user_id}")
 def edit_client(user_id: str, payload: dict, admin: dict = Depends(auth.require_admin)):
-    allowed = {k: v for k, v in payload.items() if k in {"name", "identifier", "plan", "active", "expires_at", "ai_config"}}
+    allowed = {k: v for k, v in payload.items() if k in {"name", "identifier", "plan", "active", "expires_at", "ai_config", "monthly_price", "billing_status", "next_billing_at", "billing_notes", "custom_domain", "billing_provider", "external_subscription_id"}}
     if "active" in allowed and not allowed["active"]:
         saas_store.revoke_user_sessions(user_id)
-    return saas_store.update_user(user_id, allowed)
+    updated = saas_store.update_user(user_id, allowed)
+    business_store.audit(admin["id"], user_id, "client.updated", "saas_user", user_id, {"fields": list(allowed)})
+    return updated
 
 
 @app.post("/admin/clientes/{user_id}/codigos")

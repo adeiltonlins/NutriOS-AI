@@ -37,3 +37,10 @@ def upsert_anamnesis(client_id: str, session_id: str, payload: dict) -> dict:
     data = {"client_id": client_id, "session_id": session_id, **payload}
     rows = saas_store._request("POST", "anamneses", params={"on_conflict": "client_id,session_id"}, payload=data, prefer="resolution=merge-duplicates,return=representation")
     return rows[0]
+
+
+def audit(actor_id: str | None, client_id: str | None, action: str, resource_type: str = "", resource_id: str = "", metadata: dict | None = None) -> None:
+    try:
+        saas_store._request("POST", "audit_logs", payload={"actor_id": actor_id, "client_id": client_id, "action": action, "resource_type": resource_type, "resource_id": resource_id, "metadata": metadata or {}}, prefer="return=minimal")
+    except Exception as exc:
+        print(f"[audit] Falha ao registrar evento: {exc}")
