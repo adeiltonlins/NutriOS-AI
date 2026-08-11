@@ -388,7 +388,9 @@
       const r = await fetch('/leads/claim-paid', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sessionId, client_id:clientId, client_slug:clientSlug})});
       const x = await r.json().catch(()=>({}));
       if (!r.ok) { claim.disabled=false; claim.textContent='Já realizei o pagamento'; mostrarErro(x.detail || 'Não foi possível enviar o aviso.'); return; }
+      if (x.liberado) { col.remove(); mostrarContatoLiberado(x); return; }
       claim.textContent = 'Aviso enviado ✓'; texto.textContent = x.message;
+      iniciarPollingContato();
     });
     bubble.appendChild(claim); col.appendChild(bubble); adicionarTimestamp(col);
   }
@@ -404,12 +406,27 @@
     contactDialog.close(); mostrarPagamento(data);
   });
 
-  function mostrarContatoLiberado(contato) {
+  function mostrarContatoLiberado(dados) {
     pararPolling();
     const col = criarLinha('bot');
     const bubble = document.createElement('div');
     bubble.className = 'px-4 py-3 text-[14.5px] leading-relaxed shadow-sm bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl rounded-tl-sm';
-    bubble.innerHTML = `<span class="font-semibold text-emerald-700 dark:text-emerald-400">✅ Pagamento confirmado!</span><br>Fale agora com sua nutricionista: ${linkify(contato)}`;
+    const title = document.createElement('div');
+    title.className = 'font-semibold text-emerald-700 dark:text-emerald-400';
+    title.textContent = '✅ Pagamento confirmado!';
+    const message = document.createElement('p');
+    message.className = 'mt-1 text-slate-700 dark:text-slate-200';
+    message.textContent = dados.message || 'Seu atendimento foi liberado. O profissional poderá responder em até 24 horas.';
+    bubble.append(title, message);
+    const actions = document.createElement('div');
+    actions.className = 'flex flex-wrap gap-2 mt-3';
+    if (dados.anamnesis_url) {
+      const anamnesis = document.createElement('a'); anamnesis.href=dados.anamnesis_url; anamnesis.target='_blank'; anamnesis.rel='noopener'; anamnesis.textContent='Preencher anamnese'; anamnesis.className='rounded-lg bg-blue-600 text-white font-bold px-4 py-2'; actions.appendChild(anamnesis);
+    }
+    if (dados.whatsapp_url || dados.contato) {
+      const whatsapp = document.createElement('a'); whatsapp.href=dados.whatsapp_url || dados.contato; whatsapp.target='_blank'; whatsapp.rel='noopener'; whatsapp.textContent='Falar no WhatsApp'; whatsapp.className='rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; actions.appendChild(whatsapp);
+    }
+    bubble.appendChild(actions);
     col.appendChild(bubble);
     adicionarTimestamp(col);
     conversation.scrollTop = conversation.scrollHeight;
@@ -435,7 +452,7 @@
         const resp = await fetch(`${CONTATO_URL}?session_id=${sessionId}`);
         if (!resp.ok) return;
         const dados = await resp.json();
-        if (dados.liberado && dados.contato) mostrarContatoLiberado(dados.contato);
+        if (dados.liberado) mostrarContatoLiberado(dados);
       } catch (e) { /* silencioso, tenta de novo no próximo ciclo */ }
     }, 6000);
   }

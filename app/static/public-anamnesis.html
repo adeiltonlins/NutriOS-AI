@@ -1,1 +1,42 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Anamnese nutricional</title><style>body{margin:0;background:linear-gradient(145deg,#061126,#0b2030);color:#eff6ff;font:15px system-ui}.wrap{max-width:720px;margin:35px auto;padding:20px}.card{background:#101b30;border:1px solid #2b4268;border-radius:22px;padding:28px}label{display:block;margin:17px 0;color:#c8d5ea}input,textarea,select{width:100%;box-sizing:border-box;margin-top:7px;padding:13px;background:#081225;color:#fff;border:1px solid #38527e;border-radius:11px}textarea{min-height:90px}button{width:100%;padding:14px;border:0;border-radius:11px;background:linear-gradient(90deg,#3479ff,#7657f4);color:#fff;font-weight:800}.muted{color:#9caeca}.ok{color:#65e5b6}</style></head><body><main class="wrap"><section class="card"><h1>Anamnese nutricional</h1><p class="muted">Suas respostas serão enviadas com segurança somente para o profissional responsável pelo seu atendimento.</p><form id="form"><label>Objetivo principal<textarea name="objetivo" required></textarea></label><label>Idade<input name="idade" type="number" min="1" max="120" required></label><label>Peso e altura<input name="peso_altura" placeholder="Ex.: 75 kg e 1,70 m" required></label><label>Possui alguma doença, alergia ou restrição alimentar?<textarea name="restricoes"></textarea></label><label>Utiliza medicamentos ou suplementos?<textarea name="medicamentos"></textarea></label><label>Como é sua rotina e alimentação atualmente?<textarea name="rotina"></textarea></label><label>Já realizou acompanhamento nutricional?<select name="acompanhamento"><option>Não</option><option>Sim</option></select></label><button>Enviar anamnese</button><p id="msg"></p></form></section></main><script>const slug=location.pathname.split('/')[2],sessionId=new URLSearchParams(location.search).get('session_id');form.onsubmit=async e=>{e.preventDefault();if(!sessionId){msg.textContent='Link inválido. Solicite um novo link à clínica.';return}const answers=Object.fromEntries(new FormData(e.target));const r=await fetch(`/public/clientes/${encodeURIComponent(slug)}/anamnese`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,answers})});const x=await r.json().catch(()=>({}));msg.textContent=r.ok?'Anamnese enviada com sucesso! A clínica já pode visualizar suas respostas.':x.detail||'Não foi possível enviar.';msg.className=r.ok?'ok':'';if(r.ok)e.target.querySelectorAll('input,textarea,select,button').forEach(i=>i.disabled=true)}</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Anamnese nutricional</title>
+  <style>
+    body{margin:0;background:linear-gradient(145deg,#061126,#0b2030);color:#eff6ff;font:15px system-ui}.wrap{max-width:720px;margin:35px auto;padding:20px}.card{background:#101b30;border:1px solid #2b4268;border-radius:22px;padding:28px}label{display:block;margin:17px 0;color:#c8d5ea}input,textarea,select{width:100%;box-sizing:border-box;margin-top:7px;padding:13px;background:#081225;color:#fff;border:1px solid #38527e;border-radius:11px}textarea{min-height:90px}button{width:100%;padding:14px;border:0;border-radius:11px;background:linear-gradient(90deg,#3479ff,#7657f4);color:#fff;font-weight:800}.muted{color:#9caeca}.ok{color:#65e5b6}
+  </style>
+</head>
+<body>
+<main class="wrap"><section class="card">
+  <h1>Anamnese nutricional</h1>
+  <p class="muted">Suas respostas serão enviadas com segurança somente para o profissional responsável pelo seu atendimento.</p>
+  <form id="form">
+    <label>Objetivo principal<textarea name="objetivo" required></textarea></label>
+    <label>Idade<input name="idade" type="number" min="1" max="120" required></label>
+    <label>Peso e altura<input name="peso_altura" placeholder="Ex.: 75 kg e 1,70 m" required></label>
+    <label>Possui alguma doença, alergia ou restrição alimentar?<textarea name="restricoes"></textarea></label>
+    <label>Utiliza medicamentos ou suplementos?<textarea name="medicamentos"></textarea></label>
+    <label>Como é sua rotina e alimentação atualmente?<textarea name="rotina"></textarea></label>
+    <label>Já realizou acompanhamento nutricional?<select name="acompanhamento"><option>Não</option><option>Sim</option></select></label>
+    <button>Enviar anamnese</button><p id="msg"></p>
+  </form>
+</section></main>
+<script>
+const isMaster=location.pathname.startsWith('/assistente/');
+const slug=location.pathname.split('/')[2];
+const sessionId=new URLSearchParams(location.search).get('session_id');
+form.onsubmit=async e=>{
+  e.preventDefault();
+  if(!sessionId){msg.textContent='Link inválido. Solicite um novo link à clínica.';return}
+  const answers=Object.fromEntries(new FormData(e.target));
+  const endpoint=isMaster?'/public/master/anamnese':`/public/clientes/${encodeURIComponent(slug)}/anamnese`;
+  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,answers})});
+  const x=await r.json().catch(()=>({}));
+  msg.textContent=r.ok?'Anamnese enviada com sucesso! A clínica já pode visualizar suas respostas.':x.detail||'Não foi possível enviar.';
+  msg.className=r.ok?'ok':'';
+  if(r.ok)e.target.querySelectorAll('input,textarea,select,button').forEach(i=>i.disabled=true)
+}
+</script>
+</body></html>

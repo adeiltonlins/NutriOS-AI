@@ -105,6 +105,10 @@ async def security_middleware(request: Request, call_next):
     )
     response.headers["X-Frame-Options"] = "SAMEORIGIN" if is_admin_preview else "DENY"
     response.headers["Referrer-Policy"] = "same-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(self)"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    if request.url.scheme == "https" or os.getenv("URL_BASE", "").lower().startswith("https://"):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 
@@ -316,6 +320,35 @@ def master_chat_user() -> dict | None:
         return None
 
 
+def payment_next_steps(lead: dict | None, owner: dict | None, base_url: str = "") -> dict:
+    """Monta somente ações pós-pagamento verificadas pelo backend."""
+    if not lead or not lead.get("pago"):
+        return {"liberado": False, "workflow_status": (lead or {}).get("workflow_status")}
+    config = dict((owner or {}).get("ai_config") or {})
+    raw_whatsapp = str(config.get("whatsapp") or "").strip()
+    whatsapp_url = CONTATO_NUTRICIONISTA
+    if raw_whatsapp:
+        try:
+            phone = normalizar_whatsapp(raw_whatsapp)
+            message = str(config.get("whatsapp_message_template") or "Olá! Meu pagamento foi confirmado no NutriBot e gostaria de continuar meu atendimento.").strip()
+            from urllib.parse import quote
+            whatsapp_url = f"https://wa.me/{phone}?text={quote(message)}"
+        except HTTPException:
+            pass
+    public_slug = (owner or {}).get("public_slug")
+    path = f"/n/{public_slug}/anamnese" if public_slug else "/assistente/anamnese"
+    anamnesis_url = f"{base_url.rstrip('/')}{path}?session_id={lead.get('session_id', '')}"
+    return {
+        "liberado": True,
+        "workflow_status": "payment_confirmed",
+        "message": "Pagamento confirmado! Você já pode preencher sua anamnese e falar com o profissional. O atendimento humano pode ocorrer em até 24 horas.",
+        "contato": whatsapp_url,
+        "whatsapp_url": whatsapp_url,
+        "anamnesis_url": anamnesis_url,
+        "response_deadline_hours": 24,
+    }
+
+
 def public_chat_config(user: dict) -> dict:
     config = dict(user.get("ai_config") or {})
     safe_keys = {"nome", "especialidade", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
@@ -335,6 +368,10 @@ def normalizar_whatsapp(value: str) -> str:
     digits = re.sub(r"\D", "", value)
     if not 10 <= len(digits) <= 15:
         raise HTTPException(400, "Informe um WhatsApp válido com DDD e código do país.")
+    # No Brasil é comum informar apenas DDD + número. O wa.me exige o
+    # código do país; números já internacionais permanecem inalterados.
+    if len(digits) in {10, 11}:
+        digits = f"55{digits}"
     return digits
 
 
@@ -362,8 +399,8 @@ def login(request: Request, payload: LoginRequest, response: Response):
             user = auth.authenticate_password(payload.identifier.lower().strip(), payload.password)
         else:
             user = None
-    except RuntimeError as exc:
-        raise HTTPException(503, str(exc))
+    except RuntimeError:
+        raise HTTPException(503, "Serviço de autenticação temporariamente indisponível")
     if not user:
         raise HTTPException(401, "Credenciais inválidas")
     auth.create_session(user, response)
@@ -480,7 +517,7 @@ def public_client_chat(public_slug: str):
         raise HTTPException(404, "Assistente indisponível")
     if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
         raise HTTPException(404, "Assistente indisponível")
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/public/clientes/{public_slug}")
@@ -850,7 +887,10 @@ def patient_login_page():
 @app.post("/paciente/auth/login")
 @limiter.limit("5/minute")
 def patient_login(request: Request, payload: PatientLoginRequest, response: Response):
-    patient = patient_auth.authenticate(payload.code)
+    try:
+        patient = patient_auth.authenticate(payload.code)
+    except RuntimeError:
+        raise HTTPException(503, "Serviço de autenticação temporariamente indisponível")
     if not patient: raise HTTPException(401, "Código inválido, usado ou expirado")
     patient_auth.create_session(patient, response)
     return {"ok": True, "redirect": "/paciente"}
@@ -948,6 +988,15 @@ def claim_paid(request: Request, payload: LeadClaimPaidRequest, background_tasks
     lead = leads_store.buscar_lead(payload.session_id, owner_id)
     if not lead or not lead.get("contact_consent_at"):
         raise HTTPException(400, "Cadastre seus dados antes de informar o pagamento.")
+    # O clique é apenas um aviso. A liberação imediata só acontece depois
+    # de consultar a situação real pela referência no Mercado Pago.
+    if payload.client_id == "master" and pagamento.PAGAMENTO_ATIVO:
+        matches = pagamento.buscar_pagamentos_por_referencia(payload.session_id)
+        approved = next((item for item in matches if item.get("status") == "approved"), None)
+        if approved:
+            leads_store.marcar_pago(payload.session_id, str(approved.get("id") or ""), approved.get("transaction_amount"))
+            verified_lead = leads_store.buscar_lead(payload.session_id, owner_id)
+            return {"ok": True, **payment_next_steps(verified_lead, client, str(request.base_url))}
     updated = leads_store.atualizar_lead(payload.session_id, {"workflow_status": "awaiting_verification", "claimed_paid_at": datetime.now(timezone.utc).isoformat()}, owner_id)
     if not updated:
         raise HTTPException(503, "Não foi possível registrar a solicitação.")
@@ -964,6 +1013,13 @@ def public_anamnesis_page(public_slug: str, session_id: str = Query(default=""))
     return FileResponse(STATIC_DIR / "public-anamnesis.html")
 
 
+@app.get("/assistente/anamnese")
+def master_anamnesis_page(session_id: str = Query(default="")):
+    if not master_chat_user():
+        raise HTTPException(404, "Assistente indisponível")
+    return FileResponse(STATIC_DIR / "public-anamnesis.html")
+
+
 @app.post("/public/clientes/{public_slug}/anamnese")
 @limiter.limit("5/minute")
 def submit_anamnesis(request: Request, public_slug: str, payload: AnamnesisRequest):
@@ -974,6 +1030,23 @@ def submit_anamnesis(request: Request, public_slug: str, payload: AnamnesisReque
     clean = {str(k)[:60]: str(v)[:1000] for k, v in payload.answers.items() if str(v).strip()}
     row = business_store.upsert_anamnesis(client["id"], payload.session_id, {"answers": clean, "submitted_at": datetime.now(timezone.utc).isoformat()})
     leads_store.atualizar_lead(payload.session_id, {"workflow_status": "anamnesis_sent", "anamnesis_sent_at": datetime.now(timezone.utc).isoformat()}, client["id"])
+    return {"ok": True, "id": row["id"]}
+
+
+@app.post("/public/master/anamnese")
+@limiter.limit("5/minute")
+def submit_master_anamnesis(request: Request, payload: AnamnesisRequest):
+    owner = master_chat_user()
+    if not owner:
+        raise HTTPException(404, "Assistente indisponível")
+    lead = leads_store.buscar_lead(payload.session_id)
+    if not lead or lead.get("client_id"):
+        raise HTTPException(404, "Atendimento não encontrado")
+    if not lead.get("pago"):
+        raise HTTPException(403, "Anamnese liberada após a confirmação do pagamento")
+    clean = {str(k)[:60]: str(v)[:1000] for k, v in payload.answers.items() if str(v).strip()}
+    row = business_store.upsert_anamnesis(owner["id"], payload.session_id, {"answers": clean, "submitted_at": datetime.now(timezone.utc).isoformat()})
+    leads_store.atualizar_lead(payload.session_id, {"workflow_status": "anamnesis_sent", "anamnesis_sent_at": datetime.now(timezone.utc).isoformat()})
     return {"ok": True, "id": row["id"]}
 
 
@@ -1655,6 +1728,7 @@ def patient_private_chat(request: Request, req: PerguntaRequest, patient: dict =
 
 @app.get("/pagamento/sucesso", response_class=HTMLResponse)
 def pagamento_sucesso(
+    request: Request,
     payment_id: str = Query(default="", alias="payment_id"),
     external_reference: str = Query(default=""),
     status: str = Query(default=""),
@@ -1686,11 +1760,17 @@ def pagamento_sucesso(
     session_id_para_poll = session_id_confirmado or external_reference
 
     if pagamento_confirmado:
+        confirmed_lead = leads_store.buscar_lead(session_id_confirmado) if session_id_confirmado else None
+        confirmed_owner = saas_store.get_user(confirmed_lead.get("client_id")) if confirmed_lead and confirmed_lead.get("client_id") else master_chat_user()
+        steps = payment_next_steps(confirmed_lead, confirmed_owner, str(request.base_url))
+        whatsapp_url = html.escape(str(steps.get("whatsapp_url") or CONTATO_NUTRICIONISTA), quote=True)
+        anamnesis_url = html.escape(str(steps.get("anamnesis_url") or ""), quote=True)
         corpo = f"""
         <div id="conteudo">
             <h1>✅ Pagamento confirmado!</h1>
-            <p>Obrigado! Aqui está o contato de {NUTRICIONISTA_NOME} pra combinar o melhor horário:</p>
-            <p><a href="{CONTATO_NUTRICIONISTA}" style="font-size:18px;">Falar agora →</a></p>
+            <p>Você já pode adiantar seus dados. O profissional poderá responder em até 24 horas.</p>
+            <p><a href="{anamnesis_url}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:white;border-radius:10px;text-decoration:none;font-weight:bold;">Preencher anamnese</a></p>
+            <p><a href="{whatsapp_url}" style="display:inline-block;padding:12px 18px;background:#059669;color:white;border-radius:10px;text-decoration:none;font-weight:bold;">Falar no WhatsApp</a></p>
         </div>
         """
         script_polling = ""
@@ -1718,8 +1798,9 @@ def pagamento_sucesso(
                     if (dados.liberado && dados.contato) {{
                         document.getElementById('conteudo').innerHTML = `
                             <h1>✅ Pagamento confirmado!</h1>
-                            <p>Obrigado! Aqui está o contato de {NUTRICIONISTA_NOME} pra combinar o melhor horário:</p>
-                            <p><a href="${{dados.contato}}" style="font-size:18px;">Falar agora →</a></p>
+                            <p>Você já pode adiantar seus dados. O profissional poderá responder em até 24 horas.</p>
+                            <p><a href="${{dados.anamnesis_url}}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:white;border-radius:10px;text-decoration:none;font-weight:bold;">Preencher anamnese</a></p>
+                            <p><a href="${{dados.whatsapp_url || dados.contato}}" style="display:inline-block;padding:12px 18px;background:#059669;color:white;border-radius:10px;text-decoration:none;font-weight:bold;">Falar no WhatsApp</a></p>
                         `;
                         clearInterval(intervalo);
                     }}
@@ -1812,7 +1893,7 @@ def agendar(request: Request, session_id: str = Query(default="")):
 
 
 @app.get("/contato")
-def verificar_contato(session_id: str = Query(default="")):
+def verificar_contato(request: Request, session_id: str = Query(default="")):
     """
     Endpoint que o frontend pode consultar pra saber se já pode mostrar o
     contato do nutricionista pra essa sessão (só libera se pago=true).
@@ -1821,21 +1902,8 @@ def verificar_contato(session_id: str = Query(default="")):
         raise HTTPException(status_code=400, detail="session_id é obrigatório.")
 
     lead = leads_store.buscar_lead(session_id)
-    liberado = bool(lead and lead.get("pago"))
-    contato = CONTATO_NUTRICIONISTA
-    if lead:
-        owner = saas_store.get_user(lead.get("client_id")) if lead.get("client_id") else master_chat_user()
-        whatsapp = str(((owner or {}).get("ai_config") or {}).get("whatsapp") or "")
-        if whatsapp:
-            try:
-                contato = f"https://wa.me/{normalizar_whatsapp(whatsapp)}"
-            except HTTPException:
-                pass
-
-    return {
-        "liberado": liberado,
-        "contato": contato if liberado else None,
-    }
+    owner = saas_store.get_user(lead.get("client_id")) if lead and lead.get("client_id") else master_chat_user()
+    return payment_next_steps(lead, owner, str(request.base_url))
 
 
 def painel_autorizado(request: Request, token: str) -> bool:
