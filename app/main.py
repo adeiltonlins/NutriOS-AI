@@ -18,9 +18,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -30,7 +30,7 @@ from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
 from app import pagamento
-from app import auth, business_store, emailer, saas_store
+from app import auth, business_store, emailer, patient_auth, saas_store
 import os
 
 
@@ -88,7 +88,7 @@ async def security_middleware(request: Request, call_next):
         origin = request.headers.get("origin")
         if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
             return Response("Origem não autorizada", status_code=403)
-        if request.method in {"POST", "PUT", "PATCH"} and request.url.path != "/auth/logout" and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
+        if request.method in {"POST", "PUT", "PATCH"} and request.url.path not in {"/auth/logout", "/app/api/logo"} and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -125,6 +125,11 @@ class LoginRequest(BaseModel):
 
 class PasswordSetupRequest(BaseModel):
     password: str = Field(..., min_length=10, max_length=128)
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(..., min_length=10, max_length=128)
+    new_password: str = Field(..., min_length=10, max_length=128)
 
 
 class ClienteRequest(BaseModel):
@@ -201,6 +206,24 @@ class DataRequestPayload(BaseModel):
     request_type: str = Field(..., pattern=r"^(export|delete)$")
 
 
+class PatientRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120)
+    identifier: str | None = Field(default=None, max_length=160)
+    phone: str | None = Field(default=None, max_length=30)
+    plan_name: str | None = Field(default=None, max_length=100)
+    duration_days: int = Field(default=30, ge=1, le=730)
+    diet_context: str | None = Field(default=None, max_length=12000)
+    message_limit: int = Field(default=200, ge=1, le=5000)
+
+
+class PatientLoginRequest(BaseModel):
+    code: str = Field(..., min_length=8, max_length=64)
+
+
+class PatientRenewRequest(BaseModel):
+    duration_days: int = Field(default=30, ge=1, le=730)
+
+
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
     """Classificação comercial local: rápida e sem consumir outra chamada do Gemini."""
     falas = [str(m.get("texto", "")).strip() for m in historico if m.get("autor") == "user"]
@@ -253,7 +276,7 @@ def health_check():
 
 @app.get("/login")
 def login_page():
-    return FileResponse(STATIC_DIR / "login.html")
+    return FileResponse(STATIC_DIR / "login.html", headers={"Cache-Control": "no-store"})
 
 
 @app.post("/auth/login")
@@ -288,6 +311,8 @@ def me(user: dict = Depends(auth.current_user)):
 
 @app.get("/app")
 def client_app(background_tasks: BackgroundTasks, user: dict = Depends(auth.current_user)):
+    if user.get("role") == "client" and not user.get("password_hash"):
+        return RedirectResponse("/app/primeiro-acesso", status_code=303)
     if user.get("role") == "client" and "@" in str((user.get("ai_config") or {}).get("notification_email") or user.get("identifier") or ""):
         last = _parse_data_lead(user.get("last_weekly_report_at")) if user.get("last_weekly_report_at") else None
         if not last or last < datetime.now(timezone.utc) - timedelta(days=7):
@@ -298,14 +323,14 @@ def client_app(background_tasks: BackgroundTasks, user: dict = Depends(auth.curr
             body = f"Resumo dos últimos 7 dias\nConversas: {metrics['conversations']}\nVendas: {metrics['sales']}\nFaturamento: R$ {metrics['revenue']:.2f}\nConversão: {metrics['conversion_rate']}%\nAgendamentos: {metrics['scheduled']}"
             background_tasks.add_task(emailer.send_notification, address, "Seu relatório semanal — NutriBot AI", body)
             saas_store.update_user(user["id"], {"last_weekly_report_at": datetime.now(timezone.utc).isoformat()})
-    return FileResponse(STATIC_DIR / "app.html")
+    return FileResponse(STATIC_DIR / "app.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/app/primeiro-acesso")
 def password_setup_page(user: dict = Depends(auth.current_user)):
     if user.get("role") != "client":
         raise HTTPException(403, "Somente clientes")
-    return FileResponse(STATIC_DIR / "setup-password.html")
+    return FileResponse(STATIC_DIR / "setup-password.html", headers={"Cache-Control": "no-store"})
 
 
 @app.post("/app/primeiro-acesso")
@@ -318,6 +343,41 @@ def password_setup(payload: PasswordSetupRequest, user: dict = Depends(auth.curr
         raise HTTPException(400, str(exc))
     saas_store.update_user(user["id"], {"password_hash": password_hash, "password_created_at": datetime.now(timezone.utc).isoformat()})
     return {"ok": True, "redirect": "/app"}
+
+
+@app.post("/app/api/senha")
+def change_client_password(payload: PasswordChangeRequest, user: dict = Depends(auth.current_user)):
+    if user.get("role") != "client":
+        raise HTTPException(403, "Somente nutricionistas")
+    if not auth.verify_password(user.get("password_hash"), payload.current_password):
+        raise HTTPException(401, "Senha atual inválida")
+    try:
+        password_hash = auth.hash_password(payload.new_password)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    saas_store.update_user(user["id"], {"password_hash": password_hash, "password_created_at": datetime.now(timezone.utc).isoformat()})
+    return {"ok": True}
+
+
+@app.post("/app/api/logo")
+async def upload_client_logo(file: UploadFile = File(...), user: dict = Depends(auth.current_user)):
+    if user.get("role") != "client":
+        raise HTTPException(403, "Somente nutricionistas")
+    allowed = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(400, "Envie uma imagem JPG, PNG ou WebP")
+    content = await file.read(1_000_001)
+    if len(content) > 1_000_000:
+        raise HTTPException(413, "A imagem deve ter no máximo 1 MB")
+    if not content:
+        raise HTTPException(400, "Imagem vazia")
+    public_url = saas_store.upload_public_asset(
+        "nutribot-assets", f"logos/{user['id']}/{secrets.token_hex(12)}.{allowed[file.content_type]}", content, file.content_type
+    )
+    config = dict(user.get("ai_config") or {})
+    config["logo_url"] = public_url
+    saas_store.update_user(user["id"], {"ai_config": config})
+    return {"ok": True, "logo_url": public_url}
 
 
 @app.get("/app/chat")
@@ -564,6 +624,102 @@ def own_config(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-config.html")
 
 
+def _owned_patient(patient_id: str, client_id: str) -> dict:
+    rows = saas_store._request("GET", "patient_accounts", params={"select": "*", "id": f"eq.{patient_id}", "client_id": f"eq.{client_id}", "limit": "1"}) or []
+    if not rows:
+        raise HTTPException(404, "Paciente não encontrado")
+    return rows[0]
+
+
+@app.get("/app/pacientes")
+def patient_management_page(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-patients.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/app/api/pacientes")
+def list_patients(user: dict = Depends(auth.current_user)):
+    return saas_store._request("GET", "patient_accounts", params={"select": "*", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
+
+
+@app.post("/app/api/pacientes")
+def create_patient(payload: PatientRequest, user: dict = Depends(auth.current_user)):
+    expires = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
+    rows = saas_store._request("POST", "patient_accounts", payload={"client_id": user["id"], "name": payload.name.strip(), "identifier": (payload.identifier or "").strip() or None, "phone": normalizar_whatsapp(payload.phone) if payload.phone else None, "plan_name": payload.plan_name, "access_expires_at": expires.isoformat(), "diet_context": payload.diet_context, "message_limit": payload.message_limit}, prefer="return=representation")
+    return rows[0]
+
+
+@app.patch("/app/api/pacientes/{patient_id}")
+def edit_patient(patient_id: str, payload: dict, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    allowed = {k: v for k, v in payload.items() if k in {"name", "identifier", "phone", "plan_name", "active", "diet_context", "message_limit"}}
+    if "message_limit" in allowed: allowed["message_limit"] = max(1, min(5000, int(allowed["message_limit"])))
+    if "phone" in allowed and allowed["phone"]: allowed["phone"] = normalizar_whatsapp(allowed["phone"])
+    allowed["updated_at"] = datetime.now(timezone.utc).isoformat()
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload=allowed, prefer="return=representation") or []
+    if allowed.get("active") is False: patient_auth.revoke(patient_id)
+    return rows[0] if rows else None
+
+
+@app.post("/app/api/pacientes/{patient_id}/codigo")
+def generate_patient_code(patient_id: str, user: dict = Depends(auth.current_user)):
+    patient = _owned_patient(patient_id, user["id"])
+    if patient.get("archived_at") or not patient.get("active"): raise HTTPException(409, "Ative o paciente antes de gerar o código")
+    return {"code": patient_auth.issue_code(patient_id, 24), "expires_in_hours": 24, "show_once": True}
+
+
+@app.post("/app/api/pacientes/{patient_id}/renovar")
+def renew_patient(patient_id: str, payload: PatientRenewRequest, user: dict = Depends(auth.current_user)):
+    patient = _owned_patient(patient_id, user["id"]); now = datetime.now(timezone.utc)
+    current = datetime.fromisoformat(patient["access_expires_at"].replace("Z", "+00:00")); base = current if current > now else now
+    patient_auth.revoke(patient_id)
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"active": True, "access_expires_at": (base + timedelta(days=payload.duration_days)).isoformat(), "messages_used": 0, "usage_started_at": now.isoformat(), "updated_at": now.isoformat()}, prefer="return=representation") or []
+    return rows[0]
+
+
+@app.post("/app/api/pacientes/{patient_id}/arquivar")
+def archive_patient(patient_id: str, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"]); now = datetime.now(timezone.utc).isoformat(); patient_auth.revoke(patient_id)
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"active": False, "archived_at": now, "updated_at": now}, prefer="return=representation") or []
+    return rows[0]
+
+
+@app.post("/app/api/pacientes/{patient_id}/restaurar")
+def restore_patient(patient_id: str, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"archived_at": None, "active": False, "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=representation") or []
+    return rows[0]
+
+
+@app.get("/paciente/login")
+def patient_login_page():
+    return FileResponse(STATIC_DIR / "patient-login.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/paciente/auth/login")
+@limiter.limit("5/minute")
+def patient_login(request: Request, payload: PatientLoginRequest, response: Response):
+    patient = patient_auth.authenticate(payload.code)
+    if not patient: raise HTTPException(401, "Código inválido, usado ou expirado")
+    patient_auth.create_session(patient, response)
+    return {"ok": True, "redirect": "/paciente"}
+
+
+@app.post("/paciente/auth/logout")
+def patient_logout(response: Response):
+    patient_auth.logout(response); return {"ok": True}
+
+
+@app.get("/paciente")
+def patient_portal(patient: dict = Depends(patient_auth.current_patient)):
+    return FileResponse(STATIC_DIR / "patient-portal.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/paciente/api/me")
+def patient_me(patient: dict = Depends(patient_auth.current_patient)):
+    client = saas_store.get_user(patient["client_id"]); config = (client or {}).get("ai_config") or {}
+    return {"name": patient["name"], "plan_name": patient.get("plan_name"), "expires_at": patient["access_expires_at"], "messages_used": patient.get("messages_used") or 0, "message_limit": patient.get("message_limit") or 200, "professional_name": config.get("nome") or (client or {}).get("name"), "assistant_name": config.get("identidade_ia") or "NutriBot AI", "logo_url": config.get("logo_url"), "color": config.get("cor_principal") or "#4f7cff"}
+
+
 @app.get("/app/api/configuracoes")
 def own_config_data(request: Request, user: dict = Depends(auth.current_user)):
     public_url = f"{str(request.base_url).rstrip('/')}/n/{user.get('public_slug')}" if user.get("public_slug") else None
@@ -721,7 +877,7 @@ def create_public_appointment(request: Request, public_slug: str, payload: Appoi
 
 @app.get("/admin")
 def admin_page(user: dict = Depends(auth.require_admin)):
-    return FileResponse(STATIC_DIR / "admin-v2.html")
+    return FileResponse(STATIC_DIR / "admin-v2.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/admin/api/dashboard")
@@ -843,21 +999,6 @@ def restore_client(user_id: str, admin: dict = Depends(auth.require_admin)):
     return updated
 
 
-@app.delete("/admin/clientes/{user_id}")
-def delete_client(user_id: str, admin: dict = Depends(auth.require_admin)):
-    client = saas_store.get_user(user_id)
-    if not client or client.get("role") != "client":
-        raise HTTPException(404, "Nutricionista não encontrado")
-    if not client.get("archived_at"):
-        raise HTTPException(409, "Arquive a conta antes de excluir definitivamente")
-    if leads_store.listar_leads(limite=1, client_id=user_id):
-        raise HTTPException(409, "Esta conta possui leads e não pode ser apagada. Mantenha-a arquivada para preservar o histórico.")
-    saas_store.revoke_codes(user_id)
-    saas_store.revoke_user_sessions(user_id)
-    saas_store.delete_user(user_id)
-    return {"ok": True}
-
-
 @app.post("/admin/clientes/{user_id}/codigos")
 @limiter.limit(os.getenv("CODE_GENERATION_RATE_LIMIT", "10/minute"))
 def generate_code(request: Request, user_id: str, payload: CodigoRequest, admin: dict = Depends(auth.require_admin)):
@@ -938,8 +1079,15 @@ def chat(request: Request, req: PerguntaRequest):
             raise HTTPException(404, "Assistente indisponível")
         if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
             raise HTTPException(404, "Assistente indisponível")
-        client_config = client.get("ai_config") or {}
-        if req.session_id:
+        client_config = dict(client.get("ai_config") or {})
+        patient_context = getattr(request.state, "patient_context", None)
+        if patient_context:
+            base_prompt = str(client_config.get("prompt") or "")
+            client_config["prompt"] = (base_prompt + "\n\nCONTEXTO PRIVADO DO PACIENTE ATIVO:\n" + str(patient_context)).strip()
+            client_config["free_message_limit"] = 5000
+            ja_pago = True
+            estado_convite = "pago"
+        if req.session_id and not patient_context:
             lead_atual = leads_store.buscar_lead(req.session_id, resolved_client_id)
             ja_pago = bool(lead_atual and lead_atual.get("pago"))
             if ja_pago:
@@ -1005,6 +1153,19 @@ def chat(request: Request, req: PerguntaRequest):
         leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, resolved_client_id, qualification)
 
     return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes, requires_contact=requires_contact, workflow_status=(lead_atual or {}).get("workflow_status"))
+
+
+@app.post("/paciente/api/chat", response_model=RespostaResponse)
+@limiter.limit("10/minute")
+def patient_private_chat(request: Request, req: PerguntaRequest, patient: dict = Depends(patient_auth.current_patient)):
+    used = int(patient.get("messages_used") or 0); limit = int(patient.get("message_limit") or 200)
+    if used >= limit:
+        raise HTTPException(429, "Seu limite de mensagens foi atingido. Fale com seu nutricionista para renovar ou ampliar o plano.")
+    req.client_id = patient["client_id"]; req.client_slug = None; req.lead_source = "patient_portal"
+    request.state.patient_context = patient.get("diet_context") or "Paciente ativo em acompanhamento. Responda apenas dentro das orientações gerais do nutricionista e encaminhe questões clínicas ao profissional."
+    response = chat(request, req)
+    saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient['id']}"}, payload={"messages_used": used + 1, "last_access_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
+    return response
 
 
 @app.get("/pagamento/sucesso", response_class=HTMLResponse)

@@ -83,9 +83,13 @@ O cliente entra em `/login`. Após autenticar, recebe cookie HttpOnly/Secure e �
 - Configuração da IA: `PATCH /admin/clientes/{id}` com `{"ai_config":{"nome":"Dra. Maria","especialidade":"...","prompt":"..."}}`.
 - Arquivar uma conta: `POST /admin/clientes/{id}/arquivar`; bloqueia acesso e preserva histórico.
 - Restaurar: `POST /admin/clientes/{id}/restaurar`; a conta volta bloqueada para revisão antes de liberar.
-- Excluir definitivamente: `DELETE /admin/clientes/{id}`; somente contas arquivadas e sem leads podem ser apagadas.
+- Contas arquivadas não são excluídas, preservando leads, vendas e métricas históricas.
 
-Antes do deploy desta versão, execute `migrations/010_admin_archive_analytics.sql` no SQL Editor do Supabase. O painel mestre exibe conversas, vendas, conversão e receita dos últimos seis meses.
+Antes do deploy desta versão, execute `migrations/010_admin_archive_analytics.sql` e `migrations/011_public_brand_assets.sql` no SQL Editor do Supabase. O painel mestre exibe conversas, vendas, conversão e receita dos últimos seis meses. A migração 011 cria o armazenamento público de fotos/logos; o upload aceita JPG, PNG e WebP de até 1 MB.
+
+## Portal privado de pacientes
+
+Execute também `migrations/012_patient_followup_portal.sql`. No painel do nutricionista, a rota `/app/pacientes` permite cadastrar pacientes, registrar o contexto da dieta, definir validade e limite de mensagens, gerar código individual, renovar, bloquear e arquivar. O paciente entra em `/paciente/login`; a sessão é HttpOnly e deixa de funcionar automaticamente quando o acompanhamento vence. `PATIENT_SESSION_DURATION` controla a duração máxima da sessão, sempre limitada pela validade do plano.
 
 ## Rotas e compatibilidade
 

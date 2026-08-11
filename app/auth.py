@@ -98,6 +98,15 @@ def hash_password(password: str) -> str:
     return PASSWORD_HASHER.hash(password)
 
 
+def verify_password(password_hash: str | None, password: str) -> bool:
+    if not password_hash:
+        return False
+    try:
+        return bool(PASSWORD_HASHER.verify(password_hash, password))
+    except (VerifyMismatchError, InvalidHashError):
+        return False
+
+
 def create_session(user: dict, response: Response) -> None:
     raw = secrets.token_urlsafe(48)
     now = datetime.now(timezone.utc)
