@@ -2,6 +2,17 @@
 
 O projeto mantém chat/RAG, Gemini, Supabase, leads, Mercado Pago e o painel legado. A camada SaaS acrescenta usuários `admin`/`client`, códigos temporários de uso único, sessões opacas em cookie HttpOnly e isolamento de leads por `client_id`.
 
+## Rotas do produto
+
+- `/` — página comercial pública do SaaS, com demonstração guiada sem consumo do Gemini.
+- `/login` — primeiro acesso por código e acessos seguintes do nutricionista por e-mail/identificador e senha.
+- `/admin` — painel mestre protegido; o administrador entra pelo código mestre na tela `/login`.
+- `/n/{slug}` — página pública personalizada de cada nutricionista.
+- `/paciente/login?nutri={slug}` — entrada do paciente com identidade do nutricionista.
+- `/paciente` — canal privado do paciente enquanto seu acompanhamento estiver ativo.
+
+O código do paciente é uma concessão de acesso de uso único. Depois do login, o navegador usa uma sessão HttpOnly. Se a sessão for encerrada ou o paciente trocar de aparelho, o nutricionista deve gerar um novo código; o plano e o prazo do acompanhamento permanecem os mesmos.
+
 ## Estrutura
 
 ```text

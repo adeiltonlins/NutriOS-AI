@@ -210,6 +210,7 @@
     const links = document.getElementById('professionalLinks');
     if (cfg.crn) links.insertAdjacentHTML('beforeend', `<span>CRN ${String(cfg.crn).replace(/[<>&]/g,'')}</span>`);
     if (cfg.instagram) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.instagram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Instagram</a>`);
+    links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="/paciente/login?nutri=${encodeURIComponent(clientSlug)}">Já sou paciente</a>`);
     const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
     if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors shadow-sm" data-icon="✦" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
     document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;

@@ -99,8 +99,8 @@ async def security_middleware(request: Request, call_next):
 
 @app.get("/")
 def servir_interface():
-    """Serve a interface de chat (HTML) na URL raiz do site."""
-    return FileResponse(STATIC_DIR / "index.html")
+    """Vitrine comercial do SaaS. A demonstração não chama o Gemini."""
+    return FileResponse(STATIC_DIR / "saas-landing.html", headers={"Cache-Control": "no-store"})
 
 
 class MensagemHistorico(BaseModel):
