@@ -124,6 +124,18 @@ PYTHONPATH=. pytest -q
 
 Checklist manual: login ADMIN; criar cliente; gerar/revogar código; bloquear/desbloquear; login CLIENTE; consultar `/api/me`; abrir `/app/leads`; confirmar 403 do cliente em `/admin`; testar código usado/expirado/revogado; logout; testar chat, TACO/RAG, criação/consulta de pagamento, webhook e painel legado.
 
+## Fluxo profissional no GitHub
+
+O repositório agora possui modelos em `.github/ISSUE_TEMPLATE`, checklist de Pull Request e a esteira `.github/workflows/quality.yml`. Para cada melhoria:
+
+1. Crie uma Issue com problema, critérios de aceite e testes.
+2. Abra uma branch, por exemplo `feature/skeleton-dashboard`.
+3. Faça a alteração e abra uma Pull Request mencionando `Closes #NUMERO`.
+4. Aguarde a esteira verificar compilação, testes, JavaScript, dependências e possíveis segredos.
+5. Integre na `main` somente quando as verificações estiverem verdes.
+
+Nas configurações do GitHub, proteja a branch `main` e exija o status **Quality Gate** antes do merge. O frontend inclui `nutribot-ux.js` e `nutribot-ux.css` para feedback de conexão, estado de progresso nos formulários, skeleton inicial e respeito à preferência de movimento reduzido.
+
 ## Render
 
 - Aplique a migração antes do deploy.
