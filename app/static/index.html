@@ -170,13 +170,17 @@
   let clientId = null;
   const slugMatch = window.location.pathname.match(/^\/n\/([^/]+)$/);
   const clientSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
+  const testMatch = window.location.pathname.match(/^\/admin\/testes\/([^/]+)\/chat$/);
+  const testMode = Boolean(testMatch);
   const sourceParams = new URLSearchParams(window.location.search);
   const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
   sessionStorage.setItem('nutribot-source', detectedSource);
   let tenantColor = '#2563eb';
-  const clientReady = window.location.pathname === '/app/chat'
-    ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
-    : Promise.resolve();
+  const clientReady = testMode
+    ? fetch('/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
+    : window.location.pathname === '/app/chat'
+      ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
+      : Promise.resolve();
   const CONTATO_URL = window.location.origin + '/contato';
   let historicoConversa = [];
   let sessionId = crypto.randomUUID();
@@ -194,10 +198,11 @@
   const contactForm = document.getElementById('contactForm');
 
   async function carregarIdentidadePublica() {
-    if (!clientSlug) return;
-    const resp = await fetch('/public/clientes/' + encodeURIComponent(clientSlug));
+    if (!clientSlug && !testMode) return;
+    const resp = await fetch(testMode ? '/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste' : '/public/clientes/' + encodeURIComponent(clientSlug));
     if (!resp.ok) return;
-    const cfg = await resp.json();
+    const raw = await resp.json();
+    const cfg = testMode ? {...(raw.ai_config || {}), nome:(raw.ai_config || {}).nome || raw.name} : raw;
     tenantColor = cfg.cor_principal || tenantColor;
     document.title = `${cfg.identidade_ia || 'Assistente'} — ${cfg.nome}`;
     document.getElementById('brandName').textContent = cfg.identidade_ia || `Assistente da ${cfg.nome}`;
@@ -217,6 +222,10 @@
     const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
     if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors shadow-sm" data-icon="✦" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
     document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;
+    const intro = cfg.mensagem_inicial || `Olá! Sou a assistente virtual de ${cfg.nome}. Como posso ajudar você hoje?`;
+    mostrarChat();
+    digitarResposta(intro);
+    historicoConversa.push({autor:'bot', texto:intro});
   }
   carregarIdentidadePublica();
 
@@ -451,7 +460,7 @@
       const resp = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId, client_id: clientId, client_slug: clientSlug, lead_source: detectedSource })
+        body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId, client_id: clientId, client_slug: clientSlug, lead_source: detectedSource, test_mode: testMode })
       });
 
       removerPensando();

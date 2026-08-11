@@ -120,6 +120,7 @@ class PerguntaRequest(BaseModel):
     client_id: str | None = Field(default=None, max_length=64)
     client_slug: str | None = Field(default=None, max_length=160)
     lead_source: str | None = Field(default=None, max_length=80)
+    test_mode: bool = False
 
 
 class LoginRequest(BaseModel):
@@ -1011,6 +1012,56 @@ def admin_page(user: dict = Depends(auth.require_admin)):
     return FileResponse(STATIC_DIR / "admin-v2.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/admin/testes")
+def admin_test_lab(user: dict = Depends(auth.require_admin)):
+    return FileResponse(STATIC_DIR / "admin-testing.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/admin/testes/{user_id}/chat")
+def admin_test_chat(user_id: str, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/admin/api/clientes/{user_id}/teste")
+def admin_test_client_data(request: Request, user_id: str, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    config = dict(client.get("ai_config") or {})
+    base = str(request.base_url).rstrip("/")
+    slug = client.get("public_slug")
+    return {
+        "id": client["id"], "name": client["name"], "identifier": client["identifier"],
+        "active": client.get("active"), "public_slug": slug, "ai_config": config,
+        "public_url": f"{base}/n/{slug}" if slug else None,
+        "test_chat_url": f"{base}/admin/testes/{client['id']}/chat",
+        "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
+        "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
+    }
+
+
+@app.patch("/admin/api/clientes/{user_id}/teste")
+def admin_update_test_client(user_id: str, payload: dict, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    allowed_keys = {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "payment_wait_message"}
+    updates = {k: v for k, v in payload.items() if k in allowed_keys}
+    if "whatsapp" in updates and updates["whatsapp"]:
+        updates["whatsapp"] = normalizar_whatsapp(str(updates["whatsapp"]))
+    if "link_consulta" in updates and updates["link_consulta"] and not str(updates["link_consulta"]).startswith("https://"):
+        raise HTTPException(400, "O link de pagamento deve começar com https://")
+    if "free_message_limit" in updates:
+        updates["free_message_limit"] = max(1, min(50, int(updates["free_message_limit"] or 8)))
+    current = dict(client.get("ai_config") or {}); current.update(updates)
+    saas_store.update_user(user_id, {"ai_config": current})
+    business_store.audit(admin["id"], user_id, "client.test_config_updated", "saas_user", user_id, {"fields": list(updates)})
+    return {"ok": True, "ai_config": current}
+
+
 @app.get("/admin/api/dashboard")
 def admin_dashboard(user: dict = Depends(auth.require_admin)):
     all_clients = [u for u in saas_store.list_users() if u["role"] == "client"]
@@ -1082,6 +1133,23 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
         "archived_count": len(archived_clients),
         "archived_clients": archived_clients,
         "series": series,
+    }
+
+
+@app.get("/admin/api/system-health")
+def admin_system_health(user: dict = Depends(auth.require_admin)):
+    """Estado operacional sem expor chaves, tokens ou valores secretos."""
+    checks = {
+        "ai": bool(os.getenv("GEMINI_API_KEY")) and os.getenv("IA_ATIVA", "true").lower() == "true",
+        "database": bool(os.getenv("SUPABASE_URL")) and bool(os.getenv("SUPABASE_KEY")),
+        "payment": bool(pagamento.PAGAMENTO_ATIVO),
+        "email": bool(os.getenv("SMTP_HOST")) and bool(os.getenv("SMTP_FROM") or os.getenv("SMTP_USER")),
+    }
+    return {
+        "ok": checks["ai"] and checks["database"],
+        "checks": checks,
+        "labels": {"ai": "Inteligência artificial", "database": "Banco e isolamento", "payment": "Mercado Pago", "email": "Notificações por e-mail"},
+        "checked_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -1207,6 +1275,16 @@ def chat(request: Request, req: PerguntaRequest):
     if not req.pergunta.strip():
         raise HTTPException(status_code=400, detail="Pergunta vazia.")
 
+    # O laboratório mestre usa a configuração real do nutricionista, mas
+    # não cria leads, não consome franquia pública e não dispara pagamento.
+    if req.test_mode:
+        admin = auth.user_from_token(request, request.cookies.get(auth.COOKIE_NAME))
+        if admin.get("role") != "admin":
+            raise HTTPException(403, "Modo de teste disponível somente ao admin mestre")
+        if not req.client_id:
+            raise HTTPException(400, "Selecione um nutricionista para o teste")
+        req.lead_source = "admin_test_lab"
+
     resultados = base_conhecimento.buscar_contexto(req.pergunta, top_k=5)
     contexto = base_conhecimento.formatar_contexto_para_prompt(resultados)
 
@@ -1271,16 +1349,24 @@ def chat(request: Request, req: PerguntaRequest):
         except (ValueError, TypeError):
             historico_salvo = []
     mensagens_anteriores = sum(1 for m in historico_salvo if m.get("autor") == "user")
-    atingiu_limite = mensagens_anteriores >= limite_gratuito
+    atingiu_limite = False if req.test_mode else mensagens_anteriores >= limite_gratuito
     cta_cliente = client_config.get("link_consulta")
     fallback_cliente = cta_cliente or "O canal de agendamento deste profissional ainda não foi configurado. Solicite o contato diretamente à clínica."
-    if atingiu_limite and not ja_pago:
+    texto_normalizado = req.pergunta.casefold()
+    intencao_consulta = any(term in texto_normalizado for term in ("consulta", "agendar", "agendamento", "marcar horário", "marcar horario", "quero pagar", "valor da consulta", "preço da consulta", "preco da consulta"))
+    if intencao_consulta and resolved_client_id and not ja_pago:
+        resposta = "Claro! Para dar continuidade com um atendimento personalizado, use este acesso seguro: " + MARCADOR_LINK_PAGAMENTO
+    elif atingiu_limite and not ja_pago:
         resposta = "Já consegui entender melhor o que você busca. Para continuar com uma orientação realmente personalizada, o próximo passo é conversar com a nutricionista e avaliar seu caso com segurança. " + (fallback_cliente if resolved_client_id else LINK_AGENDAMENTO)
     else:
         try:
             resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=f"Erro ao consultar o modelo de IA: {e}")
+            if not str(resposta or "").strip():
+                raise RuntimeError("Resposta vazia do provedor")
+        except Exception:
+            # Falha transitória do provedor não derruba a experiência nem
+            # expõe detalhes técnicos. O usuário pode tentar novamente.
+            resposta = "Tive uma instabilidade rápida ao preparar essa resposta. Pode repetir sua dúvida em uma frase? Se você deseja marcar uma consulta, escreva ‘quero agendar’."
 
     # O Bruce usa um marcador em vez de escrever o link — aqui a gente
     # detecta a intenção de convidar pra consulta e troca pelo link real.
@@ -1291,7 +1377,7 @@ def chat(request: Request, req: PerguntaRequest):
     # evita duplicar links/preferências e evita confundir quem já pagou.
     quis_agendar = atingiu_limite or MARCADOR_LINK_PAGAMENTO in resposta
     requires_contact = False
-    if quis_agendar and resolved_client_id and not (lead_atual and lead_atual.get("lead_phone")):
+    if quis_agendar and resolved_client_id and not req.test_mode and not (lead_atual and lead_atual.get("lead_phone")):
         resposta = "Para enviar o link de pagamento com segurança, preciso primeiro do seu nome e WhatsApp. Preencha os dados abaixo; eles serão usados somente pela clínica para falar com você sobre este atendimento."
         requires_contact = True
     elif quis_agendar:
@@ -1311,7 +1397,7 @@ def chat(request: Request, req: PerguntaRequest):
             fontes.append(r["dado"]["titulo"])
 
     # Salva o histórico atualizado da conversa (não derruba a resposta se falhar)
-    if req.session_id:
+    if req.session_id and not req.test_mode:
         historico_completo = historico_dict + [
             {"autor": "user", "texto": req.pergunta},
             {"autor": "bot", "texto": resposta},
