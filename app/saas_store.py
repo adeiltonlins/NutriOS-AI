@@ -36,6 +36,25 @@ def upload_public_asset(bucket: str, object_path: str, content: bytes, content_t
     return f"{SUPABASE_URL}/storage/v1/object/public/{bucket}/{object_path}"
 
 
+def upload_private_asset(bucket: str, object_path: str, content: bytes, content_type: str) -> str:
+    """Envia um objeto privado. Retorna somente o caminho interno, nunca uma URL pública."""
+    if not ATIVO:
+        raise RuntimeError("Supabase não configurado")
+    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}", "Content-Type": content_type, "x-upsert": "false"}
+    response = requests.post(f"{SUPABASE_URL}/storage/v1/object/{bucket}/{object_path}", headers=headers, data=content, timeout=30)
+    response.raise_for_status()
+    return object_path
+
+
+def download_private_asset(bucket: str, object_path: str) -> bytes:
+    if not ATIVO:
+        raise RuntimeError("Supabase não configurado")
+    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+    response = requests.get(f"{SUPABASE_URL}/storage/v1/object/authenticated/{bucket}/{object_path}", headers=headers, timeout=30)
+    response.raise_for_status()
+    return response.content
+
+
 def get_user(user_id: str) -> dict | None:
     rows = _request("GET", "saas_users", params={"select": "*", "id": f"eq.{user_id}", "limit": "1"})
     return rows[0] if rows else None

@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from fastapi import BackgroundTasks, Depends, FastAPI, File, HTTPException, Query, Request, Response, UploadFile
+from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -82,13 +82,16 @@ MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "1048576"))
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     length = request.headers.get("content-length")
-    if length and int(length) > MAX_BODY_BYTES:
+    is_patient_pdf = request.method == "POST" and request.url.path.endswith("/documentos") and request.url.path.startswith("/app/api/pacientes/")
+    body_limit = 10_500_000 if is_patient_pdf else MAX_BODY_BYTES
+    if length and int(length) > body_limit:
         return Response("Corpo da requisição excede o limite", status_code=413)
     if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path != "/pagamento/webhook":
         origin = request.headers.get("origin")
         if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
             return Response("Origem não autorizada", status_code=403)
-        if request.method in {"POST", "PUT", "PATCH"} and request.url.path not in {"/auth/logout", "/app/api/logo"} and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
+        multipart_allowed = request.url.path == "/app/api/logo" or is_patient_pdf
+        if request.method in {"POST", "PUT", "PATCH"} and request.url.path != "/auth/logout" and not multipart_allowed and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -222,6 +225,31 @@ class PatientLoginRequest(BaseModel):
 
 class PatientRenewRequest(BaseModel):
     duration_days: int = Field(default=30, ge=1, le=730)
+
+
+class PatientRecordRequest(BaseModel):
+    notes: str = Field(default="", max_length=12000)
+    hunger_status: str | None = Field(default=None, max_length=30)
+    energy_status: str | None = Field(default=None, max_length=30)
+    sleep_status: str | None = Field(default=None, max_length=30)
+    bowel_status: str | None = Field(default=None, max_length=30)
+    adherence_status: str | None = Field(default=None, max_length=30)
+    clinical_alerts: str | None = Field(default=None, max_length=3000)
+
+
+class PatientCheckinRequest(BaseModel):
+    hunger: int = Field(..., ge=0, le=10)
+    energy: int = Field(..., ge=0, le=10)
+    sleep: int = Field(..., ge=0, le=10)
+    adherence: int = Field(..., ge=0, le=10)
+    water_liters: float | None = Field(default=None, ge=0, le=20)
+    training_sessions: int | None = Field(default=None, ge=0, le=30)
+    weight_kg: float | None = Field(default=None, ge=20, le=500)
+    bowel_status: str | None = Field(default=None, max_length=80)
+    cravings: bool = False
+    symptoms: str | None = Field(default=None, max_length=2000)
+    difficulties: str | None = Field(default=None, max_length=2000)
+    notes: str | None = Field(default=None, max_length=3000)
 
 
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
@@ -636,6 +664,12 @@ def patient_management_page(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-patients.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/app/pacientes/{patient_id}")
+def patient_record_page(patient_id: str, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    return FileResponse(STATIC_DIR / "patient-record.html", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/app/api/pacientes")
 def list_patients(user: dict = Depends(auth.current_user)):
     return saas_store._request("GET", "patient_accounts", params={"select": "*", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
@@ -690,6 +724,55 @@ def restore_patient(patient_id: str, user: dict = Depends(auth.current_user)):
     return rows[0]
 
 
+@app.get("/app/api/pacientes/{patient_id}/acompanhamento")
+def patient_followup_data(patient_id: str, user: dict = Depends(auth.current_user)):
+    patient = _owned_patient(patient_id, user["id"])
+    records = saas_store._request("GET", "patient_records", params={"select": "*", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
+    checkins = saas_store._request("GET", "patient_checkins", params={"select": "*", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc", "limit": "50"}) or []
+    documents = saas_store._request("GET", "patient_documents", params={"select": "id,title,original_name,version,is_current,created_at", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
+    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents}
+
+
+@app.post("/app/api/pacientes/{patient_id}/prontuario")
+def save_patient_record(patient_id: str, payload: PatientRecordRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    rows = saas_store._request("POST", "patient_records", payload={"patient_id": patient_id, "client_id": user["id"], **payload.model_dump()}, prefer="return=representation") or []
+    return rows[0]
+
+
+@app.post("/app/api/pacientes/{patient_id}/documentos")
+async def upload_patient_document(patient_id: str, title: str = Form(..., min_length=2, max_length=160), file: UploadFile = File(...), user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    if file.content_type != "application/pdf" or not str(file.filename or "").lower().endswith(".pdf"):
+        raise HTTPException(400, "Envie somente arquivo PDF")
+    content = await file.read(10_000_001)
+    if len(content) > 10_000_000: raise HTTPException(413, "O PDF deve ter no máximo 10 MB")
+    if not content.startswith(b"%PDF-"): raise HTTPException(400, "O arquivo não é um PDF válido")
+    safe_name = re.sub(r"[^a-zA-Z0-9._-]+", "-", Path(file.filename or "dieta.pdf").name)[:120]
+    object_path = f"{user['id']}/{patient_id}/{secrets.token_hex(16)}-{safe_name}"
+    saas_store.upload_private_asset("patient-documents", object_path, content, "application/pdf")
+    previous = saas_store._request("GET", "patient_documents", params={"select": "version", "patient_id": f"eq.{patient_id}", "order": "version.desc", "limit": "1"}) or []
+    version = int(previous[0]["version"]) + 1 if previous else 1
+    saas_store._request("PATCH", "patient_documents", params={"patient_id": f"eq.{patient_id}", "is_current": "eq.true"}, payload={"is_current": False}, prefer="return=minimal")
+    rows = saas_store._request("POST", "patient_documents", payload={"patient_id": patient_id, "client_id": user["id"], "title": title.strip(), "original_name": safe_name, "storage_path": object_path, "version": version, "is_current": True}, prefer="return=representation") or []
+    return {"ok": True, "document": rows[0]}
+
+
+def _patient_document(document_id: str) -> dict:
+    rows = saas_store._request("GET", "patient_documents", params={"select": "*", "id": f"eq.{document_id}", "limit": "1"}) or []
+    if not rows: raise HTTPException(404, "Documento não encontrado")
+    return rows[0]
+
+
+@app.get("/app/api/documentos/{document_id}/baixar")
+def professional_download_document(document_id: str, user: dict = Depends(auth.current_user)):
+    doc = _patient_document(document_id)
+    if doc["client_id"] != user["id"]: raise HTTPException(403, "Acesso negado")
+    content = saas_store.download_private_asset("patient-documents", doc["storage_path"])
+    name = re.sub(r"[^a-zA-Z0-9._-]+", "-", doc.get("original_name") or "dieta.pdf")
+    return Response(content, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{name}"', "Cache-Control": "private, no-store"})
+
+
 @app.get("/paciente/login")
 def patient_login_page():
     return FileResponse(STATIC_DIR / "patient-login.html", headers={"Cache-Control": "no-store"})
@@ -718,6 +801,31 @@ def patient_portal(patient: dict = Depends(patient_auth.current_patient)):
 def patient_me(patient: dict = Depends(patient_auth.current_patient)):
     client = saas_store.get_user(patient["client_id"]); config = (client or {}).get("ai_config") or {}
     return {"name": patient["name"], "plan_name": patient.get("plan_name"), "expires_at": patient["access_expires_at"], "messages_used": patient.get("messages_used") or 0, "message_limit": patient.get("message_limit") or 200, "professional_name": config.get("nome") or (client or {}).get("name"), "assistant_name": config.get("identidade_ia") or "NutriBot AI", "logo_url": config.get("logo_url"), "color": config.get("cor_principal") or "#4f7cff"}
+
+
+@app.get("/paciente/api/documentos")
+def patient_documents(patient: dict = Depends(patient_auth.current_patient)):
+    return saas_store._request("GET", "patient_documents", params={"select": "id,title,original_name,version,is_current,created_at", "patient_id": f"eq.{patient['id']}", "order": "created_at.desc"}) or []
+
+
+@app.get("/paciente/api/documentos/{document_id}/baixar")
+def patient_download_document(document_id: str, patient: dict = Depends(patient_auth.current_patient)):
+    doc = _patient_document(document_id)
+    if doc["patient_id"] != patient["id"]: raise HTTPException(403, "Acesso negado")
+    content = saas_store.download_private_asset("patient-documents", doc["storage_path"])
+    name = re.sub(r"[^a-zA-Z0-9._-]+", "-", doc.get("original_name") or "dieta.pdf")
+    return Response(content, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{name}"', "Cache-Control": "private, no-store"})
+
+
+@app.get("/paciente/api/checkins")
+def patient_checkins(patient: dict = Depends(patient_auth.current_patient)):
+    return saas_store._request("GET", "patient_checkins", params={"select": "*", "patient_id": f"eq.{patient['id']}", "order": "created_at.desc", "limit": "20"}) or []
+
+
+@app.post("/paciente/api/checkins")
+def create_patient_checkin(payload: PatientCheckinRequest, patient: dict = Depends(patient_auth.current_patient)):
+    rows = saas_store._request("POST", "patient_checkins", payload={"patient_id": patient["id"], "client_id": patient["client_id"], **payload.model_dump()}, prefer="return=representation") or []
+    return rows[0]
 
 
 @app.get("/app/api/configuracoes")

@@ -102,6 +102,8 @@ Antes do deploy desta versão, execute `migrations/010_admin_archive_analytics.s
 
 Execute também `migrations/012_patient_followup_portal.sql`. No painel do nutricionista, a rota `/app/pacientes` permite cadastrar pacientes, registrar o contexto da dieta, definir validade e limite de mensagens, gerar código individual, renovar, bloquear e arquivar. O paciente entra em `/paciente/login`; a sessão é HttpOnly e deixa de funcionar automaticamente quando o acompanhamento vence. `PATIENT_SESSION_DURATION` controla a duração máxima da sessão, sempre limitada pela validade do plano.
 
+Execute por último `migrations/013_patient_records_checkins_documents.sql`. Ela cria prontuário evolutivo, check-ins semanais, metadados de documentos e o bucket privado `patient-documents`. O nutricionista abre o prontuário pela rota `/app/pacientes/{id}`, registra evolução e envia dietas em PDF de até 10 MB. O paciente visualiza os PDFs e responde ao check-in em `/paciente`. Os arquivos nunca recebem URL pública: todo download passa pelo backend e exige uma sessão autorizada.
+
 ## Rotas e compatibilidade
 
 - Públicas: `/`, `/chat`, pagamento e webhook continuam existentes.
