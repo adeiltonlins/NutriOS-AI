@@ -1066,11 +1066,38 @@ def admin_test_lab(user: dict = Depends(auth.require_admin)):
 @app.get("/admin/testes/{user_id}/chat")
 def admin_test_chat(user_id: str, admin: dict = Depends(auth.require_admin)):
     if user_id == "master":
-        return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
+        return HTMLResponse(
+            (STATIC_DIR / "index.html").read_text(encoding="utf-8"),
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+        )
     client = saas_store.get_user(user_id)
     if not client or client.get("role") != "client":
         raise HTTPException(404, "Nutricionista não encontrado")
-    return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
+    return HTMLResponse(
+        (STATIC_DIR / "index.html").read_text(encoding="utf-8"),
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+    )
+
+
+@app.post("/admin/api/clientes/{user_id}/link-publico")
+def admin_generate_public_link(request: Request, user_id: str, admin: dict = Depends(auth.require_admin)):
+    """Gera uma URL pública persistente sem compartilhar a sessão do ADMIN."""
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    slug = client.get("public_slug")
+    if not slug:
+        slug = criar_slug_publico(client.get("name") or "nutricionista")
+        saas_store.update_user(user_id, {"public_slug": slug})
+    public_url = f"{str(request.base_url).rstrip('/')}/n/{slug}"
+    business_store.audit(admin["id"], user_id, "client.public_link_generated", "saas_user", user_id, {})
+    return {"ok": True, "public_url": public_url}
+
+
+@app.post("/admin/api/chatbot-mestre/link-publico")
+def admin_generate_master_public_link(request: Request, admin: dict = Depends(auth.require_admin)):
+    """Retorna apenas o endereço público; nunca inclui cookie ou token mestre."""
+    return {"ok": True, "public_url": f"{str(request.base_url).rstrip('/')}/assistente"}
 
 
 @app.get("/admin/api/chatbot-mestre/teste")
