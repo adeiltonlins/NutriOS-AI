@@ -51,15 +51,9 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 Em HTTP local, use `COOKIE_SECURE=false`. No Render/HTTPS, mantenha `true`.
 
-## Primeiro ADMIN
+## ADMIN mestre
 
-Depois da migração e das variáveis configuradas:
-
-```bash
-PYTHONPATH=. python scripts/create_admin.py --name "Adeilton" --identifier "admin@seudominio.com" --hours 24
-```
-
-O comando mostra um código uma única vez. Abra `/login`, use o código e entre em `/admin`. O código é salvo apenas como HMAC/hash e fica marcado como usado após o login.
+O ADMIN mestre não usa e-mail/senha e não aparece como nutricionista. Ele entra em `/login`, na aba **Código de acesso**, usando exclusivamente o valor secreto de `ADMIN_TOKEN` configurado no Render. Depois é direcionado para `/admin`. Trocar `ADMIN_TOKEN` no Render invalida o código mestre anterior após o novo deploy.
 
 ## Primeiro CLIENTE e código
 
@@ -87,6 +81,11 @@ O cliente entra em `/login`. Após autenticar, recebe cookie HttpOnly/Secure e �
 - Bloquear: `PATCH /admin/clientes/{id}` com `{"active":false}`; todas as sessões são invalidadas.
 - Desbloquear: a mesma rota com `{"active":true}`; depois gere um código novo.
 - Configuração da IA: `PATCH /admin/clientes/{id}` com `{"ai_config":{"nome":"Dra. Maria","especialidade":"...","prompt":"..."}}`.
+- Arquivar uma conta: `POST /admin/clientes/{id}/arquivar`; bloqueia acesso e preserva histórico.
+- Restaurar: `POST /admin/clientes/{id}/restaurar`; a conta volta bloqueada para revisão antes de liberar.
+- Excluir definitivamente: `DELETE /admin/clientes/{id}`; somente contas arquivadas e sem leads podem ser apagadas.
+
+Antes do deploy desta versão, execute `migrations/010_admin_archive_analytics.sql` no SQL Editor do Supabase. O painel mestre exibe conversas, vendas, conversão e receita dos últimos seis meses.
 
 ## Rotas e compatibilidade
 

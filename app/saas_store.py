@@ -57,6 +57,11 @@ def update_user(user_id: str, payload: dict) -> dict | None:
     return rows[0] if rows else None
 
 
+def delete_user(user_id: str) -> None:
+    """Remove definitivamente uma conta já validada pela camada de serviço."""
+    _request("DELETE", "saas_users", params={"id": f"eq.{user_id}"}, prefer="return=minimal")
+
+
 def insert_access_code(payload: dict) -> dict:
     rows = _request("POST", "access_codes", payload=payload, prefer="return=representation")
     return rows[0]

@@ -726,26 +726,67 @@ def admin_page(user: dict = Depends(auth.require_admin)):
 
 @app.get("/admin/api/dashboard")
 def admin_dashboard(user: dict = Depends(auth.require_admin)):
-    clients = [u for u in saas_store.list_users() if u["role"] == "client"]
+    all_clients = [u for u in saas_store.list_users() if u["role"] == "client"]
+    clients = [u for u in all_clients if not u.get("archived_at")]
+    archived_clients = [u for u in all_clients if u.get("archived_at")]
     leads = leads_store.listar_leads(limite=1000)
     now = datetime.now(timezone.utc)
 
+    def parsed(value):
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            return None
+
     def expired(client: dict) -> bool:
-        value = client.get("expires_at")
-        return bool(value and datetime.fromisoformat(value.replace("Z", "+00:00")) <= now)
+        value = parsed(client.get("expires_at"))
+        return bool(value and value <= now)
+
+    # Série mensal compacta para o dashboard mestre, sem serviço externo.
+    month_starts = []
+    cursor = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    for offset in range(5, -1, -1):
+        year = cursor.year
+        month = cursor.month - offset
+        while month <= 0:
+            month += 12
+            year -= 1
+        month_starts.append(datetime(year, month, 1, tzinfo=timezone.utc))
+
+    series = {"labels": [], "new_clients": [], "conversations": [], "sales": [], "revenue": []}
+    for start in month_starts:
+        end = datetime(start.year + (start.month == 12), 1 if start.month == 12 else start.month + 1, 1, tzinfo=timezone.utc)
+        period_leads = [lead for lead in leads if (parsed(lead.get("criado_em")) or parsed(lead.get("atualizado_em"))) and start <= (parsed(lead.get("criado_em")) or parsed(lead.get("atualizado_em"))) < end]
+        paid_leads = [lead for lead in leads if lead.get("pago") and parsed(lead.get("pago_em")) and start <= parsed(lead.get("pago_em")) < end]
+        series["labels"].append(start.strftime("%m/%Y"))
+        series["new_clients"].append(sum(start <= parsed(c.get("created_at")) < end for c in all_clients if parsed(c.get("created_at"))))
+        series["conversations"].append(len(period_leads))
+        series["sales"].append(len(paid_leads))
+        series["revenue"].append(round(sum(float(lead.get("sale_amount") or 0) for lead in paid_leads), 2))
+
+    paid_leads = [lead for lead in leads if lead.get("pago")]
+    total_revenue = round(sum(float(lead.get("sale_amount") or 0) for lead in paid_leads), 2)
 
     return {
         "clients_total": len(clients),
         "clients_active": sum(bool(c["active"]) and not expired(c) for c in clients),
         "clients_expired": sum(expired(c) for c in clients),
         "leads_total": len(leads),
+        "sales_total": len(paid_leads),
+        "revenue_total": total_revenue,
+        "conversion_rate": round((len(paid_leads) / len(leads) * 100) if leads else 0, 1),
         "ai_active": os.getenv("IA_ATIVA", "true").lower() == "true",
         "mrr": round(sum(float(c.get("monthly_price") or 0) for c in clients if c.get("billing_status") == "paid" and c.get("active")), 2),
         "billing_paid": sum(c.get("billing_status") == "paid" for c in clients),
         "billing_trial": sum((c.get("billing_status") or "trial") == "trial" for c in clients),
         "billing_overdue": sum(c.get("billing_status") == "overdue" for c in clients),
-        "billing_due_soon": sum(bool(c.get("next_billing_at")) and now <= datetime.fromisoformat(str(c["next_billing_at"]).replace("Z", "+00:00")) <= now + timedelta(days=7) for c in clients),
+        "billing_due_soon": sum(bool(parsed(c.get("next_billing_at"))) and now <= parsed(c.get("next_billing_at")) <= now + timedelta(days=7) for c in clients),
         "clients": clients,
+        "archived_count": len(archived_clients),
+        "archived_clients": archived_clients,
+        "series": series,
     }
 
 
@@ -777,6 +818,44 @@ def edit_client(user_id: str, payload: dict, admin: dict = Depends(auth.require_
     updated = saas_store.update_user(user_id, allowed)
     business_store.audit(admin["id"], user_id, "client.updated", "saas_user", user_id, {"fields": list(allowed)})
     return updated
+
+
+@app.post("/admin/clientes/{user_id}/arquivar")
+def archive_client(user_id: str, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    now = datetime.now(timezone.utc).isoformat()
+    saas_store.revoke_codes(user_id)
+    saas_store.revoke_user_sessions(user_id)
+    updated = saas_store.update_user(user_id, {"active": False, "billing_status": "cancelled", "archived_at": now})
+    business_store.audit(admin["id"], user_id, "client.archived", "saas_user", user_id, {})
+    return updated
+
+
+@app.post("/admin/clientes/{user_id}/restaurar")
+def restore_client(user_id: str, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    updated = saas_store.update_user(user_id, {"archived_at": None, "active": False, "billing_status": "trial"})
+    business_store.audit(admin["id"], user_id, "client.restored", "saas_user", user_id, {})
+    return updated
+
+
+@app.delete("/admin/clientes/{user_id}")
+def delete_client(user_id: str, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    if not client.get("archived_at"):
+        raise HTTPException(409, "Arquive a conta antes de excluir definitivamente")
+    if leads_store.listar_leads(limite=1, client_id=user_id):
+        raise HTTPException(409, "Esta conta possui leads e não pode ser apagada. Mantenha-a arquivada para preservar o histórico.")
+    saas_store.revoke_codes(user_id)
+    saas_store.revoke_user_sessions(user_id)
+    saas_store.delete_user(user_id)
+    return {"ok": True}
 
 
 @app.post("/admin/clientes/{user_id}/codigos")
