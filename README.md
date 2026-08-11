@@ -104,6 +104,8 @@ Execute também `migrations/012_patient_followup_portal.sql`. No painel do nutri
 
 Execute por último `migrations/013_patient_records_checkins_documents.sql`. Ela cria prontuário evolutivo, check-ins semanais, metadados de documentos e o bucket privado `patient-documents`. O nutricionista abre o prontuário pela rota `/app/pacientes/{id}`, registra evolução e envia dietas em PDF de até 10 MB. O paciente visualiza os PDFs e responde ao check-in em `/paciente`. Os arquivos nunca recebem URL pública: todo download passa pelo backend e exige uma sessão autorizada.
 
+Depois execute `migrations/014_plan_limits_safe_removal.sql`. O ADMIN mestre passa a definir o limite de pacientes de cada nutricionista (`-1` = ilimitado); o backend impede novos cadastros quando o teto é atingido. O profissional pode arquivar e ocultar pacientes sem apagar histórico. A exclusão permanente de uma conta profissional fica restrita ao ADMIN mestre, exige novamente o `ADMIN_TOKEN`, a confirmação `EXCLUIR identificador` e também remove leads e PDFs privados vinculados.
+
 ## Rotas e compatibilidade
 
 - Públicas: `/`, `/chat`, pagamento e webhook continuam existentes.

@@ -55,6 +55,15 @@ def download_private_asset(bucket: str, object_path: str) -> bytes:
     return response.content
 
 
+def delete_private_asset(bucket: str, object_path: str) -> None:
+    if not ATIVO:
+        raise RuntimeError("Supabase não configurado")
+    headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+    response = requests.delete(f"{SUPABASE_URL}/storage/v1/object/{bucket}/{object_path}", headers=headers, timeout=30)
+    if response.status_code not in {200, 204, 404}:
+        response.raise_for_status()
+
+
 def get_user(user_id: str) -> dict | None:
     rows = _request("GET", "saas_users", params={"select": "*", "id": f"eq.{user_id}", "limit": "1"})
     return rows[0] if rows else None
@@ -83,6 +92,10 @@ def update_user(user_id: str, payload: dict) -> dict | None:
     payload["updated_at"] = datetime.now(timezone.utc).isoformat()
     rows = _request("PATCH", "saas_users", params={"id": f"eq.{user_id}"}, payload=payload, prefer="return=representation")
     return rows[0] if rows else None
+
+
+def delete_user(user_id: str) -> None:
+    _request("DELETE", "saas_users", params={"id": f"eq.{user_id}"}, prefer="return=minimal")
 
 
 def insert_access_code(payload: dict) -> dict:

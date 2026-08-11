@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -54,6 +55,7 @@ app = FastAPI(
     description="Chatbot nutricional com RAG sobre dados TACO e diretrizes de saúde",
     version="0.1.0",
 )
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
@@ -140,6 +142,12 @@ class ClienteRequest(BaseModel):
     identifier: str = Field(..., min_length=3, max_length=160)
     plan: str | None = Field(default=None, max_length=60)
     duration_days: int = Field(default=30, ge=1, le=3650)
+    patient_limit: int | None = Field(default=None, ge=-1, le=100000)
+
+
+class AdminDeleteRequest(BaseModel):
+    confirmation: str = Field(..., min_length=3, max_length=220)
+    master_code: str = Field(..., min_length=1, max_length=512)
 
 
 class CodigoRequest(BaseModel):
@@ -672,11 +680,15 @@ def patient_record_page(patient_id: str, user: dict = Depends(auth.current_user)
 
 @app.get("/app/api/pacientes")
 def list_patients(user: dict = Depends(auth.current_user)):
-    return saas_store._request("GET", "patient_accounts", params={"select": "*", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
+    return saas_store._request("GET", "patient_accounts", params={"select": "*", "client_id": f"eq.{user['id']}", "hidden_at": "is.null", "order": "created_at.desc"}) or []
 
 
 @app.post("/app/api/pacientes")
 def create_patient(payload: PatientRequest, user: dict = Depends(auth.current_user)):
+    limit = int(user.get("patient_limit") if user.get("patient_limit") is not None else 10)
+    visible = saas_store._request("GET", "patient_accounts", params={"select": "id", "client_id": f"eq.{user['id']}", "hidden_at": "is.null", "archived_at": "is.null"}) or []
+    if limit >= 0 and len(visible) >= limit:
+        raise HTTPException(409, f"Limite do plano atingido ({limit} pacientes). Solicite um ajuste ao administrador.")
     expires = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
     rows = saas_store._request("POST", "patient_accounts", payload={"client_id": user["id"], "name": payload.name.strip(), "identifier": (payload.identifier or "").strip() or None, "phone": normalizar_whatsapp(payload.phone) if payload.phone else None, "plan_name": payload.plan_name, "access_expires_at": expires.isoformat(), "diet_context": payload.diet_context, "message_limit": payload.message_limit}, prefer="return=representation")
     return rows[0]
@@ -722,6 +734,17 @@ def restore_patient(patient_id: str, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
     rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"archived_at": None, "active": False, "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=representation") or []
     return rows[0]
+
+
+@app.post("/app/api/pacientes/{patient_id}/ocultar")
+def hide_patient(patient_id: str, user: dict = Depends(auth.current_user)):
+    """Remove da visão profissional sem apagar prontuário, métricas ou documentos."""
+    _owned_patient(patient_id, user["id"])
+    now = datetime.now(timezone.utc).isoformat()
+    patient_auth.revoke(patient_id)
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload={"active": False, "hidden_at": now, "updated_at": now}, prefer="return=representation") or []
+    business_store.audit(user["id"], user["id"], "patient.hidden", "patient_account", patient_id, {})
+    return rows[0] if rows else {"ok": True}
 
 
 @app.get("/app/api/pacientes/{patient_id}/acompanhamento")
@@ -991,6 +1014,14 @@ def admin_page(user: dict = Depends(auth.require_admin)):
 @app.get("/admin/api/dashboard")
 def admin_dashboard(user: dict = Depends(auth.require_admin)):
     all_clients = [u for u in saas_store.list_users() if u["role"] == "client"]
+    patient_rows = saas_store._request("GET", "patient_accounts", params={"select": "client_id,active,archived_at,hidden_at,access_expires_at"}) or []
+    patient_counts: dict[str, int] = {}
+    for patient in patient_rows:
+        if patient.get("hidden_at") or patient.get("archived_at"):
+            continue
+        patient_counts[patient["client_id"]] = patient_counts.get(patient["client_id"], 0) + 1
+    for client in all_clients:
+        client["patients_used"] = patient_counts.get(client["id"], 0)
     clients = [u for u in all_clients if not u.get("archived_at")]
     archived_clients = [u for u in all_clients if u.get("archived_at")]
     leads = leads_store.listar_leads(limite=1000)
@@ -1057,7 +1088,10 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
 @app.post("/admin/clientes")
 def create_client(payload: ClienteRequest, admin: dict = Depends(auth.require_admin)):
     expires_at = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
-    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "expires_at": expires_at.isoformat(), "public_slug": criar_slug_publico(payload.name), "billing_status": "trial", "monthly_price": 0})
+    defaults = {"basico": 10, "básico": 10, "essencial": 10, "pro": 50, "profissional": 50, "premium": 150, "clinica": -1, "clínica": -1}
+    plan = (payload.plan or "essencial").lower()
+    patient_limit = payload.patient_limit if payload.patient_limit is not None else defaults.get(plan, 10)
+    return saas_store.create_user({"name": payload.name, "identifier": payload.identifier.lower().strip(), "role": "client", "active": True, "plan": payload.plan, "patient_limit": patient_limit, "expires_at": expires_at.isoformat(), "public_slug": criar_slug_publico(payload.name), "billing_status": "trial", "monthly_price": 0})
 
 
 @app.post("/admin/clientes/{user_id}/renovar")
@@ -1076,7 +1110,9 @@ def renew_client(user_id: str, payload: CodigoRequest, admin: dict = Depends(aut
 
 @app.patch("/admin/clientes/{user_id}")
 def edit_client(user_id: str, payload: dict, admin: dict = Depends(auth.require_admin)):
-    allowed = {k: v for k, v in payload.items() if k in {"name", "identifier", "plan", "active", "expires_at", "ai_config", "monthly_price", "billing_status", "next_billing_at", "billing_notes", "custom_domain", "billing_provider", "external_subscription_id"}}
+    allowed = {k: v for k, v in payload.items() if k in {"name", "identifier", "plan", "patient_limit", "active", "expires_at", "ai_config", "monthly_price", "billing_status", "next_billing_at", "billing_notes", "custom_domain", "billing_provider", "external_subscription_id"}}
+    if "patient_limit" in allowed:
+        allowed["patient_limit"] = max(-1, min(100000, int(allowed["patient_limit"])))
     if "active" in allowed and not allowed["active"]:
         saas_store.revoke_user_sessions(user_id)
     updated = saas_store.update_user(user_id, allowed)
@@ -1105,6 +1141,30 @@ def restore_client(user_id: str, admin: dict = Depends(auth.require_admin)):
     updated = saas_store.update_user(user_id, {"archived_at": None, "active": False, "billing_status": "trial"})
     business_store.audit(admin["id"], user_id, "client.restored", "saas_user", user_id, {})
     return updated
+
+
+@app.delete("/admin/clientes/{user_id}")
+def permanently_delete_client(user_id: str, payload: AdminDeleteRequest, admin: dict = Depends(auth.require_admin)):
+    client = saas_store.get_user(user_id)
+    if not client or client.get("role") != "client":
+        raise HTTPException(404, "Nutricionista não encontrado")
+    expected = f"EXCLUIR {client['identifier']}"
+    if payload.confirmation.strip() != expected:
+        raise HTTPException(400, f"Digite exatamente: {expected}")
+    master = auth.authenticate_master(payload.master_code)
+    if not master or master.get("id") != admin.get("id"):
+        raise HTTPException(403, "Código mestre inválido")
+    documents = saas_store._request("GET", "patient_documents", params={"select": "storage_path", "client_id": f"eq.{user_id}"}) or []
+    for document in documents:
+        path = document.get("storage_path")
+        if path:
+            saas_store.delete_private_asset("patient-documents", path)
+    business_store.audit(admin["id"], None, "client.permanently_deleted", "saas_user", user_id, {"name": client.get("name"), "identifier": client.get("identifier")})
+    # A FK legado de leads não possui CASCADE; a exclusão explícita evita
+    # deixar dados pessoais órfãos e permite remover a conta com segurança.
+    saas_store._request("DELETE", "leads", params={"client_id": f"eq.{user_id}"}, prefer="return=minimal")
+    saas_store.delete_user(user_id)
+    return {"ok": True}
 
 
 @app.post("/admin/clientes/{user_id}/codigos")
