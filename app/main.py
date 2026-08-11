@@ -16,8 +16,9 @@ import secrets
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -29,7 +30,7 @@ from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
 from app import pagamento
-from app import auth, saas_store
+from app import auth, business_store, emailer, saas_store
 import os
 
 
@@ -71,7 +72,7 @@ else:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST", "PATCH"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -87,7 +88,7 @@ async def security_middleware(request: Request, call_next):
         origin = request.headers.get("origin")
         if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
             return Response("Origem não autorizada", status_code=403)
-        if request.url.path != "/auth/logout" and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
+        if request.method in {"POST", "PUT", "PATCH"} and request.url.path != "/auth/logout" and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -164,6 +165,35 @@ class LeadClaimPaidRequest(BaseModel):
 class LeadWorkflowRequest(BaseModel):
     action: str = Field(..., max_length=40)
     amount: float | None = Field(default=None, ge=0, le=1000000)
+    stage: str | None = Field(default=None, max_length=40)
+
+
+class ServiceRequest(BaseModel):
+    name: str = Field(..., min_length=2, max_length=120)
+    description: str | None = Field(default=None, max_length=600)
+    price: float = Field(default=0, ge=0, le=1000000)
+    payment_url: str | None = Field(default=None, max_length=500)
+    active: bool = True
+
+
+class AvailabilityRequest(BaseModel):
+    weekday: int = Field(..., ge=0, le=6)
+    start_time: str = Field(..., pattern=r"^\d{2}:\d{2}$")
+    end_time: str = Field(..., pattern=r"^\d{2}:\d{2}$")
+    slot_minutes: int = Field(default=60, ge=15, le=240)
+
+
+class AnamnesisRequest(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=100)
+    answers: dict
+
+
+class AppointmentRequest(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=100)
+    starts_at: datetime
+    service_id: str | None = Field(default=None, max_length=64)
+    patient_name: str = Field(..., min_length=2, max_length=120)
+    patient_phone: str = Field(..., min_length=8, max_length=30)
 
 
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
@@ -326,6 +356,72 @@ def own_metrics(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-metrics.html")
 
 
+@app.get("/app/crm")
+def own_crm(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-crm.html")
+
+
+@app.get("/app/gestao")
+def own_management(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-management.html")
+
+
+@app.get("/app/api/services")
+def list_services(user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("client_services", user["id"], order="created_at.desc")
+
+
+@app.post("/app/api/services")
+def create_service(payload: ServiceRequest, user: dict = Depends(auth.current_user)):
+    data = payload.model_dump()
+    if data.get("payment_url") and not data["payment_url"].startswith("https://"):
+        raise HTTPException(400, "O link de pagamento deve começar com https://")
+    return business_store.create_row("client_services", user["id"], data)
+
+
+@app.patch("/app/api/services/{row_id}")
+def update_service(row_id: str, payload: ServiceRequest, user: dict = Depends(auth.current_user)):
+    if not business_store.get_row("client_services", row_id, user["id"]):
+        raise HTTPException(404, "Serviço não encontrado")
+    return business_store.update_row("client_services", row_id, user["id"], payload.model_dump())
+
+
+@app.delete("/app/api/services/{row_id}")
+def delete_service(row_id: str, user: dict = Depends(auth.current_user)):
+    if not business_store.get_row("client_services", row_id, user["id"]):
+        raise HTTPException(404, "Serviço não encontrado")
+    business_store.delete_row("client_services", row_id, user["id"])
+    return {"ok": True}
+
+
+@app.get("/app/api/availability")
+def list_availability(user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("availability", user["id"], order="weekday.asc,start_time.asc")
+
+
+@app.post("/app/api/availability")
+def create_availability(payload: AvailabilityRequest, user: dict = Depends(auth.current_user)):
+    if payload.start_time >= payload.end_time:
+        raise HTTPException(400, "O horário final deve ser posterior ao inicial")
+    return business_store.create_row("availability", user["id"], payload.model_dump())
+
+
+@app.delete("/app/api/availability/{row_id}")
+def delete_availability(row_id: str, user: dict = Depends(auth.current_user)):
+    business_store.delete_row("availability", row_id, user["id"])
+    return {"ok": True}
+
+
+@app.get("/app/api/appointments")
+def list_appointments(user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("appointments", user["id"], order="starts_at.asc")
+
+
+@app.get("/app/api/anamneses")
+def list_anamneses(user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("anamneses", user["id"], order="submitted_at.desc")
+
+
 def _parse_data_lead(value) -> datetime | None:
     if not value:
         return None
@@ -396,6 +492,11 @@ def update_lead_workflow(session_id: str, payload: LeadWorkflowRequest, user: di
         "anamnesis_sent": {"anamnesis_sent_at": now, "workflow_status": "anamnesis_sent"},
         "scheduled": {"scheduled_at": now, "workflow_status": "scheduled"},
     }
+    if payload.action == "set_stage":
+        stages = {"new", "awaiting_payment", "awaiting_verification", "payment_confirmed", "contacted", "anamnesis_sent", "scheduled"}
+        if payload.stage not in stages:
+            raise HTTPException(400, "Etapa inválida")
+        actions["set_stage"] = {"workflow_status": payload.stage}
     if payload.action not in actions:
         raise HTTPException(400, "Ação inválida")
     updated = leads_store.atualizar_lead(session_id, actions[payload.action], client_id)
@@ -411,13 +512,16 @@ def own_config(user: dict = Depends(auth.current_user)):
 
 @app.get("/app/api/configuracoes")
 def own_config_data(request: Request, user: dict = Depends(auth.current_user)):
-    return {"name": user["name"], "identifier": user["identifier"], "plan": user.get("plan"), "expires_at": user.get("expires_at"), "public_slug": user.get("public_slug"), "public_url": f"{str(request.base_url).rstrip('/')}/n/{user.get('public_slug')}" if user.get("public_slug") else None, "ai_config": user.get("ai_config") or {}}
+    public_url = f"{str(request.base_url).rstrip('/')}/n/{user.get('public_slug')}" if user.get("public_slug") else None
+    config = dict(user.get("ai_config") or {})
+    config["public_url"] = public_url
+    return {"name": user["name"], "identifier": user["identifier"], "plan": user.get("plan"), "expires_at": user.get("expires_at"), "public_slug": user.get("public_slug"), "public_url": public_url, "ai_config": config}
 
 
 @app.patch("/app/api/configuracoes")
 def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
     current = user.get("ai_config") or {}
-    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "anamnesis_url", "whatsapp_message_template", "payment_wait_message"}}
+    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "anamnesis_url", "whatsapp_message_template", "payment_wait_message", "notification_email"}}
     if "free_message_limit" in allowed:
         allowed["free_message_limit"] = max(1, min(50, int(allowed["free_message_limit"] or 8)))
     current.update(allowed)
@@ -447,7 +551,7 @@ def register_lead_contact(request: Request, payload: LeadContactRequest):
 
 @app.post("/leads/claim-paid")
 @limiter.limit("5/minute")
-def claim_paid(request: Request, payload: LeadClaimPaidRequest):
+def claim_paid(request: Request, payload: LeadClaimPaidRequest, background_tasks: BackgroundTasks):
     client = resolver_cliente_publico(payload.client_slug, payload.client_id)
     lead = leads_store.buscar_lead(payload.session_id, client["id"])
     if not lead or not lead.get("contact_consent_at"):
@@ -455,7 +559,93 @@ def claim_paid(request: Request, payload: LeadClaimPaidRequest):
     updated = leads_store.atualizar_lead(payload.session_id, {"workflow_status": "awaiting_verification", "claimed_paid_at": datetime.now(timezone.utc).isoformat()}, client["id"])
     if not updated:
         raise HTTPException(503, "Não foi possível registrar a solicitação.")
+    config = client.get("ai_config") or {}
+    notify_email = str(config.get("notification_email") or client.get("identifier") or "").strip()
+    if "@" in notify_email:
+        background_tasks.add_task(emailer.send_notification, notify_email, "Novo pagamento aguardando conferência — NutriBot AI", f"{lead.get('lead_name') or 'Um paciente'} informou que realizou o pagamento.\nWhatsApp: {lead.get('lead_phone') or 'não informado'}\nAcesse seu painel para conferir e dar continuidade.")
     return {"ok": True, "message": "Recebemos seu aviso. A clínica verificará o pagamento e entrará em contato pelo WhatsApp informado em até 24 horas.", "workflow_status": "awaiting_verification"}
+
+
+@app.get("/n/{public_slug}/anamnese")
+def public_anamnesis_page(public_slug: str, session_id: str = Query(default="")):
+    resolver_cliente_publico(public_slug, None)
+    return FileResponse(STATIC_DIR / "public-anamnesis.html")
+
+
+@app.post("/public/clientes/{public_slug}/anamnese")
+@limiter.limit("5/minute")
+def submit_anamnesis(request: Request, public_slug: str, payload: AnamnesisRequest):
+    client = resolver_cliente_publico(public_slug, None)
+    lead = leads_store.buscar_lead(payload.session_id, client["id"])
+    if not lead:
+        raise HTTPException(404, "Atendimento não encontrado")
+    clean = {str(k)[:60]: str(v)[:1000] for k, v in payload.answers.items() if str(v).strip()}
+    row = business_store.upsert_anamnesis(client["id"], payload.session_id, {"answers": clean, "submitted_at": datetime.now(timezone.utc).isoformat()})
+    leads_store.atualizar_lead(payload.session_id, {"workflow_status": "anamnesis_sent", "anamnesis_sent_at": datetime.now(timezone.utc).isoformat()}, client["id"])
+    return {"ok": True, "id": row["id"]}
+
+
+@app.get("/n/{public_slug}/agenda")
+def public_schedule_page(public_slug: str, session_id: str = Query(default="")):
+    resolver_cliente_publico(public_slug, None)
+    return FileResponse(STATIC_DIR / "public-schedule.html")
+
+
+@app.get("/public/clientes/{public_slug}/services")
+def public_services(public_slug: str):
+    client = resolver_cliente_publico(public_slug, None)
+    rows = business_store.list_rows("client_services", client["id"], order="created_at.asc", extra={"active": "eq.true"})
+    return [{k: row.get(k) for k in ("id", "name", "description", "price")} for row in rows]
+
+
+@app.get("/public/clientes/{public_slug}/slots")
+def public_slots(public_slug: str):
+    client = resolver_cliente_publico(public_slug, None)
+    availability = business_store.list_rows("availability", client["id"], order="weekday.asc", extra={"active": "eq.true"})
+    appointments = business_store.list_rows("appointments", client["id"], order="starts_at.asc", extra={"starts_at": f"gte.{datetime.now(timezone.utc).isoformat()}"})
+    occupied = {_parse_data_lead(x.get("starts_at")).astimezone(timezone.utc).isoformat()[:16] for x in appointments if x.get("status") != "cancelled" and _parse_data_lead(x.get("starts_at"))}
+    slots = []
+    config = client.get("ai_config") or {}
+    try:
+        clinic_tz = ZoneInfo(str(config.get("timezone") or "America/Recife"))
+    except Exception:
+        clinic_tz = ZoneInfo("America/Recife")
+    today = datetime.now(clinic_tz).date()
+    for offset in range(1, 31):
+        day = today + timedelta(days=offset)
+        for rule in availability:
+            if day.weekday() != int(rule["weekday"]):
+                continue
+            start_h, start_m = map(int, str(rule["start_time"])[:5].split(":"))
+            end_h, end_m = map(int, str(rule["end_time"])[:5].split(":"))
+            cursor = datetime(day.year, day.month, day.day, start_h, start_m, tzinfo=clinic_tz)
+            end = datetime(day.year, day.month, day.day, end_h, end_m, tzinfo=clinic_tz)
+            while cursor + timedelta(minutes=int(rule["slot_minutes"])) <= end:
+                if cursor.astimezone(timezone.utc).isoformat()[:16] not in occupied:
+                    slots.append(cursor.isoformat())
+                cursor += timedelta(minutes=int(rule["slot_minutes"]))
+    return slots[:120]
+
+
+@app.post("/public/clientes/{public_slug}/appointments")
+@limiter.limit("5/minute")
+def create_public_appointment(request: Request, public_slug: str, payload: AppointmentRequest, background_tasks: BackgroundTasks):
+    client = resolver_cliente_publico(public_slug, None)
+    lead = leads_store.buscar_lead(payload.session_id, client["id"])
+    if not lead or not lead.get("pago"):
+        raise HTTPException(403, "O agendamento é liberado após a confirmação do pagamento")
+    if payload.starts_at <= datetime.now(timezone.utc):
+        raise HTTPException(400, "Escolha um horário futuro")
+    try:
+        row = business_store.create_row("appointments", client["id"], {"session_id": payload.session_id, "service_id": payload.service_id, "patient_name": payload.patient_name.strip(), "patient_phone": normalizar_whatsapp(payload.patient_phone), "starts_at": payload.starts_at.isoformat(), "status": "scheduled"})
+    except Exception:
+        raise HTTPException(409, "Este horário acabou de ser ocupado. Escolha outro.")
+    leads_store.atualizar_lead(payload.session_id, {"workflow_status": "scheduled", "scheduled_at": payload.starts_at.isoformat()}, client["id"])
+    config = client.get("ai_config") or {}
+    notify_email = str(config.get("notification_email") or client.get("identifier") or "")
+    if "@" in notify_email:
+        background_tasks.add_task(emailer.send_notification, notify_email, "Nova consulta agendada — NutriBot AI", f"Paciente: {payload.patient_name}\nWhatsApp: {payload.patient_phone}\nHorário: {payload.starts_at.isoformat()}")
+    return {"ok": True, "appointment": row}
 
 
 @app.get("/admin")

@@ -114,3 +114,6 @@ Checklist manual: login ADMIN; criar cliente; gerar/revogar código; bloquear/de
 - Não exponha `SUPABASE_KEY`, `GEMINI_API_KEY`, `SESSION_SECRET`, `ADMIN_TOKEN` ou `MP_ACCESS_TOKEN` como variáveis de frontend.
 - Com múltiplas instâncias, sessões e códigos continuam consistentes porque o estado está no Supabase. O rate limit atual do `slowapi` é por processo; para escala horizontal, migre o contador para Redis.
 - `ADMIN_TOKEN` é compatibilidade temporária. Remova-o somente depois de confirmar que ninguém depende dos links antigos do painel.
+# Módulos de clínica
+
+Após executar `migrations/007_clinic_management.sql`, cada nutricionista passa a ter CRM visual, serviços/planos, anamnese interna, disponibilidade e agenda. As notificações por e-mail usam `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` e `SMTP_FROM`; sem SMTP, o restante do sistema continua funcionando normalmente.
