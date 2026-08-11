@@ -172,7 +172,7 @@ def atualizar_lead(session_id: str, payload: dict, client_id: str | None = None)
         return None
 
 
-def listar_leads(limite: int = 100, client_id: str | None = None) -> list[dict]:
+def listar_leads(limite: int = 100, client_id: str | None = None, only_unassigned: bool = False) -> list[dict]:
     """Retorna os leads mais recentes, pro painel administrativo."""
     if not ARMAZENAMENTO_ATIVO:
         return []
@@ -181,6 +181,8 @@ def listar_leads(limite: int = 100, client_id: str | None = None) -> list[dict]:
         params = {"select": "*", "order": "atualizado_em.desc", "limit": str(limite)}
         if client_id:
             params["client_id"] = f"eq.{client_id}"
+        elif only_unassigned:
+            params["client_id"] = "is.null"
         resp = requests.get(
             f"{SUPABASE_URL}/rest/v1/{TABELA}",
             headers=_headers_read(),

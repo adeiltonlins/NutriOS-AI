@@ -172,14 +172,17 @@
   const clientSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
   const testMatch = window.location.pathname.match(/^\/admin\/testes\/([^/]+)\/chat$/);
   const testMode = Boolean(testMatch);
+  const masterPublic = window.location.pathname === '/assistente';
   const sourceParams = new URLSearchParams(window.location.search);
   const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
   sessionStorage.setItem('nutribot-source', detectedSource);
   let tenantColor = '#2563eb';
+  let assistantDisplayName = 'NutriBot AI';
   const clientReady = testMode
-    ? fetch('/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
+    ? fetch(testMatch[1] === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
     : window.location.pathname === '/app/chat'
       ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
+      : masterPublic ? Promise.resolve().then(() => { clientId = 'master'; })
       : Promise.resolve();
   const CONTATO_URL = window.location.origin + '/contato';
   let historicoConversa = [];
@@ -198,14 +201,16 @@
   const contactForm = document.getElementById('contactForm');
 
   async function carregarIdentidadePublica() {
-    if (!clientSlug && !testMode) return;
-    const resp = await fetch(testMode ? '/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste' : '/public/clientes/' + encodeURIComponent(clientSlug));
+    if (!clientSlug && !testMode && !masterPublic) return;
+    const identityUrl = testMode ? (testMatch[1] === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste') : masterPublic ? '/public/chatbot-mestre' : '/public/clientes/' + encodeURIComponent(clientSlug);
+    const resp = await fetch(identityUrl);
     if (!resp.ok) return;
     const raw = await resp.json();
     const cfg = testMode ? {...(raw.ai_config || {}), nome:(raw.ai_config || {}).nome || raw.name} : raw;
     tenantColor = cfg.cor_principal || tenantColor;
-    document.title = `${cfg.identidade_ia || 'Assistente'} — ${cfg.nome}`;
-    document.getElementById('brandName').textContent = cfg.identidade_ia || `Assistente da ${cfg.nome}`;
+    assistantDisplayName = cfg.identidade_ia || `Assistente de ${cfg.nome}`;
+    document.title = `${assistantDisplayName} — ${cfg.nome}`;
+    document.getElementById('brandName').textContent = assistantDisplayName;
     document.getElementById('brandSpecialty').textContent = [cfg.nome, cfg.especialidade].filter(Boolean).join(' • ');
     document.getElementById('heroTitle').textContent = cfg.identidade_ia || `Atendimento da ${cfg.nome}`;
     document.getElementById('welcomeText').textContent = cfg.mensagem_inicial || `Olá! Sou a assistente virtual de ${cfg.nome}. Como posso ajudar você hoje?`;
@@ -218,7 +223,7 @@
     const links = document.getElementById('professionalLinks');
     if (cfg.crn) links.insertAdjacentHTML('beforeend', `<span>CRN ${String(cfg.crn).replace(/[<>&]/g,'')}</span>`);
     if (cfg.instagram) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.instagram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Instagram</a>`);
-    links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="/paciente/login?nutri=${encodeURIComponent(clientSlug)}">Já sou paciente</a>`);
+    if (clientSlug) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="/paciente/login?nutri=${encodeURIComponent(clientSlug)}">Já sou paciente</a>`);
     const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
     if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors shadow-sm" data-icon="✦" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
     document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;
@@ -284,11 +289,13 @@
     const avatar = document.createElement('div');
     avatar.className = `w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[11px] font-bold text-white mt-0.5 ${isUser ? 'bg-slate-400 dark:bg-slate-600' : 'bg-gradient-to-br from-brand to-emerald-500'}`;
     avatar.textContent = isUser ? 'Eu' : 'NB';
+    avatar.title = isUser ? 'Você' : assistantDisplayName;
     if (!isUser) avatar.style.background = tenantColor;
     row.appendChild(avatar);
 
     const col = document.createElement('div');
     col.className = `flex flex-col min-w-0 ${isUser ? 'items-end' : 'items-start'}`;
+    if (!isUser) { const who=document.createElement('span'); who.className='text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1 px-1'; who.textContent=assistantDisplayName; col.appendChild(who); }
     row.appendChild(col);
 
     conversation.appendChild(row);
@@ -342,20 +349,6 @@
         onDone && onDone(col);
       }
     }, 12);
-  }
-
-  function adicionarFontes(col, fontes) {
-    if (!fontes || fontes.length === 0) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'flex flex-wrap gap-1.5 mt-1.5 px-1';
-    fontes.forEach(f => {
-      const tag = document.createElement('span');
-      tag.className = 'text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full';
-      tag.textContent = f;
-      wrap.appendChild(tag);
-    });
-    col.appendChild(wrap);
-    conversation.scrollTop = conversation.scrollHeight;
   }
 
   function mostrarPensando() {
@@ -473,9 +466,8 @@
 
       const dados = await resp.json();
       digitarResposta(dados.resposta, (col) => {
-        adicionarFontes(col, dados.fontes_utilizadas);
         if (detectarLinkPagamento(dados.resposta)) iniciarPollingContato();
-        if (dados.requires_contact && clientSlug) contactDialog.showModal();
+        if (dados.requires_contact && (clientSlug || masterPublic)) contactDialog.showModal();
       });
 
       historicoConversa.push({ autor: 'user', texto: pergunta });

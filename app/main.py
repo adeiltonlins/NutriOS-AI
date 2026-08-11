@@ -97,14 +97,16 @@ async def security_middleware(request: Request, call_next):
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
+    # O laboratório mestre usa um iframe da própria origem. Qualquer outra
+    # página continua proibida de ser embutida por sites externos.
+    response.headers["X-Frame-Options"] = "SAMEORIGIN" if re.fullmatch(r"/admin/testes/[^/]+/chat", request.url.path) else "DENY"
     response.headers["Referrer-Policy"] = "same-origin"
     return response
 
 
 @app.get("/")
 def servir_interface():
-    """Vitrine comercial do SaaS. A demonstração não chama o Gemini."""
+    """Vitrine comercial com conversa real, limitada pela configuração mestre."""
     return FileResponse(STATIC_DIR / "saas-landing.html", headers={"Cache-Control": "no-store"})
 
 
@@ -287,12 +289,42 @@ def criar_slug_publico(name: str) -> str:
 
 
 def resolver_cliente_publico(client_slug: str | None, client_id: str | None) -> dict:
+    if client_id == "master":
+        admins = [u for u in saas_store.list_users() if u.get("role") == "admin" and u.get("active")]
+        if not admins:
+            raise HTTPException(404, "Assistente indisponível")
+        return admins[0]
     client = saas_store.get_user_by_slug(client_slug) if client_slug else saas_store.get_user(client_id) if client_id else None
     if not client or client.get("role") != "client" or not client.get("active"):
         raise HTTPException(404, "Assistente indisponível")
     if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
         raise HTTPException(404, "Assistente indisponível")
     return client
+
+
+def master_chat_user() -> dict | None:
+    """Conta mestre que também funciona como tenant de demonstração real."""
+    try:
+        admins = [u for u in saas_store.list_users() if u.get("role") == "admin" and u.get("active")]
+        return admins[0] if admins else None
+    except Exception:
+        # Mantém o chatbot legado operacional em ambiente local sem banco.
+        return None
+
+
+def public_chat_config(user: dict) -> dict:
+    config = dict(user.get("ai_config") or {})
+    safe_keys = {"nome", "especialidade", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
+    safe = {k: config.get(k) for k in safe_keys if config.get(k)}
+    safe["nome"] = safe.get("nome") or user.get("name") or "NutriBot AI"
+    safe["identidade_ia"] = safe.get("identidade_ia") or f"Assistente de {safe['nome']}"
+    color = safe.get("cor_principal", "#2563eb")
+    safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#2563eb"
+    if safe.get("logo_url") and not str(safe["logo_url"]).startswith("https://"):
+        safe.pop("logo_url", None)
+    if safe.get("instagram") and not str(safe["instagram"]).startswith("https://"):
+        safe.pop("instagram", None)
+    return safe
 
 
 def normalizar_whatsapp(value: str) -> str:
@@ -422,6 +454,21 @@ def client_chat(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/assistente")
+def master_public_chat():
+    if not master_chat_user():
+        raise HTTPException(404, "Assistente indisponível")
+    return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/public/chatbot-mestre")
+def master_public_branding():
+    user = master_chat_user()
+    if not user:
+        raise HTTPException(404, "Assistente indisponível")
+    return public_chat_config(user)
+
+
 @app.get("/n/{public_slug}")
 def public_client_chat(public_slug: str):
     client = saas_store.get_user_by_slug(public_slug)
@@ -439,23 +486,17 @@ def public_client_branding(public_slug: str):
         raise HTTPException(404, "Assistente indisponível")
     if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
         raise HTTPException(404, "Assistente indisponível")
-    config = client.get("ai_config") or {}
-    safe_keys = {"nome", "especialidade", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
-    safe = {k: config.get(k) for k in safe_keys if config.get(k)}
-    safe["nome"] = safe.get("nome") or client.get("name")
-    color = safe.get("cor_principal", "#2563eb")
-    safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#2563eb"
-    if safe.get("logo_url") and not str(safe["logo_url"]).startswith("https://"):
-        safe.pop("logo_url", None)
-    for key in ("instagram",):
-        if safe.get(key) and not str(safe[key]).startswith("https://"):
-            safe.pop(key, None)
-    return safe
+    return public_chat_config(client)
 
 
 @app.get("/app/leads")
 def own_leads(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-leads.html")
+
+
+@app.get("/app/conversas")
+def own_conversations(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-conversations.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/app/api/leads")
@@ -879,12 +920,16 @@ def register_lead_contact(request: Request, payload: LeadContactRequest):
     client = resolver_cliente_publico(payload.client_slug, payload.client_id)
     config = client.get("ai_config") or {}
     payment_url = str(config.get("link_consulta") or "").strip()
+    is_master = payload.client_id == "master"
+    if is_master and not payment_url.startswith("https://") and pagamento.PAGAMENTO_ATIVO:
+        payment_url = pagamento.criar_link_pagamento(payload.session_id)
     if not payment_url.startswith("https://"):
         raise HTTPException(409, "O profissional ainda não configurou o link de pagamento.")
-    lead = leads_store.buscar_lead(payload.session_id, client["id"])
+    owner_id = None if is_master else client["id"]
+    lead = leads_store.buscar_lead(payload.session_id, owner_id)
     if not lead:
-        leads_store.salvar_lead(payload.session_id, [], True, client["id"], {"lead_status": "quente", "lead_score": 70, "lead_summary": "Solicitou atendimento", "message_count": 0})
-    updated = leads_store.atualizar_lead(payload.session_id, {"lead_name": payload.name.strip(), "lead_phone": normalizar_whatsapp(payload.phone), "contact_consent_at": datetime.now(timezone.utc).isoformat(), "workflow_status": "awaiting_payment", "lead_status": "quente", "lead_source": (payload.lead_source or "direto").strip().lower()[:80]}, client["id"])
+        leads_store.salvar_lead(payload.session_id, [], True, owner_id, {"lead_status": "quente", "lead_score": 70, "lead_summary": "Solicitou atendimento", "message_count": 0})
+    updated = leads_store.atualizar_lead(payload.session_id, {"lead_name": payload.name.strip(), "lead_phone": normalizar_whatsapp(payload.phone), "contact_consent_at": datetime.now(timezone.utc).isoformat(), "workflow_status": "awaiting_payment", "lead_status": "quente", "lead_source": (payload.lead_source or "direto").strip().lower()[:80]}, owner_id)
     if not updated:
         raise HTTPException(503, "Não foi possível registrar seus dados.")
     message = config.get("payment_wait_message") or "Após realizar o pagamento, clique em ‘Já realizei o pagamento’. A clínica fará a conferência e entrará em contato pelo WhatsApp informado em até 24 horas."
@@ -895,10 +940,11 @@ def register_lead_contact(request: Request, payload: LeadContactRequest):
 @limiter.limit("5/minute")
 def claim_paid(request: Request, payload: LeadClaimPaidRequest, background_tasks: BackgroundTasks):
     client = resolver_cliente_publico(payload.client_slug, payload.client_id)
-    lead = leads_store.buscar_lead(payload.session_id, client["id"])
+    owner_id = None if payload.client_id == "master" else client["id"]
+    lead = leads_store.buscar_lead(payload.session_id, owner_id)
     if not lead or not lead.get("contact_consent_at"):
         raise HTTPException(400, "Cadastre seus dados antes de informar o pagamento.")
-    updated = leads_store.atualizar_lead(payload.session_id, {"workflow_status": "awaiting_verification", "claimed_paid_at": datetime.now(timezone.utc).isoformat()}, client["id"])
+    updated = leads_store.atualizar_lead(payload.session_id, {"workflow_status": "awaiting_verification", "claimed_paid_at": datetime.now(timezone.utc).isoformat()}, owner_id)
     if not updated:
         raise HTTPException(503, "Não foi possível registrar a solicitação.")
     config = client.get("ai_config") or {}
@@ -1019,10 +1065,49 @@ def admin_test_lab(user: dict = Depends(auth.require_admin)):
 
 @app.get("/admin/testes/{user_id}/chat")
 def admin_test_chat(user_id: str, admin: dict = Depends(auth.require_admin)):
+    if user_id == "master":
+        return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
     client = saas_store.get_user(user_id)
     if not client or client.get("role") != "client":
         raise HTTPException(404, "Nutricionista não encontrado")
     return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/admin/api/chatbot-mestre/teste")
+def admin_master_chat_data(request: Request, admin: dict = Depends(auth.require_admin)):
+    config = dict(admin.get("ai_config") or {})
+    base = str(request.base_url).rstrip("/")
+    today = datetime.now(timezone.utc).date().isoformat()
+    leads = leads_store.listar_leads(limite=1000, only_unassigned=True)
+    today_sessions = {str(row.get("session_id")) for row in leads if str(row.get("criado_em") or "").startswith(today)}
+    return {
+        "id": "master", "name": admin.get("name"), "identifier": admin.get("identifier"),
+        "ai_config": config, "public_url": f"{base}/assistente",
+        "test_chat_url": f"{base}/admin/testes/mestre/chat",
+        "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
+        "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
+        "mercado_pago_api": bool(pagamento.PAGAMENTO_ATIVO),
+        "visitors_today": len(today_sessions),
+    }
+
+
+@app.patch("/admin/api/chatbot-mestre/teste")
+def admin_update_master_chat(payload: dict, admin: dict = Depends(auth.require_admin)):
+    allowed_keys = {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "prompt", "free_message_limit", "crn", "cor_principal", "acoes_rapidas", "daily_visitor_limit", "demo_duration_minutes", "public_chat_enabled"}
+    updates = {k: v for k, v in payload.items() if k in allowed_keys}
+    if "whatsapp" in updates and updates["whatsapp"]:
+        updates["whatsapp"] = normalizar_whatsapp(str(updates["whatsapp"]))
+    if "link_consulta" in updates and updates["link_consulta"] and not str(updates["link_consulta"]).startswith("https://"):
+        raise HTTPException(400, "O link deve começar com https://")
+    for key, default, maximum in (("free_message_limit", 8, 100), ("daily_visitor_limit", 30, 10000), ("demo_duration_minutes", 30, 1440)):
+        if key in updates:
+            updates[key] = max(1, min(maximum, int(updates[key] or default)))
+    if "public_chat_enabled" in updates:
+        updates["public_chat_enabled"] = bool(updates["public_chat_enabled"])
+    current = dict(admin.get("ai_config") or {}); current.update(updates)
+    saas_store.update_user(admin["id"], {"ai_config": current})
+    business_store.audit(admin["id"], admin["id"], "master_chat.updated", "saas_user", admin["id"], {"fields": list(updates)})
+    return {"ok": True, "ai_config": current}
 
 
 @app.get("/admin/api/clientes/{user_id}/teste")
@@ -1077,6 +1162,7 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
     archived_clients = [u for u in all_clients if u.get("archived_at")]
     leads = leads_store.listar_leads(limite=1000)
     now = datetime.now(timezone.utc)
+    master_config = dict(user.get("ai_config") or {})
 
     def parsed(value):
         if not value:
@@ -1120,6 +1206,8 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
         "clients_active": sum(bool(c["active"]) and not expired(c) for c in clients),
         "clients_expired": sum(expired(c) for c in clients),
         "leads_total": len(leads),
+        "master_visitors_today": len({str(row.get("session_id")) for row in leads if not row.get("client_id") and str(row.get("criado_em") or "").startswith(now.date().isoformat())}),
+        "master_daily_limit": max(1, int(master_config.get("daily_visitor_limit") or 30)),
         "sales_total": len(paid_leads),
         "revenue_total": total_revenue,
         "conversion_rate": round((len(paid_leads) / len(leads) * 100) if leads else 0, 1),
@@ -1315,12 +1403,22 @@ def chat(request: Request, req: PerguntaRequest):
     client_config = {}
     resolved_client_id = req.client_id
     client = None
-    if req.client_slug:
+    master_context = req.client_id == "master" or (not req.client_slug and not req.client_id)
+    if req.client_id == "master":
+        client = master_chat_user()
+        resolved_client_id = None
+        if not client:
+            raise HTTPException(404, "Assistente indisponível")
+        client_config = dict(client.get("ai_config") or {})
+    elif req.client_slug:
         client = saas_store.get_user_by_slug(req.client_slug)
         resolved_client_id = client.get("id") if client else None
     elif req.client_id:
         client = saas_store.get_user(req.client_id)
-    if req.client_slug or req.client_id:
+    elif master_context:
+        client = master_chat_user()
+        client_config = dict((client or {}).get("ai_config") or {})
+    if (req.client_slug or req.client_id) and req.client_id != "master":
         if not client or not client.get("active") or client.get("role") != "client":
             raise HTTPException(404, "Assistente indisponível")
         if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
@@ -1340,6 +1438,21 @@ def chat(request: Request, req: PerguntaRequest):
                 estado_convite = "pago"
             elif lead_atual and lead_atual.get("workflow_status") in {"awaiting_payment", "awaiting_verification"}:
                 estado_convite = "convidou_pendente"
+    if master_context and not req.test_mode:
+        if client_config.get("public_chat_enabled", True) is False:
+            raise HTTPException(503, "O assistente público está temporariamente pausado.")
+        daily_limit = max(1, int(client_config.get("daily_visitor_limit") or 30))
+        today = datetime.now(timezone.utc).date().isoformat()
+        master_leads = leads_store.listar_leads(limite=1000, only_unassigned=True)
+        sessions_today = {str(row.get("session_id")) for row in master_leads if str(row.get("criado_em") or "").startswith(today)}
+        if req.session_id and req.session_id not in sessions_today and len(sessions_today) >= daily_limit:
+            raise HTTPException(429, "O limite de atendimentos de hoje foi alcançado. Tente novamente amanhã ou use o canal de contato disponível.")
+        existing_master_lead = leads_store.buscar_lead(req.session_id) if req.session_id else None
+        duration = max(1, int(client_config.get("demo_duration_minutes") or 30))
+        if existing_master_lead and existing_master_lead.get("criado_em"):
+            started = datetime.fromisoformat(str(existing_master_lead["criado_em"]).replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) > started + timedelta(minutes=duration):
+                raise HTTPException(403, "O tempo desta conversa terminou. Inicie uma nova demonstração ou fale com nossa equipe.")
     limite_gratuito = int(client_config.get("free_message_limit") or os.getenv("FREE_MESSAGE_LIMIT", "8"))
     historico_salvo = []
     if lead_atual:
@@ -1377,15 +1490,15 @@ def chat(request: Request, req: PerguntaRequest):
     # evita duplicar links/preferências e evita confundir quem já pagou.
     quis_agendar = atingiu_limite or MARCADOR_LINK_PAGAMENTO in resposta
     requires_contact = False
-    if quis_agendar and resolved_client_id and not req.test_mode and not (lead_atual and lead_atual.get("lead_phone")):
+    if quis_agendar and (resolved_client_id or master_context) and not req.test_mode and not (lead_atual and lead_atual.get("lead_phone")):
         resposta = "Para enviar o link de pagamento com segurança, preciso primeiro do seu nome e WhatsApp. Preencha os dados abaixo; eles serão usados somente pela clínica para falar com você sobre este atendimento."
         requires_contact = True
     elif quis_agendar:
         if ja_pago:
             resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, CONTATO_NUTRICIONISTA)
         else:
-            link_real = cta_cliente if resolved_client_id else None
-            if not resolved_client_id and not link_real and pagamento.PAGAMENTO_ATIVO and req.session_id:
+            link_real = cta_cliente or None
+            if master_context and not link_real and pagamento.PAGAMENTO_ATIVO and req.session_id:
                 link_real = pagamento.criar_link_pagamento(req.session_id)
             resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, link_real or (fallback_cliente if resolved_client_id else LINK_AGENDAMENTO))
 
@@ -1591,10 +1704,19 @@ def verificar_contato(session_id: str = Query(default="")):
 
     lead = leads_store.buscar_lead(session_id)
     liberado = bool(lead and lead.get("pago"))
+    contato = CONTATO_NUTRICIONISTA
+    if lead:
+        owner = saas_store.get_user(lead.get("client_id")) if lead.get("client_id") else master_chat_user()
+        whatsapp = str(((owner or {}).get("ai_config") or {}).get("whatsapp") or "")
+        if whatsapp:
+            try:
+                contato = f"https://wa.me/{normalizar_whatsapp(whatsapp)}"
+            except HTTPException:
+                pass
 
     return {
         "liberado": liberado,
-        "contato": CONTATO_NUTRICIONISTA if liberado else None,
+        "contato": contato if liberado else None,
     }
 
 
