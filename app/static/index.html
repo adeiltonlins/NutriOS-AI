@@ -171,7 +171,8 @@
   const slugMatch = window.location.pathname.match(/^\/n\/([^/]+)$/);
   const clientSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
   const testMatch = window.location.pathname.match(/^\/admin\/testes\/([^/]+)\/chat$/);
-  const testMode = Boolean(testMatch);
+  const adminTestTarget = testMatch ? testMatch[1] : new URLSearchParams(window.location.search).get('admin_test');
+  const testMode = Boolean(adminTestTarget);
   const masterPublic = window.location.pathname === '/assistente';
   const sourceParams = new URLSearchParams(window.location.search);
   const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
@@ -179,7 +180,7 @@
   let tenantColor = '#2563eb';
   let assistantDisplayName = 'NutriBot AI';
   const clientReady = testMode
-    ? fetch(testMatch[1] === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
+    ? fetch(adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
     : window.location.pathname === '/app/chat'
       ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
       : masterPublic ? Promise.resolve().then(() => { clientId = 'master'; })
@@ -202,7 +203,7 @@
 
   async function carregarIdentidadePublica() {
     if (!clientSlug && !testMode && !masterPublic) return;
-    const identityUrl = testMode ? (testMatch[1] === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(testMatch[1]) + '/teste') : masterPublic ? '/public/chatbot-mestre' : '/public/clientes/' + encodeURIComponent(clientSlug);
+    const identityUrl = testMode ? (adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste') : masterPublic ? '/public/chatbot-mestre' : '/public/clientes/' + encodeURIComponent(clientSlug);
     const resp = await fetch(identityUrl);
     if (!resp.ok) return;
     const raw = await resp.json();

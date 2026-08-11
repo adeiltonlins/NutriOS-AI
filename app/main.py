@@ -99,7 +99,11 @@ async def security_middleware(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     # O laboratório mestre usa um iframe da própria origem. Qualquer outra
     # página continua proibida de ser embutida por sites externos.
-    response.headers["X-Frame-Options"] = "SAMEORIGIN" if re.fullmatch(r"/admin/testes/[^/]+/chat", request.url.path) else "DENY"
+    is_admin_preview = (
+        bool(re.fullmatch(r"/admin/testes/[^/]+/chat", request.url.path))
+        or (request.url.path == "/static/index.html" and bool(request.query_params.get("admin_test")))
+    )
+    response.headers["X-Frame-Options"] = "SAMEORIGIN" if is_admin_preview else "DENY"
     response.headers["Referrer-Policy"] = "same-origin"
     return response
 
@@ -1058,6 +1062,48 @@ def admin_page(user: dict = Depends(auth.require_admin)):
     return FileResponse(STATIC_DIR / "admin-v2.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/admin/leads")
+def admin_leads_page(user: dict = Depends(auth.require_admin)):
+    return FileResponse(STATIC_DIR / "admin-leads.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/admin/api/leads")
+def admin_all_leads(admin: dict = Depends(auth.require_admin)):
+    """Todas as conversas para o mestre, identificadas por proprietário."""
+    leads = leads_store.listar_leads(limite=2000)
+    owners = {str(user.get("id")): user for user in saas_store.list_users()}
+    result = []
+    mercado_pago_lookups = 0
+    for row in leads:
+        owner = owners.get(str(row.get("client_id"))) if row.get("client_id") else None
+        lead_name = row.get("lead_name")
+        lead_phone = row.get("lead_phone")
+        payer_email = None
+        # Recupera a identidade de pagamentos antigos que foram confirmados
+        # antes de nome/WhatsApp passarem a ser salvos no lead.
+        if row.get("pago") and row.get("payment_id") and (not lead_name or not lead_phone) and mercado_pago_lookups < 50:
+            payment_data = pagamento.consultar_pagamento(str(row["payment_id"]))
+            mercado_pago_lookups += 1
+            if payment_data:
+                payer = payment_data.get("payer") or {}
+                payer_email = payer.get("email")
+                payer_name = " ".join(filter(None, [payer.get("first_name"), payer.get("last_name")])).strip()
+                lead_name = lead_name or payer_name or payer_email
+                phone = payer.get("phone") or {}
+                lead_phone = lead_phone or "".join(filter(None, [str(phone.get("area_code") or ""), str(phone.get("number") or "")])) or None
+        result.append({
+            **row,
+            "lead_name": lead_name,
+            "lead_phone": lead_phone,
+            "payer_email": payer_email,
+            "owner_name": owner.get("name") if owner else "Meu chatbot mestre",
+            "owner_identifier": owner.get("identifier") if owner else "admin mestre",
+            "owner_type": "nutritionist" if owner else "master",
+        })
+    result.sort(key=lambda item: str(item.get("atualizado_em") or item.get("criado_em") or ""), reverse=True)
+    return result
+
+
 @app.get("/admin/testes")
 def admin_test_lab(user: dict = Depends(auth.require_admin)):
     return FileResponse(STATIC_DIR / "admin-testing.html", headers={"Cache-Control": "no-store"})
@@ -1110,7 +1156,7 @@ def admin_master_chat_data(request: Request, admin: dict = Depends(auth.require_
     return {
         "id": "master", "name": admin.get("name"), "identifier": admin.get("identifier"),
         "ai_config": config, "public_url": f"{base}/assistente",
-        "test_chat_url": f"{base}/admin/testes/mestre/chat",
+        "test_chat_url": f"{base}/static/index.html?admin_test=mestre",
         "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
         "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
         "mercado_pago_api": bool(pagamento.PAGAMENTO_ATIVO),
@@ -1149,7 +1195,7 @@ def admin_test_client_data(request: Request, user_id: str, admin: dict = Depends
         "id": client["id"], "name": client["name"], "identifier": client["identifier"],
         "active": client.get("active"), "public_slug": slug, "ai_config": config,
         "public_url": f"{base}/n/{slug}" if slug else None,
-        "test_chat_url": f"{base}/admin/testes/{client['id']}/chat",
+        "test_chat_url": f"{base}/static/index.html?admin_test={client['id']}",
         "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
         "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
     }
@@ -1249,6 +1295,51 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
         "archived_clients": archived_clients,
         "series": series,
     }
+
+
+@app.get("/admin/api/pagamentos-mestre")
+def admin_master_payments(admin: dict = Depends(auth.require_admin)):
+    """Fila financeira do chatbot mestre, separada das mensalidades SaaS."""
+    leads = leads_store.listar_leads(limite=1000, only_unassigned=True)
+    relevant = [
+        row for row in leads
+        if row.get("pago") or row.get("payment_id") or row.get("claimed_paid_at")
+        or row.get("workflow_status") in {"awaiting_payment", "awaiting_verification", "payment_confirmed", "contacted", "scheduled"}
+    ]
+    relevant.sort(key=lambda row: str(row.get("pago_em") or row.get("claimed_paid_at") or row.get("atualizado_em") or ""), reverse=True)
+    return [{
+        "session_id": row.get("session_id"),
+        "name": row.get("lead_name") or "Visitante",
+        "phone": row.get("lead_phone"),
+        "status": "approved" if row.get("pago") else "verification" if row.get("claimed_paid_at") else "pending",
+        "workflow_status": row.get("workflow_status") or "new",
+        "amount": float(row.get("sale_amount") or 0),
+        "payment_id": row.get("payment_id"),
+        "paid_at": row.get("pago_em"),
+        "updated_at": row.get("atualizado_em") or row.get("criado_em"),
+        "contact_released": bool(row.get("pago")),
+    } for row in relevant[:200]]
+
+
+@app.post("/admin/api/pagamentos-mestre/{session_id}/verificar")
+def admin_verify_master_payment(session_id: str, admin: dict = Depends(auth.require_admin)):
+    """Consulta o Mercado Pago antes de liberar; nunca confia no navegador."""
+    lead = leads_store.buscar_lead(session_id)
+    if not lead or lead.get("client_id"):
+        raise HTTPException(404, "Pagamento do chatbot mestre não encontrado")
+    if lead.get("pago"):
+        return {"ok": True, "status": "approved", "already_confirmed": True}
+    payment_data = None
+    if lead.get("payment_id"):
+        payment_data = pagamento.consultar_pagamento(str(lead["payment_id"]))
+    if not payment_data:
+        matches = pagamento.buscar_pagamentos_por_referencia(session_id)
+        payment_data = next((item for item in matches if item.get("status") == "approved"), matches[0] if matches else None)
+    if not payment_data or payment_data.get("status") != "approved":
+        return {"ok": True, "status": (payment_data or {}).get("status") or "pending"}
+    leads_store.marcar_pago(session_id, str(payment_data.get("id") or ""), payment_data.get("transaction_amount"))
+    business_store.audit(admin["id"], admin["id"], "master_payment.verified", "lead", session_id, {"payment_id": payment_data.get("id")})
+    return {"ok": True, "status": "approved", "amount": payment_data.get("transaction_amount")}
 
 
 @app.get("/admin/api/system-health")

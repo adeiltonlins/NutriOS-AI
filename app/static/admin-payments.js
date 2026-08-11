@@ -1,0 +1,66 @@
+(() => {
+  document.querySelectorAll('a[href="/painel"]').forEach(link => {
+    link.href = '/admin/leads';
+    link.textContent = 'Central de conversas';
+  });
+  const style = document.createElement('style');
+  style.textContent = `
+    .top>div:last-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .top>div:last-child>a,.top>div:last-child>button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 17px;border-radius:13px;text-decoration:none;font-weight:800}
+    .finance-panel{margin-bottom:18px}.finance-copy{display:grid;gap:3px}.finance-table{min-width:850px}
+    .finance-actions{display:flex;gap:8px;align-items:center}.finance-actions a,.finance-actions button{white-space:nowrap}
+    .finance-empty{padding:26px;color:var(--muted)}.finance-note{padding:13px 22px;border-top:1px solid #253857;color:var(--muted);font-size:12px}
+    @media(max-width:850px){.top>div:last-child{width:100%}.top>div:last-child>a,.top>div:last-child>button{flex:1}.finance-table{min-width:760px}}
+  `;
+  document.head.appendChild(style);
+
+  const nutritionists = document.getElementById('nutritionists');
+  if (!nutritionists) return;
+  const section = document.createElement('section');
+  section.className = 'panel finance-panel';
+  section.innerHTML = `
+    <div class="panel-head"><div class="finance-copy"><h2 style="margin:0">Pagamentos do meu chatbot</h2><span class="muted">Vendas dos pacientes no seu link mestre — separado das mensalidades dos nutricionistas</span></div><button class="ghost" id="refreshMasterPayments">Atualizar pagamentos</button></div>
+    <div class="table"><table class="finance-table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Status Mercado Pago</th><th>Valor</th><th>Data</th><th>Liberação</th><th>Ação</th></tr></thead><tbody id="masterPaymentRows"><tr><td colspan="7" class="finance-empty">Carregando pagamentos…</td></tr></tbody></table></div>
+    <div class="finance-note">“Receita mensal” é o que os nutricionistas pagam pelo SaaS. “Receita gerada” são as vendas realizadas pelos chatbots.</div>`;
+  nutritionists.parentNode.insertBefore(section, nutritionists);
+
+  const rows = document.getElementById('masterPaymentRows');
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const brl = value => Number(value || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+
+  async function loadMasterPayments() {
+    rows.innerHTML = '<tr><td colspan="7" class="finance-empty">Atualizando…</td></tr>';
+    try {
+      const response = await fetch('/admin/api/pagamentos-mestre');
+      if (response.status === 401 || response.status === 403) return location.assign('/login');
+      const items = await response.json();
+      if (!response.ok) throw new Error(items.detail || 'Erro ao carregar pagamentos');
+      rows.innerHTML = items.map(item => {
+        const approved = item.status === 'approved';
+        const checking = item.status === 'verification';
+        const status = approved ? 'Confirmado' : checking ? 'Aguardando conferência' : 'Pendente';
+        const phone = item.phone ? String(item.phone).replace(/\D/g, '') : '';
+        const date = item.paid_at || item.updated_at;
+        return `<tr><td><b>${safe(item.name)}</b><br><small class="muted">${safe(item.session_id)}</small></td><td>${phone ? `<a href="https://wa.me/${safe(phone)}" target="_blank" rel="noopener">${safe(phone)}</a>` : '—'}</td><td><span class="badge ${approved ? '' : 'trial'}">${status}</span></td><td>${brl(item.amount)}</td><td>${date ? new Date(date).toLocaleString('pt-BR') : '—'}</td><td>${approved ? '<span class="badge">Contato liberado</span>' : '<span class="badge trial">Bloqueado</span>'}</td><td><div class="finance-actions">${approved ? '<b class="money">OK ✓</b>' : `<button class="primary" data-verify="${safe(item.session_id)}">Verificar agora</button>`}</div></td></tr>`;
+      }).join('') || '<tr><td colspan="7" class="finance-empty">Nenhum pagamento iniciado no chatbot mestre.</td></tr>';
+    } catch (error) {
+      rows.innerHTML = `<tr><td colspan="7" class="finance-empty">${safe(error.message)}</td></tr>`;
+    }
+  }
+
+  rows.addEventListener('click', async event => {
+    const button = event.target.closest('[data-verify]');
+    if (!button) return;
+    button.disabled = true; button.textContent = 'Consultando Mercado Pago…';
+    try {
+      const response = await fetch(`/admin/api/pagamentos-mestre/${encodeURIComponent(button.dataset.verify)}/verificar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || 'Falha na verificação');
+      alert(data.status === 'approved' ? 'Pagamento confirmado e atendimento liberado.' : `Pagamento ainda está ${data.status || 'pendente'}.`);
+      await loadMasterPayments();
+      if (typeof load === 'function') load();
+    } catch (error) { alert(error.message); button.disabled = false; button.textContent = 'Tentar novamente'; }
+  });
+  document.getElementById('refreshMasterPayments').addEventListener('click', loadMasterPayments);
+  loadMasterPayments();
+})();
