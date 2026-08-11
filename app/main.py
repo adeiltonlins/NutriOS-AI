@@ -113,6 +113,7 @@ class PerguntaRequest(BaseModel):
     session_id: str = Field(default="", max_length=100, description="Identificador único da conversa, gerado pelo navegador")
     client_id: str | None = Field(default=None, max_length=64)
     client_slug: str | None = Field(default=None, max_length=160)
+    lead_source: str | None = Field(default=None, max_length=80)
 
 
 class LoginRequest(BaseModel):
@@ -140,6 +141,29 @@ class CodigoRequest(BaseModel):
 class RespostaResponse(BaseModel):
     resposta: str
     fontes_utilizadas: list[str]
+    requires_contact: bool = False
+    workflow_status: str | None = None
+
+
+class LeadContactRequest(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=100)
+    client_id: str | None = Field(default=None, max_length=64)
+    client_slug: str | None = Field(default=None, max_length=160)
+    name: str = Field(..., min_length=2, max_length=120)
+    phone: str = Field(..., min_length=8, max_length=30)
+    consent: bool
+    lead_source: str | None = Field(default=None, max_length=80)
+
+
+class LeadClaimPaidRequest(BaseModel):
+    session_id: str = Field(..., min_length=8, max_length=100)
+    client_id: str | None = Field(default=None, max_length=64)
+    client_slug: str | None = Field(default=None, max_length=160)
+
+
+class LeadWorkflowRequest(BaseModel):
+    action: str = Field(..., max_length=40)
+    amount: float | None = Field(default=None, ge=0, le=1000000)
 
 
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
@@ -165,6 +189,22 @@ def criar_slug_publico(name: str) -> str:
     normalized = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
     base = re.sub(r"[^a-z0-9]+", "-", normalized).strip("-")[:60] or "nutricionista"
     return f"{base}-{secrets.token_hex(2)}"
+
+
+def resolver_cliente_publico(client_slug: str | None, client_id: str | None) -> dict:
+    client = saas_store.get_user_by_slug(client_slug) if client_slug else saas_store.get_user(client_id) if client_id else None
+    if not client or client.get("role") != "client" or not client.get("active"):
+        raise HTTPException(404, "Assistente indisponível")
+    if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
+        raise HTTPException(404, "Assistente indisponível")
+    return client
+
+
+def normalizar_whatsapp(value: str) -> str:
+    digits = re.sub(r"\D", "", value)
+    if not 10 <= len(digits) <= 15:
+        raise HTTPException(400, "Informe um WhatsApp válido com DDD e código do país.")
+    return digits
 
 
 @app.get("/health")
@@ -258,14 +298,14 @@ def public_client_branding(public_slug: str):
     if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
         raise HTTPException(404, "Assistente indisponível")
     config = client.get("ai_config") or {}
-    safe_keys = {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
+    safe_keys = {"nome", "especialidade", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
     safe = {k: config.get(k) for k in safe_keys if config.get(k)}
     safe["nome"] = safe.get("nome") or client.get("name")
     color = safe.get("cor_principal", "#2563eb")
     safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#2563eb"
     if safe.get("logo_url") and not str(safe["logo_url"]).startswith("https://"):
         safe.pop("logo_url", None)
-    for key in ("whatsapp", "link_consulta", "instagram"):
+    for key in ("instagram",):
         if safe.get(key) and not str(safe[key]).startswith("https://"):
             safe.pop(key, None)
     return safe
@@ -281,6 +321,89 @@ def own_leads_data(user: dict = Depends(auth.current_user)):
     return leads_store.listar_leads(limite=500, client_id=None if user["role"] == "admin" else user["id"])
 
 
+@app.get("/app/metricas")
+def own_metrics(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "client-metrics.html")
+
+
+def _parse_data_lead(value) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+
+
+def _metricas_periodo(leads: list[dict], start: datetime, end: datetime) -> dict:
+    created = [x for x in leads if (d := _parse_data_lead(x.get("criado_em") or x.get("atualizado_em"))) and start <= d < end]
+    sales = [x for x in leads if x.get("pago") and (d := _parse_data_lead(x.get("pago_em"))) and start <= d < end]
+    revenue = sum(float(x.get("sale_amount") or 0) for x in sales)
+    scheduled = [x for x in leads if (d := _parse_data_lead(x.get("scheduled_at"))) and start <= d < end]
+    sources: dict[str, int] = {}
+    daily: dict[str, dict] = {}
+    for item in created:
+        source = str(item.get("lead_source") or "direto").strip().lower()[:80]
+        sources[source] = sources.get(source, 0) + 1
+    for item in sales:
+        day = str(item.get("pago_em"))[:10]
+        daily.setdefault(day, {"sales": 0, "revenue": 0.0})
+        daily[day]["sales"] += 1
+        daily[day]["revenue"] += float(item.get("sale_amount") or 0)
+    return {"conversations": len(created), "leads": sum(bool(x.get("quis_agendar")) for x in created), "sales": len(sales), "revenue": round(revenue, 2), "ticket_average": round(revenue / len(sales), 2) if sales else 0, "scheduled": len(scheduled), "conversion_rate": round((len(sales) / len(created) * 100), 1) if created else 0, "sources": sources, "daily": daily}
+
+
+@app.get("/app/api/metricas")
+def own_metrics_data(month: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}$"), user: dict = Depends(auth.current_user)):
+    now = datetime.now(timezone.utc)
+    if month:
+        year, number = map(int, month.split("-"))
+        if number < 1 or number > 12:
+            raise HTTPException(400, "Mês inválido")
+        start = datetime(year, number, 1, tzinfo=timezone.utc)
+    else:
+        start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    end = datetime(start.year + (start.month == 12), 1 if start.month == 12 else start.month + 1, 1, tzinfo=timezone.utc)
+    previous_start = datetime(start.year - (start.month == 1), 12 if start.month == 1 else start.month - 1, 1, tzinfo=timezone.utc)
+    leads = leads_store.listar_leads(limite=5000, client_id=None if user["role"] == "admin" else user["id"])
+    current = _metricas_periodo(leads, start, end)
+    previous = _metricas_periodo(leads, previous_start, start)
+    growth = round(((current["revenue"] - previous["revenue"]) / previous["revenue"] * 100), 1) if previous["revenue"] else (100.0 if current["revenue"] else 0.0)
+    return {"month": start.strftime("%Y-%m"), "current": current, "previous": previous, "revenue_growth": growth}
+
+
+@app.get("/app/api/metricas/exportar")
+def export_own_metrics(user: dict = Depends(auth.current_user)):
+    leads = leads_store.listar_leads(limite=5000, client_id=None if user["role"] == "admin" else user["id"])
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Data", "Nome", "WhatsApp", "Origem", "Status", "Pago", "Valor", "Agendado"])
+    for lead in leads:
+        writer.writerow([lead.get("criado_em") or lead.get("atualizado_em"), lead.get("lead_name"), lead.get("lead_phone"), lead.get("lead_source") or "direto", lead.get("workflow_status"), "Sim" if lead.get("pago") else "Não", lead.get("sale_amount") or 0, "Sim" if lead.get("scheduled_at") else "Não"])
+    return Response("\ufeff" + buffer.getvalue(), media_type="text/csv; charset=utf-8", headers={"Content-Disposition": "attachment; filename=balancete-nutribot.csv"})
+
+
+@app.patch("/app/api/leads/{session_id}")
+def update_lead_workflow(session_id: str, payload: LeadWorkflowRequest, user: dict = Depends(auth.current_user)):
+    client_id = None if user["role"] == "admin" else user["id"]
+    lead = leads_store.buscar_lead(session_id, client_id)
+    if not lead:
+        raise HTTPException(404, "Lead não encontrado")
+    now = datetime.now(timezone.utc).isoformat()
+    actions = {
+        "confirm_payment": {"pago": True, "pago_em": now, "manual_payment_confirmed_at": now, "workflow_status": "payment_confirmed", "lead_status": "convertido", "lead_score": 100, "sale_amount": round(float(payload.amount or 0), 2)},
+        "contacted": {"contacted_at": now, "workflow_status": "contacted"},
+        "anamnesis_sent": {"anamnesis_sent_at": now, "workflow_status": "anamnesis_sent"},
+        "scheduled": {"scheduled_at": now, "workflow_status": "scheduled"},
+    }
+    if payload.action not in actions:
+        raise HTTPException(400, "Ação inválida")
+    updated = leads_store.atualizar_lead(session_id, actions[payload.action], client_id)
+    if not updated:
+        raise HTTPException(503, "Não foi possível atualizar o lead")
+    return updated
+
+
 @app.get("/app/configuracoes")
 def own_config(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-config.html")
@@ -294,12 +417,45 @@ def own_config_data(request: Request, user: dict = Depends(auth.current_user)):
 @app.patch("/app/api/configuracoes")
 def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
     current = user.get("ai_config") or {}
-    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas"}}
+    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "anamnesis_url", "whatsapp_message_template", "payment_wait_message"}}
     if "free_message_limit" in allowed:
         allowed["free_message_limit"] = max(1, min(50, int(allowed["free_message_limit"] or 8)))
     current.update(allowed)
     updated = saas_store.update_user(user["id"], {"ai_config": current})
     return {"ok": True, "ai_config": updated.get("ai_config") if updated else current}
+
+
+@app.post("/leads/contact")
+@limiter.limit("5/minute")
+def register_lead_contact(request: Request, payload: LeadContactRequest):
+    if not payload.consent:
+        raise HTTPException(400, "É necessário autorizar o contato pelo WhatsApp.")
+    client = resolver_cliente_publico(payload.client_slug, payload.client_id)
+    config = client.get("ai_config") or {}
+    payment_url = str(config.get("link_consulta") or "").strip()
+    if not payment_url.startswith("https://"):
+        raise HTTPException(409, "O profissional ainda não configurou o link de pagamento.")
+    lead = leads_store.buscar_lead(payload.session_id, client["id"])
+    if not lead:
+        leads_store.salvar_lead(payload.session_id, [], True, client["id"], {"lead_status": "quente", "lead_score": 70, "lead_summary": "Solicitou atendimento", "message_count": 0})
+    updated = leads_store.atualizar_lead(payload.session_id, {"lead_name": payload.name.strip(), "lead_phone": normalizar_whatsapp(payload.phone), "contact_consent_at": datetime.now(timezone.utc).isoformat(), "workflow_status": "awaiting_payment", "lead_status": "quente", "lead_source": (payload.lead_source or "direto").strip().lower()[:80]}, client["id"])
+    if not updated:
+        raise HTTPException(503, "Não foi possível registrar seus dados.")
+    message = config.get("payment_wait_message") or "Após realizar o pagamento, clique em ‘Já realizei o pagamento’. A clínica fará a conferência e entrará em contato pelo WhatsApp informado em até 24 horas."
+    return {"ok": True, "payment_url": payment_url, "message": message, "workflow_status": "awaiting_payment"}
+
+
+@app.post("/leads/claim-paid")
+@limiter.limit("5/minute")
+def claim_paid(request: Request, payload: LeadClaimPaidRequest):
+    client = resolver_cliente_publico(payload.client_slug, payload.client_id)
+    lead = leads_store.buscar_lead(payload.session_id, client["id"])
+    if not lead or not lead.get("contact_consent_at"):
+        raise HTTPException(400, "Cadastre seus dados antes de informar o pagamento.")
+    updated = leads_store.atualizar_lead(payload.session_id, {"workflow_status": "awaiting_verification", "claimed_paid_at": datetime.now(timezone.utc).isoformat()}, client["id"])
+    if not updated:
+        raise HTTPException(503, "Não foi possível registrar a solicitação.")
+    return {"ok": True, "message": "Recebemos seu aviso. A clínica verificará o pagamento e entrará em contato pelo WhatsApp informado em até 24 horas.", "workflow_status": "awaiting_verification"}
 
 
 @app.get("/admin")
@@ -436,6 +592,13 @@ def chat(request: Request, req: PerguntaRequest):
         if client.get("expires_at") and datetime.fromisoformat(client["expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
             raise HTTPException(404, "Assistente indisponível")
         client_config = client.get("ai_config") or {}
+        if req.session_id:
+            lead_atual = leads_store.buscar_lead(req.session_id, resolved_client_id)
+            ja_pago = bool(lead_atual and lead_atual.get("pago"))
+            if ja_pago:
+                estado_convite = "pago"
+            elif lead_atual and lead_atual.get("workflow_status") in {"awaiting_payment", "awaiting_verification"}:
+                estado_convite = "convidou_pendente"
     limite_gratuito = int(client_config.get("free_message_limit") or os.getenv("FREE_MESSAGE_LIMIT", "8"))
     historico_salvo = []
     if lead_atual:
@@ -446,7 +609,7 @@ def chat(request: Request, req: PerguntaRequest):
             historico_salvo = []
     mensagens_anteriores = sum(1 for m in historico_salvo if m.get("autor") == "user")
     atingiu_limite = mensagens_anteriores >= limite_gratuito
-    cta_cliente = client_config.get("link_consulta") or client_config.get("whatsapp")
+    cta_cliente = client_config.get("link_consulta")
     fallback_cliente = cta_cliente or "O canal de agendamento deste profissional ainda não foi configurado. Solicite o contato diretamente à clínica."
     if atingiu_limite and not ja_pago:
         resposta = "Já consegui entender melhor o que você busca. Para continuar com uma orientação realmente personalizada, o próximo passo é conversar com a nutricionista e avaliar seu caso com segurança. " + (fallback_cliente if resolved_client_id else LINK_AGENDAMENTO)
@@ -464,7 +627,11 @@ def chat(request: Request, req: PerguntaRequest):
     # Mercado Pago — troca o marcador pelo contato de verdade direto. Isso
     # evita duplicar links/preferências e evita confundir quem já pagou.
     quis_agendar = atingiu_limite or MARCADOR_LINK_PAGAMENTO in resposta
-    if quis_agendar:
+    requires_contact = False
+    if quis_agendar and resolved_client_id and not (lead_atual and lead_atual.get("lead_phone")):
+        resposta = "Para enviar o link de pagamento com segurança, preciso primeiro do seu nome e WhatsApp. Preencha os dados abaixo; eles serão usados somente pela clínica para falar com você sobre este atendimento."
+        requires_contact = True
+    elif quis_agendar:
         if ja_pago:
             resposta = resposta.replace(MARCADOR_LINK_PAGAMENTO, CONTATO_NUTRICIONISTA)
         else:
@@ -487,9 +654,10 @@ def chat(request: Request, req: PerguntaRequest):
             {"autor": "bot", "texto": resposta},
         ]
         qualification = qualificar_lead(historico_completo, quis_agendar, ja_pago)
+        qualification["lead_source"] = (req.lead_source or "direto").strip().lower()[:80]
         leads_store.salvar_lead(req.session_id, historico_completo, quis_agendar, resolved_client_id, qualification)
 
-    return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes)
+    return RespostaResponse(resposta=resposta, fontes_utilizadas=fontes, requires_contact=requires_contact, workflow_status=(lead_atual or {}).get("workflow_status"))
 
 
 @app.get("/pagamento/sucesso", response_class=HTMLResponse)
@@ -517,7 +685,7 @@ def pagamento_sucesso(
         pagamento_confirmado = True
         session_id_confirmado = dados_pagamento.get("external_reference") or external_reference
         if session_id_confirmado:
-            leads_store.marcar_pago(session_id_confirmado, str(dados_pagamento.get("id", payment_id)))
+            leads_store.marcar_pago(session_id_confirmado, str(dados_pagamento.get("id", payment_id)), dados_pagamento.get("transaction_amount"))
 
     # session_id pra usar no polling do lado pendente — o Mercado Pago
     # sempre reenvia o external_reference na URL de retorno (mesmo quando
@@ -628,7 +796,7 @@ async def pagamento_webhook(request: Request):
     if dados and dados.get("status") == "approved":
         session_id = dados.get("external_reference")
         if session_id:
-            leads_store.marcar_pago(session_id, payment_id)
+            leads_store.marcar_pago(session_id, payment_id, dados.get("transaction_amount"))
 
     return {"status": "ok"}
 

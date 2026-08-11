@@ -131,12 +131,26 @@
   </main>
 </div>
 
+<dialog id="contactDialog" class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-0 shadow-2xl backdrop:bg-slate-950/70 w-[min(92vw,460px)]">
+  <form id="contactForm" class="p-6 space-y-4">
+    <div><h2 class="text-xl font-bold">Dados para atendimento</h2><p class="text-sm text-slate-500 mt-1">A clínica usará estes dados somente para conferir o pagamento e falar com você.</p></div>
+    <label class="block text-sm font-semibold">Nome completo<input id="leadName" required minlength="2" maxlength="120" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-3 font-normal" autocomplete="name"></label>
+    <label class="block text-sm font-semibold">WhatsApp com DDD<input id="leadPhone" required minlength="10" maxlength="30" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-3 font-normal" autocomplete="tel" placeholder="Ex.: 55 11 99999-9999"></label>
+    <label class="flex gap-2 text-xs text-slate-500"><input id="leadConsent" required type="checkbox" class="mt-0.5"><span>Autorizo a clínica a entrar em contato comigo pelo WhatsApp sobre este atendimento.</span></label>
+    <p id="contactError" class="hidden text-sm text-red-500"></p>
+    <div class="flex gap-2"><button type="button" id="cancelContact" class="flex-1 rounded-xl border border-slate-300 px-4 py-3">Agora não</button><button type="submit" id="submitContact" class="flex-1 rounded-xl bg-blue-600 text-white font-bold px-4 py-3">Continuar</button></div>
+  </form>
+</dialog>
+
 <script>
 (() => {
   const API_URL = window.location.origin + '/chat';
   let clientId = null;
   const slugMatch = window.location.pathname.match(/^\/n\/([^/]+)$/);
   const clientSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
+  const sourceParams = new URLSearchParams(window.location.search);
+  const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
+  sessionStorage.setItem('nutribot-source', detectedSource);
   let tenantColor = '#2563eb';
   const clientReady = window.location.pathname === '/app/chat'
     ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
@@ -154,6 +168,8 @@
   const enviarBtn = document.getElementById('enviarBtn');
   const newChatBtn = document.getElementById('newChatBtn');
   const themeToggle = document.getElementById('themeToggle');
+  const contactDialog = document.getElementById('contactDialog');
+  const contactForm = document.getElementById('contactForm');
 
   async function carregarIdentidadePublica() {
     if (!clientSlug) return;
@@ -172,7 +188,6 @@
     const links = document.getElementById('professionalLinks');
     if (cfg.crn) links.insertAdjacentHTML('beforeend', `<span>CRN ${String(cfg.crn).replace(/[<>&]/g,'')}</span>`);
     if (cfg.instagram) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.instagram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Instagram</a>`);
-    if (cfg.whatsapp) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.whatsapp).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">WhatsApp</a>`);
     const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
     if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors shadow-sm" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
     document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;
@@ -334,6 +349,33 @@
     conversation.scrollTop = conversation.scrollHeight;
   }
 
+  function mostrarPagamento(dados) {
+    const col = criarLinha('bot');
+    const bubble = bolhaBase(false);
+    const texto = document.createElement('p'); texto.textContent = dados.message; bubble.appendChild(texto);
+    const pay = document.createElement('a'); pay.href = dados.payment_url; pay.target = '_blank'; pay.rel = 'noopener'; pay.textContent = 'Abrir pagamento'; pay.className = 'inline-block mt-3 rounded-lg bg-blue-600 text-white font-bold px-4 py-2'; bubble.appendChild(pay);
+    const claim = document.createElement('button'); claim.type = 'button'; claim.textContent = 'Já realizei o pagamento'; claim.className = 'block mt-2 rounded-lg border border-blue-500 text-blue-600 dark:text-blue-300 font-bold px-4 py-2';
+    claim.addEventListener('click', async () => {
+      claim.disabled = true; claim.textContent = 'Enviando...';
+      const r = await fetch('/leads/claim-paid', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sessionId, client_id:clientId, client_slug:clientSlug})});
+      const x = await r.json().catch(()=>({}));
+      if (!r.ok) { claim.disabled=false; claim.textContent='Já realizei o pagamento'; mostrarErro(x.detail || 'Não foi possível enviar o aviso.'); return; }
+      claim.textContent = 'Aviso enviado ✓'; texto.textContent = x.message;
+    });
+    bubble.appendChild(claim); col.appendChild(bubble); adicionarTimestamp(col);
+  }
+
+  document.getElementById('cancelContact').addEventListener('click', () => contactDialog.close());
+  contactForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const btn = document.getElementById('submitContact'); const error = document.getElementById('contactError');
+    btn.disabled=true; error.classList.add('hidden');
+    const resp = await fetch('/leads/contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sessionId, client_id:clientId, client_slug:clientSlug, name:document.getElementById('leadName').value, phone:document.getElementById('leadPhone').value, consent:document.getElementById('leadConsent').checked, lead_source:detectedSource})});
+    const data = await resp.json().catch(()=>({})); btn.disabled=false;
+    if (!resp.ok) { error.textContent=data.detail || 'Não foi possível continuar.'; error.classList.remove('hidden'); return; }
+    contactDialog.close(); mostrarPagamento(data);
+  });
+
   function mostrarContatoLiberado(contato) {
     pararPolling();
     const col = criarLinha('bot');
@@ -384,7 +426,7 @@
       const resp = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId, client_id: clientId, client_slug: clientSlug })
+        body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId, client_id: clientId, client_slug: clientSlug, lead_source: detectedSource })
       });
 
       removerPensando();
@@ -399,6 +441,7 @@
       digitarResposta(dados.resposta, (col) => {
         adicionarFontes(col, dados.fontes_utilizadas);
         if (detectarLinkPagamento(dados.resposta)) iniciarPollingContato();
+        if (dados.requires_contact && clientSlug) contactDialog.showModal();
       });
 
       historicoConversa.push({ autor: 'user', texto: pergunta });

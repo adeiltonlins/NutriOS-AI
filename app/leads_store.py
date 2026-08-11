@@ -85,7 +85,7 @@ def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool, clie
     if client_id:
         payload["client_id"] = client_id
     if qualification:
-        payload.update({k: v for k, v in qualification.items() if k in {"lead_status", "lead_score", "lead_summary", "message_count"}})
+        payload.update({k: v for k, v in qualification.items() if k in {"lead_status", "lead_score", "lead_summary", "message_count", "lead_source"}})
 
     try:
         resp = requests.post(
@@ -100,7 +100,7 @@ def salvar_lead(session_id: str, historico: list[dict], quis_agendar: bool, clie
         _log_erro("Falha ao salvar lead", e)
 
 
-def marcar_pago(session_id: str, payment_id: str) -> None:
+def marcar_pago(session_id: str, payment_id: str, amount: float | None = None) -> None:
     """
     Marca o lead como pago, depois de o pagamento ter sido CONFIRMADO
     (status "approved") direto na API do Mercado Pago — nunca chamar isso
@@ -115,6 +115,8 @@ def marcar_pago(session_id: str, payment_id: str) -> None:
         "lead_score": 100,
         "payment_id": payment_id,
         "pago_em": datetime.now(timezone.utc).isoformat(),
+        "workflow_status": "payment_confirmed",
+        "sale_amount": round(float(amount or 0), 2),
     }
 
     try:
@@ -130,7 +132,7 @@ def marcar_pago(session_id: str, payment_id: str) -> None:
         _log_erro("Falha ao marcar lead como pago", e)
 
 
-def buscar_lead(session_id: str) -> dict | None:
+def buscar_lead(session_id: str, client_id: str | None = None) -> dict | None:
     """Busca um lead específico pelo session_id (usado pra checar se já está pago)."""
     if not ARMAZENAMENTO_ATIVO:
         return None
@@ -138,7 +140,7 @@ def buscar_lead(session_id: str) -> dict | None:
         resp = requests.get(
             f"{SUPABASE_URL}/rest/v1/{TABELA}",
             headers=_headers_read(),
-            params={"select": "*", "session_id": f"eq.{session_id}"},
+            params={"select": "*", "session_id": f"eq.{session_id}", **({"client_id": f"eq.{client_id}"} if client_id else {})},
             timeout=5,
         )
         resp.raise_for_status()
@@ -146,6 +148,27 @@ def buscar_lead(session_id: str) -> dict | None:
         return resultados[0] if resultados else None
     except requests.RequestException as e:
         _log_erro("Falha ao buscar lead", e)
+        return None
+
+
+def atualizar_lead(session_id: str, payload: dict, client_id: str | None = None) -> dict | None:
+    """Atualiza um lead, sempre permitindo restringir pelo dono (client_id)."""
+    if not ARMAZENAMENTO_ATIVO:
+        return None
+    params = {"session_id": f"eq.{session_id}"}
+    if client_id:
+        params["client_id"] = f"eq.{client_id}"
+    dados = dict(payload)
+    dados["atualizado_em"] = datetime.now(timezone.utc).isoformat()
+    headers = _headers_update()
+    headers["Prefer"] = "return=representation"
+    try:
+        resp = requests.patch(f"{SUPABASE_URL}/rest/v1/{TABELA}", headers=headers, params=params, json=dados, timeout=5)
+        resp.raise_for_status()
+        rows = resp.json()
+        return rows[0] if rows else None
+    except requests.RequestException as e:
+        _log_erro("Falha ao atualizar lead", e)
         return None
 
 

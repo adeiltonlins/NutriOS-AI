@@ -22,3 +22,14 @@ def test_client_cannot_pass_admin_guard():
     with pytest.raises(HTTPException) as exc:
         auth.require_admin({"role": "client"})
     assert exc.value.status_code == 403
+
+
+def test_password_is_argon2_hash():
+    hashed = auth.hash_password("senha-muito-segura-123")
+    assert hashed.startswith("$argon2")
+    assert "senha-muito-segura-123" not in hashed
+
+
+def test_short_password_is_rejected():
+    with pytest.raises(ValueError):
+        auth.hash_password("curta")
