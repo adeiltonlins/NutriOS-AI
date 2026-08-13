@@ -18,7 +18,7 @@
       extend: {
         fontFamily: { sans: ['Inter', 'sans-serif'] },
         colors: {
-          brand: { DEFAULT: '#2563eb', dark: '#1d4ed8', soft: '#eff4ff' },
+          brand: { DEFAULT: '#168f43', dark: '#1d4ed8', soft: '#eff4ff' },
         },
         keyframes: {
           riseIn: { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
@@ -40,7 +40,7 @@
   html, body { height: 100%; }
   body { font-family: 'Inter', sans-serif; position:relative; overflow:hidden; }
   body::before,body::after{content:"";position:fixed;border-radius:999px;filter:blur(90px);pointer-events:none;opacity:.2;z-index:0}
-  body::before{width:460px;height:460px;background:#2563eb;top:-220px;left:-120px}
+  body::before{width:460px;height:460px;background:#168f43;top:-220px;left:-120px}
   body::after{width:420px;height:420px;background:#10b981;right:-180px;bottom:-240px}
   .app-shell{position:relative;z-index:1}
   .glass-card{background:rgba(255,255,255,.82);backdrop-filter:blur(22px);box-shadow:0 30px 90px rgba(15,23,42,.14)}
@@ -48,7 +48,7 @@
   .brand-orb{box-shadow:0 10px 35px rgba(37,99,235,.28)}
   .hero-icon{box-shadow:0 14px 40px rgba(37,99,235,.18)}
   .hero-gradient{background:linear-gradient(100deg,#f8fafc 10%,#93c5fd 55%,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
-  html:not(.dark) .hero-gradient{background:linear-gradient(100deg,#0f172a,#2563eb 62%,#059669);-webkit-background-clip:text;background-clip:text;color:transparent}
+  html:not(.dark) .hero-gradient{background:linear-gradient(100deg,#0f172a,#168f43 62%,#059669);-webkit-background-clip:text;background-clip:text;color:transparent}
   .quick-action{position:relative;overflow:hidden;min-height:68px;padding-left:52px!important}
   .quick-action::before{content:attr(data-icon);position:absolute;left:15px;top:50%;transform:translateY(-50%);width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:rgba(37,99,235,.1);font-size:14px}
   .quick-action::after{content:"→";position:absolute;right:13px;top:50%;transform:translateY(-50%);opacity:.35;transition:.2s}
@@ -56,7 +56,7 @@
   .trust-pill{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(148,163,184,.09);border:1px solid rgba(148,163,184,.13)}
   .landing-layout{display:grid;grid-template-columns:minmax(210px,.72fr) minmax(0,1.35fr);gap:34px;align-items:center;width:100%;max-width:820px;text-align:left}
   .profile-card{padding:22px;border-radius:24px;background:linear-gradient(145deg,rgba(37,99,235,.12),rgba(16,185,129,.08));border:1px solid rgba(96,165,250,.2);text-align:center}
-  .profile-photo{width:112px;height:112px;margin:0 auto 15px;border-radius:32px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#2563eb,#10b981);color:white;font-size:30px;font-weight:800;box-shadow:0 18px 45px rgba(37,99,235,.25)}
+  .profile-photo{width:112px;height:112px;margin:0 auto 15px;border-radius:32px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#168f43,#10b981);color:white;font-size:30px;font-weight:800;box-shadow:0 18px 45px rgba(37,99,235,.25)}
   .profile-photo img{width:100%;height:100%;object-fit:cover}
   @media(max-width:720px){.landing-layout{grid-template-columns:1fr;text-align:center;gap:18px}.profile-card{display:flex;align-items:center;gap:14px;text-align:left;padding:14px}.profile-photo{width:68px;height:68px;border-radius:20px;margin:0}.profile-copy{flex:1}}
   #conversation::-webkit-scrollbar { width: 7px; }
@@ -70,6 +70,7 @@
 <link rel="stylesheet" href="/static/nutrios-unified-v17.css?v=17">
 <link rel="stylesheet" href="/static/nutrios-no-blue-v18.css?v=18">
 <link rel="stylesheet" href="/static/nutrios-exact-reference-v19.css?v=19">
+<link rel="stylesheet" href="/static/nutrios-final-v21.css?v=21">
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 text-slate-900 dark:from-[#030817] dark:via-[#071126] dark:to-[#071b24] dark:text-slate-100 transition-colors public-page">
 
@@ -81,7 +82,7 @@
       <div id="brandLogo" class="brand-orb w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-emerald-500 flex items-center justify-center shrink-0 overflow-hidden">
         <svg viewBox="0 0 24 24" class="w-5 h-5 text-white" fill="none">
           <path d="M12 3C8 3 5 6.5 5 10.8C5 15.6 8.5 19.5 12 21C15.5 19.5 19 15.6 19 10.8C19 6.5 16 3 12 3Z" fill="white" fill-opacity=".95"/>
-          <path d="M12 7.5V14.5M9 10.5C9 10.5 9.8 12 12 12C14.2 12 15 10.5 15 10.5" stroke="#2563eb" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M12 7.5V14.5M9 10.5C9 10.5 9.8 12 12 12C14.2 12 15 10.5 15 10.5" stroke="#168f43" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
       </div>
       <div>
@@ -181,7 +182,7 @@
   const sourceParams = new URLSearchParams(window.location.search);
   const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
   sessionStorage.setItem('nutribot-source', detectedSource);
-  let tenantColor = '#2563eb';
+  let tenantColor = '#168f43';
   let assistantDisplayName = 'NutriOS';
   const clientReady = testMode
     ? fetch(adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
@@ -521,6 +522,7 @@
 
 <a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#64748b;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
 
-<script src="/static/nutrios-theme-v17.js?v=17"></script>
+
+<script src="/static/nutrios-theme-v21.js?v=21"></script>
 </body>
 </html>

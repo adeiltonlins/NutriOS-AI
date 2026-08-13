@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="/static/nutrios-unified-v17.css?v=17">
 <link rel="stylesheet" href="/static/nutrios-no-blue-v18.css?v=18">
 <link rel="stylesheet" href="/static/nutrios-exact-reference-v19.css?v=19">
+<link rel="stylesheet" href="/static/nutrios-final-v21.css?v=21">
 </head>
 <body><main class="page">
   <header class="top"><div><a class="back" href="/admin">← Voltar ao Admin mestre</a><h1>Central de conversas</h1><div class="muted">Veja a experiência mestre e todos os nutricionistas sem misturar os dados.</div></div><div class="actions"><a class="button" href="/admin/testes">Testar experiência</a><button class="button primary" id="reload">Atualizar dados</button></div></header>
@@ -32,5 +33,6 @@ function render(){const term=search.value.trim().toLowerCase(),ownerValue=owner.
 function openConversation(id){const row=leads.find(item=>item.session_id===id);if(!row)return;dialogTitle.textContent=personName(row);dialogOwner.textContent=row.owner_name;messages.innerHTML=historyOf(row).map(item=>`<div class="message ${item.autor==='user'?'user':'bot'}">${esc(item.texto)}</div>`).join('')||'<div class="empty">O histórico desta sessão está vazio.</div>';details.textContent=`Sessão: ${row.session_id} • Pagamento: ${row.pago?'confirmado':'pendente'} • Valor: ${brl(row.sale_amount)}`;conversation.showModal()}
 async function load(){rows.innerHTML='<tr><td colspan="8" class="empty">Atualizando…</td></tr>';const response=await fetch('/admin/api/leads');if(response.status===401||response.status===403)return location='/login';const data=await response.json().catch(()=>({}));if(!response.ok){rows.innerHTML=`<tr><td colspan="8" class="empty">${esc(data.detail||'Erro ao carregar')}</td></tr>`;return}leads=data;total.textContent=leads.length;interested.textContent=leads.filter(x=>x.quis_agendar).length;paid.textContent=leads.filter(x=>x.pago).length;revenue.textContent=brl(leads.reduce((sum,x)=>sum+Number(x.sale_amount||0),0));const owners=[...new Map(leads.filter(x=>x.client_id).map(x=>[x.client_id,x.owner_name])).entries()];owner.innerHTML='<option value="all">Todos os ambientes</option><option value="master">Minha experiência pública</option>'+owners.map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join('');render()}
 [search,owner,payment].forEach(element=>element.addEventListener(element===search?'input':'change',render));rows.addEventListener('click',event=>{const button=event.target.closest('[data-session]');if(button)openConversation(button.dataset.session)});reload.onclick=load;load();
-</script><script src="/static/nutrios-theme-v17.js?v=17"></script>
+</script>
+<script src="/static/nutrios-theme-v21.js?v=21"></script>
 </body></html>

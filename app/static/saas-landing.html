@@ -1,262 +1,53 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="NutriOS: plataforma inteligente de gestão nutricional, acompanhamento clínico, agenda, financeiro, pacientes e IA em um só ambiente."><title>NutriOS — Gestão nutricional em uma nova geração</title><link rel="stylesheet" href="/static/titanium.css"><link rel="stylesheet" href="/static/nutribot-ux.css"><link rel="stylesheet" href="/static/saas-wide.css"><script src="/static/nutribot-ux.js"></script>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="NutriOS: plataforma inteligente de gestão nutricional, acompanhamento clínico, agenda, financeiro, pacientes e IA em um só ambiente."><title>NutriOS — Gestão nutricional em uma nova geração</title><script src="/static/nutribot-ux.js"></script>
 
-<style id="nutrios-landing-v20-source">
-:root{
-  --bg:#f7faf8;
-  --surface:#ffffff;
-  --soft:#f2f8f4;
-  --mint:#e8f6ec;
-  --border:#dfe9e2;
-  --border2:#cfe0d4;
-  --text:#101814;
-  --muted:#6f7b73;
-  --green:#169447;
-  --green2:#22b258;
-  --green3:#6bd58e;
-  --greenDark:#205f36;
-  --shadow:0 18px 44px rgba(22,80,43,.08);
-}
-html[data-theme="dark"]{
-  --bg:#0d1b12;
-  --surface:#13261a;
-  --soft:#173020;
-  --mint:#1d3a27;
-  --border:#294936;
-  --border2:#365b43;
-  --text:#eef8f0;
-  --muted:#a8b8ad;
-  --green:#50d779;
-  --green2:#47c96e;
-  --green3:#8be6a5;
-  --greenDark:#b9efc6;
-  --shadow:0 18px 48px rgba(0,0,0,.28);
-}
+
+<link rel="stylesheet" href="/static/nutrios-final-v21.css?v=21">
+
+<style id="nutrios-landing-v21">
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font:15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  overflow-x:hidden;
-}
-body:before{
-  content:"";
-  position:fixed;
-  width:560px;height:560px;
-  left:-260px;top:-250px;
-  border-radius:50%;
-  background:rgba(65,190,101,.10);
-  filter:blur(110px);
-  pointer-events:none;
-}
+body{margin:0;background:var(--u-bg);color:var(--u-text);font:15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
 .wrap{width:min(1160px,92%);margin:auto}
-.nav{
-  height:76px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  background:var(--surface);
-}
-header.wrap.nav{
-  width:100%;
-  max-width:none;
-  padding:0 max(4%,calc((100% - 1160px)/2));
-  border-bottom:1px solid var(--border);
-}
-.brand{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:900}
-.mark{
-  width:40px;height:40px;
-  display:grid;place-items:center;
-  border-radius:13px;
-  background:linear-gradient(135deg,var(--green2),var(--green3));
-  color:white;
-  box-shadow:0 10px 28px rgba(30,160,75,.16);
-}
-.public-brand-name{color:var(--greenDark)!important}
+.nav{height:76px;display:flex;align-items:center;justify-content:space-between;background:var(--u-surface)}
+header.wrap.nav{width:100%;max-width:none;padding:0 max(4%,calc((100% - 1160px)/2));border-bottom:1px solid var(--u-line)}
+.brand{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:900}
+.mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,var(--u-green2),var(--u-green3));color:white}
+.public-brand-name{color:var(--u-greenDark)!important}
 .navlinks{display:flex;align-items:center;gap:24px}
-.nav a{color:var(--muted);text-decoration:none;font-weight:700}
-.nav a:hover{color:var(--green)}
-.button{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  padding:13px 18px;
-  border-radius:13px;
-  text-decoration:none!important;
-  color:#fff!important;
-  font-weight:850;
-  background:linear-gradient(135deg,var(--green),var(--green2));
-  box-shadow:0 12px 30px rgba(22,148,71,.18);
-  border:1px solid var(--green);
-  cursor:pointer;
-}
-.button.secondary{
-  background:var(--surface);
-  color:var(--greenDark)!important;
-  border:1px solid var(--border2);
-  box-shadow:none;
-}
-.hero{
-  min-height:680px;
-  display:grid;
-  grid-template-columns:1.08fr .92fr;
-  align-items:center;
-  gap:58px;
-  padding:70px 0 90px;
-}
-.tag{
-  display:inline-flex;
-  padding:8px 12px;
-  border:1px solid var(--border2);
-  border-radius:999px;
-  background:var(--mint);
-  color:var(--green);
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:.08em;
-}
-.hero h1{
-  font-size:clamp(43px,5.4vw,72px);
-  line-height:1.02;
-  letter-spacing:-.055em;
-  margin:22px 0;
-  color:var(--text);
-}
-.gradient{
-  background:linear-gradient(90deg,var(--green),var(--green3));
-  -webkit-background-clip:text;
-  background-clip:text;
-  color:transparent;
-}
-.lead{font-size:19px;color:var(--muted);line-height:1.7;max-width:650px}
+.nav a{color:var(--u-muted)!important;text-decoration:none;font-weight:700}
+.nav a:hover{color:var(--u-green)!important}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:13px;text-decoration:none!important;color:#fff!important;font-weight:850;background:linear-gradient(135deg,var(--u-green),var(--u-green2));border:1px solid var(--u-green);cursor:pointer}
+.button.secondary{background:var(--u-surface)!important;color:var(--u-greenDark)!important;border:1px solid var(--u-line2)!important}
+.hero{min-height:680px;display:grid;grid-template-columns:1.08fr .92fr;align-items:center;gap:58px;padding:70px 0 90px;background:transparent!important}
+.tag{display:inline-flex;padding:8px 12px;border:1px solid var(--u-line2);border-radius:999px;background:var(--u-mint);color:var(--u-green);font-size:11px;font-weight:900;letter-spacing:.08em}
+.hero h1{font-size:clamp(43px,5.4vw,72px);line-height:1.02;letter-spacing:-.055em;margin:22px 0;color:var(--u-text)!important}
+.gradient{background:linear-gradient(90deg,var(--u-green),var(--u-green3));-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.lead{font-size:19px;color:var(--u-muted)!important;line-height:1.7;max-width:650px}
 .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
-.proof{display:flex;gap:22px;flex-wrap:wrap;margin-top:34px;color:var(--muted)}
-.proof b{color:var(--green)}
-
-.demo{
-  border:1px solid var(--border);
-  background:var(--surface);
-  border-radius:28px;
-  box-shadow:var(--shadow);
-  overflow:hidden;
-}
-.demohead{
-  padding:16px 19px;
-  border-bottom:1px solid var(--border);
-  display:flex;
-  justify-content:space-between;
-  color:var(--muted);
-}
-.demohead b{color:var(--greenDark)}
-.demohead span:last-child{color:var(--green)}
-.screen{
-  min-height:410px;
-  padding:26px;
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  background:var(--surface);
-}
+.proof{display:flex;gap:22px;flex-wrap:wrap;margin-top:34px;color:var(--u-muted)}
+.proof b{color:var(--u-green)!important}
+.demo{border:1px solid var(--u-line);background:var(--u-surface);border-radius:28px;box-shadow:var(--u-shadow);overflow:hidden}
+.demohead{padding:16px 19px;border-bottom:1px solid var(--u-line);display:flex;justify-content:space-between;color:var(--u-muted)}
+.demohead b{color:var(--u-greenDark)!important}.demohead span:last-child{color:var(--u-green)!important}
+.screen{min-height:410px;padding:26px;display:flex;flex-direction:column;gap:14px;background:var(--u-surface)}
 .bubble{padding:13px 15px;border-radius:16px;line-height:1.5;max-width:84%}
-.bot{
-  background:var(--soft);
-  border:1px solid var(--border);
-  align-self:flex-start;
-  color:var(--text);
-}
-.user{
-  background:var(--mint);
-  border:1px solid var(--border2);
-  color:var(--greenDark);
-  align-self:flex-end;
-}
+.bot{background:var(--u-soft)!important;border:1px solid var(--u-line)!important;align-self:flex-start;color:var(--u-text)!important}
+.user{background:var(--u-mint)!important;border:1px solid var(--u-line2)!important;color:var(--u-greenDark)!important;align-self:flex-end}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:auto}
-.choice{
-  padding:12px;
-  border-radius:12px;
-  border:1px solid var(--border2);
-  background:var(--surface);
-  color:var(--greenDark);
-  font-weight:750;
-  cursor:pointer;
-}
-.choice:hover{background:var(--mint);color:var(--green)}
-#demoComposer input{
-  flex:1;
-  padding:13px 14px;
-  border-radius:12px;
-  border:1px solid var(--border2)!important;
-  background:var(--surface)!important;
-  color:var(--text)!important;
-  outline:none;
-}
-#demoComposer input::placeholder{color:var(--muted)}
-.section{padding:95px 0}
-.section h2{font-size:clamp(32px,4vw,50px);letter-spacing:-.04em;margin:0 0 16px;color:var(--text)}
-.sub{color:var(--muted);font-size:17px;line-height:1.65;max-width:700px}
+.choice{padding:12px;border-radius:12px;border:1px solid var(--u-line2)!important;background:var(--u-surface)!important;color:var(--u-greenDark)!important;font-weight:750;cursor:pointer}
+.choice:hover{background:var(--u-mint)!important;color:var(--u-green)!important}
+#demoComposer input{flex:1;padding:13px 14px;border-radius:12px;border:1px solid var(--u-line2)!important;background:var(--u-surface)!important;color:var(--u-text)!important;outline:none}
+.section{padding:95px 0}.section h2{font-size:clamp(32px,4vw,50px);letter-spacing:-.04em;margin:0 0 16px;color:var(--u-text)!important}
+.sub{color:var(--u-muted)!important;font-size:17px;line-height:1.65;max-width:700px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:38px}
-.card{
-  padding:26px;
-  border-radius:21px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  box-shadow:0 10px 28px rgba(22,80,43,.05);
-}
-.icon{font-size:23px;color:var(--green)}
-.card h3{font-size:19px;margin:17px 0 8px;color:var(--text)}
-.card p{color:var(--muted);line-height:1.6}
-.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:38px}
-.step{
-  padding:22px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:18px;
-}
-.num{color:var(--green);font-weight:900}
-.cta{
-  margin:60px auto 90px;
-  padding:54px;
-  border:1px solid var(--border2);
-  border-radius:30px;
-  background:linear-gradient(135deg,var(--mint),var(--surface));
-  text-align:center;
-}
-.cta h2{font-size:40px;margin:0 0 12px;color:var(--text)}
-.footer{
-  border-top:1px solid var(--border);
-  padding:28px 0 45px;
-  color:var(--muted);
-  display:flex;
-  justify-content:space-between;
-}
-.footer b{color:var(--greenDark)}
-.mobile-professional{display:none}
-#nutrios-theme-toggle{
-  background:var(--surface)!important;
-  color:var(--text)!important;
-  border:1px solid var(--border2)!important;
-}
-#nutrios-theme-toggle .theme-dot{background:var(--green)!important}
-@media(max-width:850px){
-  .navlinks>a:not(.button){display:none}
-  .hero{grid-template-columns:1fr;padding-top:45px}
-  .grid{grid-template-columns:1fr}
-  .flow{grid-template-columns:1fr 1fr}
-  .hero h1{font-size:48px}
-}
-@media(max-width:520px){
-  .hero h1{font-size:39px}
-  .lead{font-size:16px}
-  .choices{grid-template-columns:1fr}
-  .flow{grid-template-columns:1fr}
-  .nav .button{padding:10px 12px}
-  .cta{padding:35px 20px}
-  .footer{display:block}
-  .footer span{display:block;margin-top:8px}
-}
+.card{padding:26px;border-radius:21px;background:var(--u-surface)!important;border:1px solid var(--u-line)!important;box-shadow:var(--u-shadow)!important}
+.icon{font-size:23px;color:var(--u-green)!important}.card h3{font-size:19px;margin:17px 0 8px;color:var(--u-text)!important}.card p{color:var(--u-muted)!important;line-height:1.6}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:38px}.step{padding:22px;background:var(--u-surface)!important;border:1px solid var(--u-line)!important;border-radius:18px}.num{color:var(--u-green)!important;font-weight:900}
+.cta{margin:60px auto 90px;padding:54px;border:1px solid var(--u-line2);border-radius:30px;background:linear-gradient(135deg,var(--u-mint),var(--u-surface));text-align:center}.cta h2{font-size:40px;margin:0 0 12px;color:var(--u-text)!important}
+.footer{border-top:1px solid var(--u-line);padding:28px 0 45px;color:var(--u-muted);display:flex;justify-content:space-between}.footer b{color:var(--u-greenDark)!important}
+@media(max-width:850px){.navlinks>a:not(.button){display:none}.hero{grid-template-columns:1fr;padding-top:45px}.grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr 1fr}.hero h1{font-size:48px}}
+@media(max-width:520px){.hero h1{font-size:39px}.lead{font-size:16px}.choices{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.nav .button{padding:10px 12px}.cta{padding:35px 20px}.footer{display:block}.footer span{display:block;margin-top:8px}}
 </style>
 </head><body class="landing-page public-page"><header class="wrap nav"><div class="brand public-brand"><span class="mark" aria-hidden="true">✦</span><span class="public-brand-name">NutriOS</span></div><nav class="navlinks"><a href="#recursos">Recursos</a><a href="#como-funciona">Como funciona</a><a href="#demonstracao">Demonstração</a><a class="button secondary" href="/login">Área do profissional</a></nav></header>
 <main><section class="wrap hero"><div><span class="tag">PLATAFORMA PARA NUTRICIONISTAS</span><h1>Sua operação clínica em <span class="gradient">um único sistema.</span></h1><p class="lead">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica em uma única experiência, com você no controle.</p><div class="actions"><a class="button" href="#contato">Conhecer o NutriOS</a><a class="button secondary" href="#demonstracao">Explorar a plataforma</a></div><div class="proof"><span><b>✓</b> Gestão clínica</span><span><b>✓</b> Portal do paciente</span><span><b>✓</b> IA integrada</span></div></div><div id="demonstracao" class="demo"><div class="demohead"><b><span class="nutrios-intelligence-title">NutriOS Intelligence</span></b><span>● online</span></div><div id="demoScreen" class="screen"><div class="bubble bot">Olá! Esta é a camada de inteligência do NutriOS. Posso apoiar atendimento, organização e acompanhamento sem substituir a decisão profissional.</div><div id="demoChoices" class="choices"><button class="choice" data-answer="Como a IA pode atender dúvidas repetitivas dos meus pacientes?">Dúvidas repetitivas</button><button class="choice" data-answer="Como o NutriOS organiza meus leads e interessados?">Organizar leads</button><button class="choice" data-answer="Como funciona o acompanhamento dos pacientes?">Acompanhar pacientes</button><button class="choice" data-answer="Quais recursos a plataforma oferece para nutricionistas?">Conhecer recursos</button></div></div><form id="demoComposer" style="display:flex;gap:9px;padding:0 20px 20px"><input id="demoInput" maxlength="500" placeholder="Escreva sua pergunta…" ><button class="button" type="submit" style="padding:12px 16px">Enviar</button></form></div></section>
@@ -265,5 +56,6 @@ header.wrap.nav{
 <section id="contato" class="wrap cta"><h2>Conheça uma nova experiência de gestão nutricional.</h2><p class="sub" style="margin:0 auto 25px">Veja como o NutriOS conecta gestão, acompanhamento e inteligência artificial sem tirar o nutricionista do centro das decisões.</p><div class="actions" style="justify-content:center"><a class="button" href="https://wa.me/5581988762300?text=Ol%C3%A1%2C%20quero%20conhecer%20o%20NutriOS%20AI" target="_blank" rel="noopener">Solicitar apresentação</a><a class="button secondary" href="/login">Já sou profissional</a></div></section></main>
 <footer class="wrap footer"><b>NutriOS</b><span>Plataforma inteligente de gestão nutricional • <a href="/privacidade" style="color:inherit">Privacidade</a></span></footer><script>
 const demoHistory=[];const demoSession=crypto.randomUUID();function demoBubble(text,who){const b=document.createElement('div');b.className='bubble '+who;b.textContent=text;demoScreen.insertBefore(b,demoChoices);demoScreen.scrollTop=demoScreen.scrollHeight;return b}async function askDemo(question){if(!question.trim())return;demoBubble(question,'user');const wait=demoBubble('Pensando…','bot');document.querySelectorAll('.choice').forEach(x=>x.disabled=true);try{const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pergunta:question,historico:demoHistory,session_id:demoSession,client_id:'master',lead_source:'vitrine_saas'})});const x=await r.json().catch(()=>({}));wait.textContent=r.ok?x.resposta:(x.detail||'Não consegui responder agora. Tente novamente.');if(r.ok){demoHistory.push({autor:'user',texto:question},{autor:'bot',texto:x.resposta});if(x.requires_contact){const go=document.createElement('a');go.className='button';go.href='/assistente';go.textContent='Continuar atendimento completo';go.style.alignSelf='flex-start';demoScreen.insertBefore(go,demoChoices)}}}catch{wait.textContent='Não consegui conectar agora. Tente novamente em instantes.'}finally{document.querySelectorAll('.choice').forEach(x=>x.disabled=false);demoInput.focus()}}document.querySelectorAll('.choice').forEach(btn=>btn.onclick=()=>askDemo(btn.dataset.answer));demoComposer.onsubmit=e=>{e.preventDefault();const q=demoInput.value.trim();demoInput.value='';askDemo(q)};
-</script><script src="/static/nutrios-theme-v17.js?v=17"></script>
+</script>
+<script src="/static/nutrios-theme-v21.js?v=21"></script>
 </body></html>
