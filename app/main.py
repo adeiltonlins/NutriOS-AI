@@ -917,12 +917,20 @@ def clinical_dashboard_page(user: dict = Depends(auth.current_user)):
 @app.get("/app/api/dashboard-clinico")
 def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
     client_id = user["id"]
-    patients = saas_store._request("GET", "patient_accounts", params={"select": "id,name,active,access_expires_at,last_seen_at,created_at,macro_targets", "client_id": f"eq.{client_id}", "hidden_at": "is.null", "order": "created_at.desc"}) or []
-    alerts = business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"resolved_at": "is.null"})
-    appointments = business_store.list_rows("appointments", client_id, order="starts_at.asc", extra={"starts_at": f"gte.{datetime.now(timezone.utc).isoformat()}", "limit": "12"})
-    plans = business_store.list_rows("meal_plans", client_id, order="created_at.desc")
-    transactions = business_store.list_rows("clinic_transactions", client_id, order="created_at.desc")
-    checkins = business_store.list_rows("patient_checkins", client_id, order="created_at.desc")
+    def optional_rows(loader):
+        try:
+            return loader() or []
+        except Exception as exc:
+            print(f"[dashboard-clinico] Modulo opcional indisponivel: {type(exc).__name__}")
+            return []
+
+    patients = optional_rows(lambda: saas_store._request("GET", "patient_accounts", params={"select": "id,name,active,access_expires_at,last_seen_at,created_at,macro_targets", "client_id": f"eq.{client_id}", "hidden_at": "is.null", "order": "created_at.desc"}))
+    alerts = optional_rows(lambda: business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"resolved_at": "is.null"}))
+    appointments = optional_rows(lambda: business_store.list_rows("appointments", client_id, order="starts_at.asc", extra={"starts_at": f"gte.{datetime.now(timezone.utc).isoformat()}", "limit": "12"}))
+    plans = optional_rows(lambda: business_store.list_rows("meal_plans", client_id, order="created_at.desc"))
+    transactions = optional_rows(lambda: business_store.list_rows("clinic_transactions", client_id, order="created_at.desc"))
+    checkins = optional_rows(lambda: business_store.list_rows("patient_checkins", client_id, order="created_at.desc"))
+    leads = optional_rows(lambda: leads_store.listar_leads(limite=500, client_id=client_id))
     patient_names = {p["id"]: p["name"] for p in patients}
     for collection in (alerts, appointments, plans, checkins):
         for row in collection:
@@ -933,8 +941,11 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
     latest_checkin = {}
     for row in checkins:
         latest_checkin.setdefault(row.get("patient_id"), row)
+    paid_leads = [lead for lead in leads if lead.get("pago")]
+    appointment_leads = [lead for lead in leads if lead.get("quis_agendar")]
+    qualified_leads = [lead for lead in leads if int(lead.get("lead_score") or 0) >= 60 or str(lead.get("lead_status") or "").lower() in {"quente", "convertido"}]
     return {
-        "metrics": {"patients": len(patients), "active": sum(bool(p.get("active")) for p in patients), "open_alerts": len(alerts), "upcoming_appointments": len(appointments), "monthly_income": round(monthly_income, 2), "without_checkin": sum(p["id"] not in latest_checkin for p in patients)},
+        "metrics": {"patients": len(patients), "active": sum(bool(p.get("active")) for p in patients), "open_alerts": len(alerts), "upcoming_appointments": len(appointments), "monthly_income": round(monthly_income, 2), "without_checkin": sum(p["id"] not in latest_checkin for p in patients), "visitors": len(leads), "qualified_leads": len(qualified_leads), "appointment_leads": len(appointment_leads), "converted_leads": len(paid_leads)},
         "patients": patients, "alerts": alerts[:30], "appointments": appointments, "plans": plans[:30], "checkins": list(latest_checkin.values())[:30]
     }
 
