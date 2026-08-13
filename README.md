@@ -165,3 +165,7 @@ Execute, nessa ordem, `migrations/015_clinical_suite.sql` e `migrations/016_adva
 - monitor operacional global do ADMIN mestre em `/admin/clinica`, sem quebrar o isolamento entre contas.
 
 O ADMIN mestre visualiza contagens globais por nutricionista. Cada nutricionista continua autorizado somente sobre seus próprios pacientes e registros. O cálculo energético e os totais nutricionais são auxiliares e não substituem avaliação clínica.
+
+## Análise Corporal Visual NutriBot (v25)
+
+Execute `migrations/019_visual_body_analysis.sql` no SQL Editor do Supabase. O módulo reaproveita as fotos privadas de evolução, associa imagens frontal e lateral à avaliação, calcula indicadores somente a partir das medidas registradas pelo nutricionista e gera um relatório PDF em duas páginas. Ele não realiza escaneamento nem reconstrução corporal 3D.

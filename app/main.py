@@ -11,6 +11,7 @@ import csv
 import html
 import io
 import json
+import math
 import re
 import secrets
 import unicodedata
@@ -299,6 +300,10 @@ class AnthropometryRequest(BaseModel):
     hip_cm: float | None = Field(default=None, ge=20, le=300)
     body_fat_percent: float | None = Field(default=None, ge=0, le=80)
     muscle_mass_kg: float | None = Field(default=None, ge=0, le=300)
+    body_water_percent: float | None = Field(default=None, ge=0, le=100)
+    evaluation_method: str | None = Field(default=None, max_length=120)
+    front_photo_id: str | None = Field(default=None, max_length=80)
+    side_photo_id: str | None = Field(default=None, max_length=80)
     notes: str | None = Field(default=None, max_length=3000)
 
 
@@ -1108,14 +1113,126 @@ def search_foods(q: str = Query(default="", max_length=80), user: dict = Depends
     return found[:40]
 
 
+def _visual_body_metrics(values: dict) -> dict:
+    """Indicadores transparentes; não faz inferência a partir das fotografias."""
+    weight = float(values.get("weight_kg") or 0)
+    height_cm = float(values.get("height_cm") or 0)
+    waist = float(values.get("waist_cm") or 0)
+    hip = float(values.get("hip_cm") or 0)
+    fat_pct = float(values.get("body_fat_percent") or 0)
+    height_m = height_cm / 100 if height_cm else 0
+    result: dict[str, float | int | str] = {}
+    if weight and height_m:
+        result["bmi"] = round(weight / height_m**2, 2)
+    if waist and height_cm:
+        result["waist_height_ratio"] = round(waist / height_cm, 3)
+    if waist and hip:
+        result["waist_hip_ratio"] = round(waist / hip, 3)
+    if weight and fat_pct:
+        fat_mass = weight * fat_pct / 100
+        lean_mass = weight - fat_mass
+        result.update({"fat_mass_kg": round(fat_mass, 2), "lean_mass_kg": round(lean_mass, 2)})
+        if height_m:
+            result.update({"fat_mass_index": round(fat_mass / height_m**2, 2), "lean_mass_index": round(lean_mass / height_m**2, 2)})
+    if waist and weight and height_m:
+        result["conicity_index"] = round((waist / 100) / (0.109 * math.sqrt(weight / height_m)), 3)
+    if values.get("body_water_percent") is not None and weight:
+        result["body_water_kg"] = round(weight * float(values["body_water_percent"]) / 100, 2)
+    expected = ("weight_kg", "height_cm", "waist_cm", "hip_cm", "body_fat_percent", "evaluation_method")
+    completed = sum(bool(values.get(key)) for key in expected) + int(bool(values.get("front_photo_id"))) + int(bool(values.get("side_photo_id")))
+    result["assessment_completeness"] = round(completed / 8 * 100)
+    result["method_notice"] = "Medidas informadas e validadas pelo nutricionista; fotos usadas somente como apoio visual."
+    return result
+
+
+def _assessment_photo(patient_id: str, photo_id: str | None, client_id: str) -> dict | None:
+    if not photo_id:
+        return None
+    row = business_store.get_row("patient_progress_photos", photo_id, client_id)
+    if not row or row.get("patient_id") != patient_id:
+        raise HTTPException(400, "Uma das fotos selecionadas não pertence a este paciente")
+    return row
+
+
 @app.post("/app/api/pacientes/{patient_id}/avaliacoes")
 def create_anthropometry(patient_id: str, payload: AnthropometryRequest, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
-    data = payload.model_dump()
-    if data.get("weight_kg") and data.get("height_cm"):
-        data["bmi"] = round(data["weight_kg"] / ((data["height_cm"] / 100) ** 2), 2)
+    data = payload.model_dump(exclude_none=True)
+    _assessment_photo(patient_id, data.get("front_photo_id"), user["id"])
+    _assessment_photo(patient_id, data.get("side_photo_id"), user["id"])
+    analysis = _visual_body_metrics(data)
+    data["bmi"] = analysis.get("bmi")
+    data["analysis_data"] = analysis
     data["assessed_at"] = data.get("assessed_at") or datetime.now(timezone.utc).date().isoformat()
     return business_store.create_row("anthropometric_assessments", user["id"], {"patient_id": patient_id, **data})
+
+
+def _visual_analysis_pdf(assessment: dict, history: list[dict], patient: dict, owner: dict, photos: list[dict | None]) -> bytes:
+    from reportlab.lib.colors import HexColor, white
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.utils import ImageReader
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.units import mm
+    buffer = io.BytesIO(); page_w, page_h = A4
+    cfg = owner.get("ai_config") or {}; brand = HexColor(str(cfg.get("cor_principal") or "#2878ff")); navy = HexColor("#071526"); muted = HexColor("#60718a"); pale = HexColor("#edf4ff")
+    c = canvas.Canvas(buffer, pagesize=A4); c.setTitle("Análise Corporal Visual NutriBot")
+    def text(x, y, value, size=9, color=navy, bold=False):
+        c.setFillColor(color); c.setFont("Helvetica-Bold" if bold else "Helvetica", size); c.drawString(x, y, str(value))
+    def metric(x, y, label, value, width=42*mm):
+        c.setFillColor(pale); c.roundRect(x, y, width, 18*mm, 3*mm, fill=1, stroke=0); text(x+4*mm,y+11*mm,label,7,muted); text(x+4*mm,y+4*mm,value,12,navy,True)
+    c.setFillColor(navy); c.rect(0,page_h-39*mm,page_w,39*mm,fill=1,stroke=0); c.setFillColor(brand); c.rect(0,page_h-4*mm,page_w,4*mm,fill=1,stroke=0)
+    text(16*mm,page_h-17*mm,"NUTRIBOT CLÍNICA",9,white,True); text(16*mm,page_h-28*mm,"Análise Corporal Visual",21,white,True)
+    text(16*mm,page_h-48*mm,f"Paciente: {patient.get('name') or 'Não informado'}",11,navy,True); text(16*mm,page_h-55*mm,f"Avaliação: {assessment.get('assessed_at')}  •  Método: {assessment.get('evaluation_method') or 'Não informado'}",8,muted)
+    analysis = assessment.get("analysis_data") or {}
+    items = [("Peso",f"{assessment.get('weight_kg') or '—'} kg"),("IMC",analysis.get("bmi") or "—"),("Cintura/altura",analysis.get("waist_height_ratio") or "—"),("Cintura/quadril",analysis.get("waist_hip_ratio") or "—"),("Massa magra",f"{analysis.get('lean_mass_kg','—')} kg"),("Massa gorda",f"{analysis.get('fat_mass_kg','—')} kg"),("Índice magro",analysis.get("lean_mass_index") or "—"),("Conicidade",analysis.get("conicity_index") or "—")]
+    for index,(label,value) in enumerate(items): metric(16*mm+(index%4)*45*mm,page_h-80*mm-(index//4)*22*mm,label,value)
+    text(16*mm,page_h-132*mm,"Registro fotográfico de apoio",13,navy,True); text(16*mm,page_h-139*mm,"Guias são referências visuais; não representam detecção automática nem reconstrução 3D.",7,muted)
+    for index, photo in enumerate(photos):
+        x=16*mm+index*89*mm; y=41*mm; w=82*mm; h=93*mm
+        c.setFillColor(HexColor("#f3f7fc")); c.roundRect(x,y,w,h,3*mm,fill=1,stroke=0)
+        if photo:
+            try:
+                raw=saas_store.download_private_asset("patient-documents",photo["storage_path"]); img=ImageReader(io.BytesIO(raw)); iw,ih=img.getSize(); scale=min((w-6*mm)/iw,(h-12*mm)/ih); dw,dh=iw*scale,ih*scale; ix=x+(w-dw)/2; iy=y+6*mm+(h-12*mm-dh)/2; c.drawImage(img,ix,iy,dw,dh,mask='auto')
+                c.setStrokeColor(HexColor("#38bdf8")); c.setLineWidth(.6); c.line(x+w/2,y+7*mm,x+w/2,y+h-4*mm)
+                for frac in (.28,.48,.68): c.line(x+8*mm,y+h*frac,x+w-8*mm,y+h*frac)
+                for frac in (.28,.48,.68): c.setFillColor(HexColor("#ff7a45")); c.circle(x+w/2,y+h*frac,1.3*mm,fill=1,stroke=0)
+            except Exception: text(x+19*mm,y+h/2,"Imagem indisponível",9,muted)
+        else: text(x+23*mm,y+h/2,"Foto não vinculada",9,muted)
+        text(x+3*mm,y+2.3*mm,"FRONTAL" if index==0 else "LATERAL",7,navy,True)
+    text(16*mm,28*mm,"Composição informada",11,navy,True); fat=assessment.get("body_fat_percent")
+    text(16*mm,21*mm,f"Gordura corporal: {fat if fat is not None else '—'}%  •  Água corporal: {assessment.get('body_water_percent') if assessment.get('body_water_percent') is not None else '—'}%",8,muted)
+    text(16*mm,12*mm,"Documento de apoio. A interpretação e a conduta são responsabilidade do nutricionista.",7,muted)
+    c.showPage(); c.setFillColor(navy); c.rect(0,page_h-31*mm,page_w,31*mm,fill=1,stroke=0); text(16*mm,page_h-19*mm,"Evolução antropométrica",20,white,True)
+    def chart(y,key,label,unit):
+        rows=[r for r in reversed(history) if r.get(key) is not None][-12:]; text(16*mm,y+44*mm,label,11,navy,True); c.setFillColor(HexColor("#f3f7fc")); c.roundRect(16*mm,y,178*mm,39*mm,3*mm,fill=1,stroke=0)
+        if len(rows)<2: text(72*mm,y+18*mm,"São necessárias duas avaliações",8,muted); return
+        vals=[float(r[key]) for r in rows]; lo,hi=min(vals),max(vals); span=hi-lo or 1; points=[]
+        for i,v in enumerate(vals): points.append((22*mm+i*164*mm/(len(vals)-1),y+7*mm+(v-lo)*24*mm/span))
+        c.setStrokeColor(brand); c.setLineWidth(2)
+        for a,b in zip(points,points[1:]): c.line(a[0],a[1],b[0],b[1])
+        for px,py in points: c.setFillColor(brand); c.circle(px,py,1.2*mm,fill=1,stroke=0)
+        text(22*mm,y+32*mm,f"{vals[-1]:g} {unit}",8,navy,True)
+    chart(page_h-86*mm,"weight_kg","Peso","kg"); chart(page_h-142*mm,"body_fat_percent","Gordura corporal","%"); chart(page_h-198*mm,"waist_cm","Cintura","cm")
+    text(16*mm,39*mm,"Observações profissionais",11,navy,True); notes=str(assessment.get("notes") or "Nenhuma observação registrada.")[:700]
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    words=notes.split(); lines=[]; current=""
+    for word in words:
+        test=(current+" "+word).strip()
+        if stringWidth(test,"Helvetica",8)>175*mm: lines.append(current); current=word
+        else: current=test
+    lines.append(current)
+    for i,line in enumerate(lines[:5]): text(16*mm,32*mm-i*5*mm,line,8,muted)
+    text(16*mm,8*mm,"Análise Corporal Visual NutriBot • sem promessa de escaneamento 3D",7,muted); c.save(); return buffer.getvalue()
+
+
+@app.get("/app/api/pacientes/{patient_id}/avaliacoes/{assessment_id}/relatorio.pdf")
+def visual_body_report(patient_id: str, assessment_id: str, user: dict = Depends(auth.current_user)):
+    patient = _owned_patient(patient_id, user["id"]); assessment = business_store.get_row("anthropometric_assessments", assessment_id, user["id"])
+    if not assessment or assessment.get("patient_id") != patient_id: raise HTTPException(404, "Avaliação não encontrada")
+    history = business_store.list_rows("anthropometric_assessments", user["id"], order="assessed_at.desc", extra={"patient_id": f"eq.{patient_id}", "limit": "24"})
+    photos = [_assessment_photo(patient_id, assessment.get("front_photo_id"), user["id"]), _assessment_photo(patient_id, assessment.get("side_photo_id"), user["id"])]
+    content = _visual_analysis_pdf(assessment, history, patient, user, photos)
+    return Response(content, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="analise-corporal-{patient_id[:8]}.pdf"', "Cache-Control": "private, no-store"})
 
 
 @app.post("/app/api/pacientes/{patient_id}/planos")
