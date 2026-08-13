@@ -1,0 +1,16 @@
+NUTRIOS V4 — UPLOAD FÁCIL PELO SITE DO GITHUB
+
+1. Extraia este ZIP.
+2. Abra no GitHub o repositório nutri-chatbot.
+3. Entre em: app > static
+4. Clique em: Add file > Upload files
+5. Arraste TODOS os 6 arquivos desta pasta para a tela.
+6. O GitHub avisará que arquivos existentes serão substituídos.
+7. Commit message: NutriOS Premium v4 - UX refinado
+8. Clique em Commit changes.
+9. Aguarde o deploy do Render.
+
+IMPORTANTE:
+- Não envie o ZIP para dentro do repositório.
+- Envie os ARQUIVOS extraídos.
+- Todos estes arquivos pertencem exatamente à pasta app/static.
