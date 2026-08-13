@@ -1,11 +1,21 @@
-NUTRIOS V10 — UPLOAD FÁCIL
+NUTRIOS V11 — ADMIN MESTRE CORRIGIDO
+
+Arquivo correto: admin-v2.html
 
 GitHub:
 nutri-chatbot > app > static > Add file > Upload files
 
-Envie os arquivos desta pasta e substitua os existentes.
+Envie:
+admin-v2.html
 
 Commit:
-NutriOS v10 - corrige admin e textos
+NutriOS v11 - corrige marca do Admin Mestre
 
-Depois aguarde o Render e use Ctrl+F5.
+Depois:
+aguarde o Render finalizar o deploy e pressione Ctrl + F5.
+
+Resultado:
+- remove o N duplicado
+- remove o OS pequeno
+- remove ADMINISTRAÇÃO da marca
+- deixa apenas ✦ + NutriOS
