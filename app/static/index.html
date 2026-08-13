@@ -18,7 +18,7 @@
       extend: {
         fontFamily: { sans: ['Inter', 'sans-serif'] },
         colors: {
-          brand: { DEFAULT: '#168f43', dark: '#1d4ed8', soft: '#eff4ff' },
+          brand: { DEFAULT: '#168f43', dark: '#205f36', soft: '#e5f6ea' },
         },
         keyframes: {
           riseIn: { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
@@ -43,20 +43,20 @@
   body::before{width:460px;height:460px;background:#168f43;top:-220px;left:-120px}
   body::after{width:420px;height:420px;background:#10b981;right:-180px;bottom:-240px}
   .app-shell{position:relative;z-index:1}
-  .glass-card{background:rgba(255,255,255,.82);backdrop-filter:blur(22px);box-shadow:0 30px 90px rgba(15,23,42,.14)}
-  .dark .glass-card{background:rgba(10,19,36,.76);box-shadow:0 32px 90px rgba(0,0,0,.42)}
-  .brand-orb{box-shadow:0 10px 35px rgba(37,99,235,.28)}
-  .hero-icon{box-shadow:0 14px 40px rgba(37,99,235,.18)}
-  .hero-gradient{background:linear-gradient(100deg,#f8fafc 10%,#93c5fd 55%,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
-  html:not(.dark) .hero-gradient{background:linear-gradient(100deg,#0f172a,#168f43 62%,#059669);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .glass-card{background:rgba(255,255,255,.82);backdrop-filter:blur(22px);box-shadow:0 30px 90px rgba(11,26,17,.14)}
+  .dark .glass-card{background:rgba(11,26,17,.76);box-shadow:0 32px 90px rgba(0,0,0,.42)}
+  .brand-orb{box-shadow:0 10px 35px rgba(22,143,67,.20)}
+  .hero-icon{box-shadow:0 14px 40px rgba(22,143,67,.15)}
+  .hero-gradient{background:linear-gradient(100deg,#e5f6ea 10%,#64cf86 55%,#64cf86);-webkit-background-clip:text;background-clip:text;color:transparent}
+  html:not(.dark) .hero-gradient{background:linear-gradient(100deg,#0b1a11,#168f43 62%,#059669);-webkit-background-clip:text;background-clip:text;color:transparent}
   .quick-action{position:relative;overflow:hidden;min-height:68px;padding-left:52px!important}
-  .quick-action::before{content:attr(data-icon);position:absolute;left:15px;top:50%;transform:translateY(-50%);width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:rgba(37,99,235,.1);font-size:14px}
+  .quick-action::before{content:attr(data-icon);position:absolute;left:15px;top:50%;transform:translateY(-50%);width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:rgba(22,143,67,.10);font-size:14px}
   .quick-action::after{content:"→";position:absolute;right:13px;top:50%;transform:translateY(-50%);opacity:.35;transition:.2s}
   .quick-action:hover::after{transform:translate(3px,-50%);opacity:1}
-  .trust-pill{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(148,163,184,.09);border:1px solid rgba(148,163,184,.13)}
+  .trust-pill{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(100,207,134,.09);border:1px solid rgba(100,207,134,.13)}
   .landing-layout{display:grid;grid-template-columns:minmax(210px,.72fr) minmax(0,1.35fr);gap:34px;align-items:center;width:100%;max-width:820px;text-align:left}
-  .profile-card{padding:22px;border-radius:24px;background:linear-gradient(145deg,rgba(37,99,235,.12),rgba(16,185,129,.08));border:1px solid rgba(96,165,250,.2);text-align:center}
-  .profile-photo{width:112px;height:112px;margin:0 auto 15px;border-radius:32px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#168f43,#10b981);color:white;font-size:30px;font-weight:800;box-shadow:0 18px 45px rgba(37,99,235,.25)}
+  .profile-card{padding:22px;border-radius:24px;background:linear-gradient(145deg,rgba(22,143,67,.10),rgba(16,185,129,.08));border:1px solid rgba(100,207,134,.20);text-align:center}
+  .profile-photo{width:112px;height:112px;margin:0 auto 15px;border-radius:32px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#168f43,#10b981);color:white;font-size:30px;font-weight:800;box-shadow:0 18px 45px rgba(22,143,67,.18)}
   .profile-photo img{width:100%;height:100%;object-fit:cover}
   @media(max-width:720px){.landing-layout{grid-template-columns:1fr;text-align:center;gap:18px}.profile-card{display:flex;align-items:center;gap:14px;text-align:left;padding:14px}.profile-photo{width:68px;height:68px;border-radius:20px;margin:0}.profile-copy{flex:1}}
   #conversation::-webkit-scrollbar { width: 7px; }
@@ -66,13 +66,13 @@
     * { animation: none !important; transition: none !important; }
   }
 </style>
-<link rel="stylesheet" href="/static/nutrios-reference-light-v15.css?v=15">
-<link rel="stylesheet" href="/static/nutrios-unified-v17.css?v=17">
-<link rel="stylesheet" href="/static/nutrios-no-blue-v18.css?v=18">
-<link rel="stylesheet" href="/static/nutrios-exact-reference-v19.css?v=19">
-<link rel="stylesheet" href="/static/nutrios-final-v21.css?v=21">
+
+
+
+
+<link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 </head>
-<body class="h-full bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 text-slate-900 dark:from-[#030817] dark:via-[#071126] dark:to-[#071b24] dark:text-slate-100 transition-colors public-page">
+<body class="h-full bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-50 text-slate-900 dark:from-[#0b1a11] dark:via-[#12271a] dark:to-[#17301f] dark:text-slate-100 transition-colors public-page">
 
 <div class="app-shell h-full max-w-5xl mx-auto flex flex-col p-3 sm:p-5 lg:p-7">
 
@@ -113,26 +113,26 @@
 
     <!-- Landing / empty state -->
     <div id="landing" class="flex-1 flex items-center justify-center px-5 py-7 sm:py-10 animate-fadeIn">
-      <div class="landing-layout"><aside class="profile-card"><div id="profilePhotoLarge" class="profile-photo">NB</div><div class="profile-copy"><div class="text-[10px] font-bold tracking-[.14em] text-blue-500 mb-2">ATENDIMENTO DIGITAL</div><h3 id="profileNameLarge" class="text-lg font-extrabold mb-1">NutriOS</h3><p id="profileSpecialty" class="text-xs text-slate-500 dark:text-slate-400 mb-2">Nutrição inteligente e segura</p><div id="professionalLinks" class="flex justify-center sm:justify-start lg:justify-center gap-3 text-xs"></div><div class="mt-4 text-[11px] text-emerald-600 dark:text-emerald-400">● Assistente disponível agora</div></div></aside><section>
-      <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200/70 dark:border-blue-400/20 bg-blue-50/80 dark:bg-blue-500/10 px-3 py-1.5 text-[11px] font-bold tracking-wide text-blue-700 dark:text-blue-300"><span>✦</span> ACOLHIMENTO INTELIGENTE 24H</div>
+      <div class="landing-layout"><aside class="profile-card"><div id="profilePhotoLarge" class="profile-photo">NB</div><div class="profile-copy"><div class="text-[10px] font-bold tracking-[.14em] text-emerald-600 mb-2">ATENDIMENTO DIGITAL</div><h3 id="profileNameLarge" class="text-lg font-extrabold mb-1">NutriOS</h3><p id="profileSpecialty" class="text-xs text-slate-500 dark:text-slate-400 mb-2">Nutrição inteligente e segura</p><div id="professionalLinks" class="flex justify-center sm:justify-start lg:justify-center gap-3 text-xs"></div><div class="mt-4 text-[11px] text-emerald-600 dark:text-emerald-400">● Assistente disponível agora</div></div></aside><section>
+      <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200/70 dark:border-emerald-400/20 bg-emerald-50/80 dark:bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-wide text-emerald-700 dark:text-emerald-300"><span>✦</span> ACOLHIMENTO INTELIGENTE 24H</div>
       <h2 id="heroTitle" class="hero-gradient text-3xl sm:text-[38px] leading-tight font-extrabold tracking-[-.035em] mb-3">Converse antes de agendar</h2>
       <p id="welcomeText" class="text-sm sm:text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 max-w-lg mb-5">Tire suas primeiras dúvidas e descubra o próximo passo para cuidar da sua alimentação.</p>
       <div id="quickActions" class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-2">
         <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
           data-icon="🥗" data-q="Pode me ajudar a montar uma dieta?">
-          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-blue-400">Montar dieta</span>
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Montar dieta</span>
         </button>
         <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
           data-icon="⚡" data-q="Como calculo minhas calorias diárias?">
-          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-blue-400">Calcular calorias</span>
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Calcular calorias</span>
         </button>
         <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
           data-icon="💪" data-q="O que preciso saber para ganhar massa muscular?">
-          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-blue-400">Ganhar massa</span>
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Ganhar massa</span>
         </button>
         <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
           data-icon="🎯" data-q="Como posso perder gordura de forma saudável?">
-          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-blue-400">Perder gordura</span>
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Perder gordura</span>
         </button>
       </div>
       <div class="mt-5 flex flex-wrap gap-2 text-[10px] text-slate-500 dark:text-slate-400"><span class="trust-pill">✓ Acolhimento inicial</span><span class="trust-pill">🔒 Dados protegidos</span><span class="trust-pill">● Disponível 24 horas</span></div></section></div>
@@ -143,13 +143,13 @@
 
     <!-- Composer -->
     <div class="border-t border-slate-200/70 dark:border-white/10 p-3 sm:p-4 bg-white/40 dark:bg-black/10 shrink-0">
-      <form id="composer" class="flex items-end gap-2 bg-white/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl px-3 py-2 shadow-sm focus-within:border-brand focus-within:ring-4 focus-within:ring-brand-soft dark:focus-within:ring-blue-500/10 transition-shadow">
+      <form id="composer" class="flex items-end gap-2 bg-white/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl px-3 py-2 shadow-sm focus-within:border-brand focus-within:ring-4 focus-within:ring-brand-soft dark:focus-within:ring-emerald-500/10 transition-shadow">
         <textarea id="pergunta" rows="1" maxlength="500"
           placeholder="Pergunte algo sobre sua dieta..."
           aria-label="Sua pergunta sobre nutrição"
           class="flex-1 resize-none bg-transparent outline-none text-[14.5px] py-2.5 max-h-28 placeholder:text-slate-400 dark:placeholder:text-slate-500"></textarea>
         <button type="submit" id="enviarBtn" aria-label="Enviar pergunta"
-          class="w-10 h-10 shrink-0 rounded-xl bg-brand text-white flex items-center justify-center shadow-lg shadow-blue-500/25 hover:bg-brand-dark active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all">
+          class="w-10 h-10 shrink-0 rounded-xl bg-brand text-white flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:bg-brand-dark active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all">
           <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
         </button>
       </form>
@@ -165,7 +165,7 @@
     <label class="block text-sm font-semibold">WhatsApp com DDD<input id="leadPhone" required minlength="10" maxlength="30" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-3 font-normal" autocomplete="tel" placeholder="Ex.: 55 11 99999-9999"></label>
     <label class="flex gap-2 text-xs text-slate-500"><input id="leadConsent" required type="checkbox" class="mt-0.5"><span>Autorizo a clínica a entrar em contato comigo pelo WhatsApp sobre este atendimento.</span></label>
     <p id="contactError" class="hidden text-sm text-red-500"></p>
-    <div class="flex gap-2"><button type="button" id="cancelContact" class="flex-1 rounded-xl border border-slate-300 px-4 py-3">Agora não</button><button type="submit" id="submitContact" class="flex-1 rounded-xl bg-blue-600 text-white font-bold px-4 py-3">Continuar</button></div>
+    <div class="flex gap-2"><button type="button" id="cancelContact" class="flex-1 rounded-xl border border-slate-300 px-4 py-3">Agora não</button><button type="submit" id="submitContact" class="flex-1 rounded-xl bg-emerald-600 text-white font-bold px-4 py-3">Continuar</button></div>
   </form>
 </dialog>
 
@@ -386,8 +386,8 @@
     const col = criarLinha('bot');
     const bubble = bolhaBase(false);
     const texto = document.createElement('p'); texto.textContent = dados.message; bubble.appendChild(texto);
-    const pay = document.createElement('a'); pay.href = dados.payment_url; pay.target = '_blank'; pay.rel = 'noopener'; pay.textContent = 'Abrir pagamento'; pay.className = 'inline-block mt-3 rounded-lg bg-blue-600 text-white font-bold px-4 py-2'; bubble.appendChild(pay);
-    const claim = document.createElement('button'); claim.type = 'button'; claim.textContent = 'Já realizei o pagamento'; claim.className = 'block mt-2 rounded-lg border border-blue-500 text-blue-600 dark:text-blue-300 font-bold px-4 py-2';
+    const pay = document.createElement('a'); pay.href = dados.payment_url; pay.target = '_blank'; pay.rel = 'noopener'; pay.textContent = 'Abrir pagamento'; pay.className = 'inline-block mt-3 rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; bubble.appendChild(pay);
+    const claim = document.createElement('button'); claim.type = 'button'; claim.textContent = 'Já realizei o pagamento'; claim.className = 'block mt-2 rounded-lg border border-emerald-500 text-emerald-600 dark:text-emerald-300 font-bold px-4 py-2';
     claim.addEventListener('click', async () => {
       claim.disabled = true; claim.textContent = 'Enviando...';
       const r = await fetch('/leads/claim-paid', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sessionId, client_id:clientId, client_slug:clientSlug})});
@@ -426,7 +426,7 @@
     const actions = document.createElement('div');
     actions.className = 'flex flex-wrap gap-2 mt-3';
     if (dados.anamnesis_url) {
-      const anamnesis = document.createElement('a'); anamnesis.href=dados.anamnesis_url; anamnesis.target='_blank'; anamnesis.rel='noopener'; anamnesis.textContent='Preencher anamnese'; anamnesis.className='rounded-lg bg-blue-600 text-white font-bold px-4 py-2'; actions.appendChild(anamnesis);
+      const anamnesis = document.createElement('a'); anamnesis.href=dados.anamnesis_url; anamnesis.target='_blank'; anamnesis.rel='noopener'; anamnesis.textContent='Preencher anamnese'; anamnesis.className='rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; actions.appendChild(anamnesis);
     }
     if (dados.whatsapp_url || dados.contato) {
       const whatsapp = document.createElement('a'); whatsapp.href=dados.whatsapp_url || dados.contato; whatsapp.target='_blank'; whatsapp.rel='noopener'; whatsapp.textContent='Falar no WhatsApp'; whatsapp.className='rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; actions.appendChild(whatsapp);
@@ -521,8 +521,6 @@
 </script>
 
 <a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#64748b;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
-
-
-<script src="/static/nutrios-theme-v21.js?v=21"></script>
+<script src="/static/nutrios-v22-theme.js?v=22"></script>
 </body>
 </html>

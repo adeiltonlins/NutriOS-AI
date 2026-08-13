@@ -1,10 +1,11 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Configurações — NutriOS</title><style>
-*{box-sizing:border-box}body{margin:0;background:#071020;color:#eff5ff;font:15px system-ui}.wrap{max-width:950px;margin:auto;padding:28px}a{color:#8eaeff;text-decoration:none}.panel,.share{margin-top:24px;padding:25px;background:#101a30;border:1px solid #293c62;border-radius:18px}.share{background:linear-gradient(120deg,#12254b,#181b3e)}.share-row{display:flex;gap:10px}.share-row input{flex:1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field{margin-bottom:8px}.full{grid-column:1/-1}label{display:block;margin-bottom:7px;color:#b9c7df}input,textarea{width:100%;padding:12px;background:#081225;color:white;border:1px solid #344d78;border-radius:10px}input[type=color]{height:46px;padding:5px}textarea{min-height:92px;resize:vertical}button{padding:12px 18px;border:0;border-radius:10px;background:linear-gradient(90deg,#4b7dff,#8958f7);color:#fff;font-weight:800;cursor:pointer}.secondary{background:#1b2b49;border:1px solid #3a5584}.meta{color:#9baccc;margin:6px 0}.ok{color:#54e4ad;min-height:22px}.preview{display:block;width:96px;height:96px;object-fit:cover;border-radius:18px;border:1px solid #3b5687;margin:10px 0}@media(max-width:650px){.grid{grid-template-columns:1fr}.share-row{flex-direction:column}.wrap{padding:18px}}
-</style><link rel="stylesheet" href="/static/nutrios-premium.css"><link rel="stylesheet" href="/static/nutrios-reference-light-v15.css?v=15">
-<link rel="stylesheet" href="/static/nutrios-unified-v17.css?v=17">
-<link rel="stylesheet" href="/static/nutrios-no-blue-v18.css?v=18">
-<link rel="stylesheet" href="/static/nutrios-exact-reference-v19.css?v=19">
-<link rel="stylesheet" href="/static/nutrios-final-v21.css?v=21">
+*{box-sizing:border-box}body{margin:0;background:#0b1a11;color:#e5f6ea;font:15px system-ui}.wrap{max-width:950px;margin:auto;padding:28px}a{color:#64cf86;text-decoration:none}.panel,.share{margin-top:24px;padding:25px;background:#12271a;border:1px solid #294a35;border-radius:18px}.share{background:linear-gradient(120deg,#17301f,#17301f)}.share-row{display:flex;gap:10px}.share-row input{flex:1}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field{margin-bottom:8px}.full{grid-column:1/-1}label{display:block;margin-bottom:7px;color:#e5f6ea}input,textarea{width:100%;padding:12px;background:#0b1a11;color:white;border:1px solid #205f36;border-radius:10px}input[type=color]{height:46px;padding:5px}textarea{min-height:92px;resize:vertical}button{padding:12px 18px;border:0;border-radius:10px;background:linear-gradient(90deg,#22ad55,#64cf86);color:#fff;font-weight:800;cursor:pointer}.secondary{background:#17301f;border:1px solid #205f36}.meta{color:#718077;margin:6px 0}.ok{color:#54e4ad;min-height:22px}.preview{display:block;width:96px;height:96px;object-fit:cover;border-radius:18px;border:1px solid #205f36;margin:10px 0}@media(max-width:650px){.grid{grid-template-columns:1fr}.share-row{flex-direction:column}.wrap{padding:18px}}
+</style><link rel="stylesheet" href="/static/nutrios-premium.css">
+
+
+
+
+<link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 </head><body><main class="wrap"><a href="/app">← Voltar</a><h1>Identidade e configurações</h1><div class="meta" id="account"></div>
 <section class="share"><h2>Link público do meu assistente</h2><p>Divulgue no Instagram, site ou WhatsApp.</p><div class="share-row"><input id="publicUrl" readonly><button id="copy" type="button">Copiar link</button></div></section>
 <form class="panel" id="form"><h2>Identidade profissional</h2><div class="grid">
@@ -21,5 +22,5 @@ uploadLogo.onclick=async()=>{if(!logoFile.files[0]){msg.textContent='Escolha uma
 form.onsubmit=async e=>{e.preventDefault();const data={};fields.forEach(k=>data[k]=document.querySelector(`[name=${k}]`).value.trim());data.free_message_limit=Number(data.free_message_limit||8);const r=await fetch('/app/api/configuracoes',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});msg.textContent=r.ok?'Configurações salvas com sucesso.':'Não foi possível salvar.'};
 passwordForm.onsubmit=async e=>{e.preventDefault();if(e.target.new_password.value!==e.target.confirm_password.value){passwordMsg.textContent='As novas senhas não coincidem.';return}const r=await fetch('/app/api/senha',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:e.target.current_password.value,new_password:e.target.new_password.value})});const out=await r.json().catch(()=>({}));passwordMsg.textContent=r.ok?'Senha alterada com sucesso.':out.detail||'Não foi possível alterar.';if(r.ok)e.target.reset()};init();
 </script>
-<script src="/static/nutrios-theme-v21.js?v=21"></script>
+<script src="/static/nutrios-v22-theme.js?v=22"></script>
 </body></html>

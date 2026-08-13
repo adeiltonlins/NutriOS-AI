@@ -6,190 +6,156 @@
 <title>NutriOS — Painel profissional</title>
 <link rel="stylesheet" href="/static/nutrios-dashboard-v6.css?v=20260813">
   <link rel="stylesheet" href="/static/nutrios-dashboard-v7.css?v=7">
-<link rel="stylesheet" href="/static/nutrios-green-premium-v13.css?v=13">
 <link rel="stylesheet" href="/static/nutrios-analytics-v14.css?v=14">
-<link rel="stylesheet" href="/static/nutrios-reference-light-v15.css?v=15">
-<link rel="stylesheet" href="/static/nutrios-premium-v16.css?v=16">
-<link rel="stylesheet" href="/static/nutrios-unified-v17.css?v=17">
-<link rel="stylesheet" href="/static/nutrios-no-blue-v18.css?v=18">
-<link rel="stylesheet" href="/static/nutrios-exact-reference-v19.css?v=19">
-<link rel="stylesheet" href="/static/nutrios-final-v21.css?v=21">
+<link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 </head>
 <body>
-<div class="nos16-shell">
-  <aside class="nos16-sidebar">
-    <div class="nos16-brand"><span class="nos16-brand-mark">✦</span><strong>NutriOS</strong></div>
-    <div>
-      <div class="nos16-nav-title">Geral</div>
-      <nav class="nos16-nav">
-        <a class="active" href="/app">⌂ <span>Início</span></a>
-        <a href="/app/pacientes">◉ <span>Pacientes</span></a>
-        <a href="/app/agenda">▣ <span>Agenda</span></a>
-        <a href="/app/clinica">◇ <span>Atendimentos</span></a>
-        <a href="/app/planos">≡ <span>Planos alimentares</span></a>
-        <a href="/app/evolucao">↗ <span>Evolução</span></a>
-        <a href="/app/analise-corporal">♙ <span>Análise corporal</span></a>
-        <a href="/app/financeiro">$ <span>Financeiro</span></a>
-      </nav>
-    </div>
-    <div>
-      <div class="nos16-nav-title">IA & Automação</div>
-      <nav class="nos16-nav">
-        <a href="/app/conversas">◌ <span>Conversas</span></a>
-        <a href="/app/leads">◎ <span>Indicações</span></a>
-        <a href="/app/treinos">↔ <span>Treinos</span></a>
-        <a href="/app/relatorios">▥ <span>Relatórios</span></a>
-      </nav>
-    </div>
-    <div style="margin-top:auto">
-      <div class="nos16-nav-title">Configurações</div>
-      <nav class="nos16-nav">
-        <a href="/app/configuracoes">⚙ <span>Configurações</span></a>
-      </nav>
+<div class="os-shell">
+  <aside class="os-sidebar">
+    <a class="os-brand" href="/app" aria-label="NutriOS">
+      <span class="os-brand-mark" aria-hidden="true"></span>
+      <span class="os-brand-name">NutriOS</span>
+    </a>
+
+    <nav class="os-nav" aria-label="Navegação principal">
+      <a class="os-nav-item active" href="/app"><span class="os-nav-icon">⌂</span><span>Início</span></a>
+      <a class="os-nav-item" href="/app/pacientes"><span class="os-nav-icon">♙</span><span>Pacientes</span></a>
+      <a class="os-nav-item" href="/app/gestao"><span class="os-nav-icon">□</span><span>Agenda</span></a>
+      <a class="os-nav-item" href="/app/clinica"><span class="os-nav-icon">◇</span><span>Atendimentos</span></a>
+      <a class="os-nav-item" href="/app/clinica#planos"><span class="os-nav-icon">◫</span><span>Planos alimentares</span></a>
+      <a class="os-nav-item" href="/app/clinica#evolucao"><span class="os-nav-icon">↗</span><span>Evolução</span></a>
+      <a class="os-nav-item" href="/app/clinica#assessment"><span class="os-nav-icon">♧</span><span>Análise corporal</span></a>
+      <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">$</span><span>Financeiro</span></a>
+      <a class="os-nav-item" href="/app/conversas"><span class="os-nav-icon">○</span><span>Conversas</span><span class="os-badge">Novo</span></a>
+      <a class="os-nav-item" href="/app/leads"><span class="os-nav-icon">◎</span><span>Indicações</span></a>
+      <a class="os-nav-item" href="/app/treinos"><span class="os-nav-icon">↔</span><span>Treinos</span><span class="os-badge">Novo</span></a>
+      <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">▥</span><span>Relatórios</span></a>
+      <a class="os-nav-item" href="/app/configuracoes"><span class="os-nav-icon">⚙</span><span>Configurações</span></a>
+    </nav>
+
+    <div class="os-sidebar-footer">
+      <a class="os-help" href="/app/onboarding"><span>?</span> Central de ajuda</a>
     </div>
   </aside>
-  <section class="nos16-main">
-    <div class="nos16-topbar">
-      <div class="nos16-search">⌕&nbsp;&nbsp; Buscar paciente, consulta, agendamento...</div>
-      <div class="nos16-user">
-        <div class="nos16-avatar" id="nos16-avatar">N</div>
-        <div><strong id="nos16-user-name">Profissional</strong><div style="font-size:12px;color:#79867d">Nutricionista</div></div>
+
+  <section class="os-workspace">
+    <header class="os-topbar">
+      <div class="os-search-wrap">
+        <span class="os-search-icon">⌕</span>
+        <input id="moduleSearch" class="os-search" type="search" placeholder="Buscar módulo ou recurso..." autocomplete="off">
+        <kbd>Ctrl + K</kbd>
       </div>
-    </div>
-    <main class="nos16-content">
-      <div class="nos16-head">
-        <div>
-          <h1>Bem-vindo de volta, <span id="nos16-name">Nutricionista</span>!</h1>
-          <p>Aqui está o resumo da sua operação hoje.</p>
+      <div class="os-top-actions">
+        <button class="os-icon-btn" type="button" title="Notificações">♢<span class="os-notification-dot" id="alertCount">0</span></button>
+        <a class="os-icon-btn" href="/app/conversas" title="Conversas">○</a>
+        <div class="os-profile">
+          <div class="os-avatar" id="avatarInitial">N</div>
+          <div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div>
         </div>
-        <div class="nos16-date" id="nos16-date">Hoje</div>
+        <button class="os-logout" id="logout" type="button">Sair</button>
       </div>
+    </header>
 
-      <section class="nos16-kpis">
-        <article class="nos16-kpi">
-          <div class="nos16-kpi-icon">◉</div>
-          <div class="nos16-kpi-body">
-            <div class="nos16-kpi-label">Pacientes ativos</div>
-            <div class="nos16-kpi-value" id="nos16-kpi-patients">0</div>
-            <div class="nos16-kpi-foot">Atualizado com seus dados</div>
-          </div>
-        </article>
-        <article class="nos16-kpi">
-          <div class="nos16-kpi-icon">▣</div>
-          <div class="nos16-kpi-body">
-            <div class="nos16-kpi-label">Consultas próximas</div>
-            <div class="nos16-kpi-value" id="nos16-kpi-appts">0</div>
-            <div class="nos16-kpi-foot">Agenda clínica</div>
-          </div>
-        </article>
-        <article class="nos16-kpi">
-          <div class="nos16-kpi-icon">$</div>
-          <div class="nos16-kpi-body">
-            <div class="nos16-kpi-label">Receita do mês</div>
-            <div class="nos16-kpi-value" id="nos16-kpi-revenue">R$ 0,00</div>
-            <div class="nos16-kpi-foot">Financeiro realizado</div>
-          </div>
-        </article>
-        <article class="nos16-kpi">
-          <div class="nos16-kpi-icon">↗</div>
-          <div class="nos16-kpi-body">
-            <div class="nos16-kpi-label">Avaliações registradas</div>
-            <div class="nos16-kpi-value" id="nos16-kpi-assessments">0</div>
-            <div class="nos16-kpi-foot">Evolução clínica</div>
-          </div>
-        </article>
+    <main class="os-main">
+      <section class="os-heading-row">
+        <div>
+          <h1 id="hello">Bem-vindo de volta!</h1>
+          <p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p>
+          <p class="os-platform-line">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência, com você no controle.</p>
+        </div>
+        <div class="os-date-card"><span>□</span><strong id="todayDate">—</strong></div>
       </section>
 
-      <section class="nos16-analytics">
-        <article class="nos16-card">
-          <h3>Visão geral financeira</h3>
-          <div class="sub">Receita e despesas dos últimos 12 meses</div>
-          <div class="nos16-chart-wrap"><canvas id="nos16-revenue-chart"></canvas></div>
-        </article>
-        <article class="nos16-card">
-          <h3>Distribuição de pacientes</h3>
-          <div class="sub">Ativos e inativos</div>
-          <div class="nos16-donut-wrap"><canvas id="nos16-patient-chart"></canvas></div>
-        </article>
+      <section class="os-metrics" aria-label="Indicadores principais">
+        <a class="os-metric-card" href="/app/pacientes">
+          <span class="os-metric-icon blue">♙</span>
+          <div><span>Pacientes ativos</span><strong id="metricPatients">—</strong><small>Ver pacientes →</small></div>
+        </a>
+        <a class="os-metric-card" href="/app/gestao">
+          <span class="os-metric-icon green">□</span>
+          <div><span>Próximas consultas</span><strong id="metricAppointments">—</strong><small>Ver agenda →</small></div>
+        </a>
+        <a class="os-metric-card" href="/app/metricas">
+          <span class="os-metric-icon orange">$</span>
+          <div><span>Receita do mês</span><strong id="metricIncome">—</strong><small>Ver financeiro →</small></div>
+        </a>
+        <a class="os-metric-card" href="/app/clinica">
+          <span class="os-metric-icon purple">↗</span>
+          <div><span>Alertas clínicos</span><strong id="metricAlerts">—</strong><small>Ver central clínica →</small></div>
+        </a>
       </section>
 
-      <section class="nos16-bottom">
-        <article class="nos16-card">
-          <h3>Próximas consultas</h3>
-          <div class="sub">Compromissos mais próximos</div>
-          <div class="nos16-list" id="nos16-appointments-list"><div class="nos16-empty">Carregando agenda...</div></div>
-        </article>
-        <article class="nos16-card">
-          <h3>Conversas recentes</h3>
-          <div class="sub">Interações e oportunidades</div>
-          <div class="nos16-list" id="nos16-conversations-list"><div class="nos16-empty">Carregando conversas...</div></div>
-        </article>
-        <article class="nos16-card">
-          <h3>Alertas e avisos</h3>
-          <div class="sub">Itens que merecem atenção</div>
-          <div class="nos16-list" id="nos16-alerts-list"><div class="nos16-empty">Sem alertas no momento</div></div>
-        </article>
+      <section class="os-section os-analytics-section" aria-labelledby="analyticsTitle">
+        <div class="os-section-head os-analytics-head">
+          <div>
+            <h2 id="analyticsTitle">Visão analítica</h2>
+            <p>Indicadores calculados com os dados reais da sua operação.</p>
+          </div>
+          <span class="os-live-badge">Dados reais</span>
+        </div>
+
+        <div class="os-analytics-grid">
+          <article class="os-chart-card os-chart-wide">
+            <div class="os-chart-head">
+              <div><h3>Receita e despesas</h3><p>Últimos 12 meses</p></div>
+              <div class="os-chart-legend"><span><i class="income"></i>Receita</span><span><i class="expense"></i>Despesas</span></div>
+            </div>
+            <div id="financeChart" class="os-chart-stage" aria-label="Gráfico de receita e despesas"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Distribuição de pacientes</h3><p>Ativos e inativos</p></div></div>
+            <div id="patientDonut" class="os-donut-wrap" aria-label="Distribuição de pacientes"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Consultas</h3><p>Volume mensal</p></div><strong id="appointmentsTotal" class="os-chart-total">—</strong></div>
+            <div id="appointmentsChart" class="os-chart-stage compact" aria-label="Consultas por mês"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Adesão nos check-ins</h3><p>Média mensal de 0 a 10</p></div><strong id="adherenceAverage" class="os-chart-total">—</strong></div>
+            <div id="adherenceChart" class="os-chart-stage compact" aria-label="Adesão média dos check-ins"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Evolução clínica registrada</h3><p>Avaliações corporais por mês</p></div><strong id="assessmentTotal" class="os-chart-total">—</strong></div>
+            <div id="assessmentChart" class="os-chart-stage compact" aria-label="Avaliações corporais por mês"></div>
+          </article>
+        </div>
       </section>
 
-      <div class="nos16-footer">
-        <span>© 2026 NutriOS</span>
-        <span>Plataforma inteligente de gestão nutricional</span>
-      </div>
+      <section class="os-section">
+        <div class="os-section-head"><div><h2>Acesso rápido</h2></div></div>
+        <div class="os-quick-grid" id="quickGrid">
+          <a class="os-quick-card" data-search="dashboard clinico prioridades consultas check-ins evolucao" href="/app/clinica">
+            <span class="os-quick-icon blue">▥</span><div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="treinos opcional series repeticoes carga descanso" href="/app/treinos">
+            <span class="os-quick-icon purple">↔</span><div><h3>Treinos opcionais</h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="planos alimentares dieta acompanhamento" href="/app/clinica#planos">
+            <span class="os-quick-icon green">◫</span><div><h3>Planos alimentares</h3><p>Crie, edite e acompanhe planos alimentares personalizados.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="analise corporal avaliacao medidas fotos body visual" href="/app/clinica#assessment">
+            <span class="os-quick-icon cyan">♧</span><div><h3>Análise corporal</h3><p>Registre avaliações e acompanhe medidas e fotos.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="conversas tempo real pacientes oportunidades" href="/app/conversas">
+            <span class="os-quick-icon pink">○</span><div><h3>Conversas em tempo real</h3><p>Acompanhe conversas e oportunidades em uma única tela.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="relatorios evolucao graficos metricas indicadores" href="/app/metricas">
+            <span class="os-quick-icon indigo">↗</span><div><h3>Relatórios e evolução</h3><p>Visualize indicadores, gráficos e evolução da operação.</p></div><span class="os-arrow">›</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="os-section os-activity-section">
+        <div class="os-section-head"><div><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div>
+        <div id="activityList" class="os-activity-list"><div class="os-empty">Carregando atividades...</div></div>
+      </section>
     </main>
   </section>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script>
-(function(){
-  function brl(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));}
-  function ptDate(d){try{return new Date(d).toLocaleDateString('pt-BR')}catch(e){return d||''}}
-  document.getElementById('nos16-date').textContent = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
-  fetch('/app/api/dashboard').then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-    const name=d.professional_name||d.name||'Nutricionista';
-    document.getElementById('nos16-name').textContent=name.split(' ')[0]||name;
-    document.getElementById('nos16-user-name').textContent=name;
-    document.getElementById('nos16-avatar').textContent=(name[0]||'N').toUpperCase();
-    document.getElementById('nos16-kpi-patients').textContent=d.active_patients ?? d.patients_count ?? 0;
-    document.getElementById('nos16-kpi-appts').textContent=d.upcoming_appointments ?? d.appointments_count ?? 0;
-    document.getElementById('nos16-kpi-revenue').textContent=brl(d.month_revenue ?? d.revenue_month ?? 0);
-    document.getElementById('nos16-kpi-assessments').textContent=d.assessments_count ?? d.visual_assessments ?? 0;
-    const appts=(d.upcoming||d.appointments||[]).slice(0,4);
-    const al=document.getElementById('nos16-appointments-list');
-    if(appts.length){al.innerHTML=appts.map(x=>`<div class="nos16-list-item"><strong>${x.patient_name||x.patient||'Paciente'}</strong><div style="font-size:12px;color:#748078">${ptDate(x.starts_at||x.date)} ${x.time||''}</div></div>`).join('')}
-    const alerts=(d.alerts||[]).slice(0,4);
-    const ar=document.getElementById('nos16-alerts-list');
-    if(alerts.length){ar.innerHTML=alerts.map(x=>`<div class="nos16-list-item"><strong>${x.title||'Alerta clínico'}</strong><div style="font-size:12px;color:#748078">${x.description||x.message||''}</div></div>`).join('')}
-  }).catch(()=>{});
-  fetch('/app/api/analytics').then(r=>r.ok?r.json():Promise.reject()).then(a=>{
-    const months=a.months||a.labels||[];
-    const revenue=a.revenue||[];
-    const expenses=a.expenses||[];
-    if(window.Chart){
-      new Chart(document.getElementById('nos16-revenue-chart'),{
-        type:'line',
-        data:{labels:months,datasets:[
-          {label:'Receita',data:revenue,borderColor:'#169447',backgroundColor:'rgba(22,148,71,.10)',fill:true,tension:.35,pointRadius:3},
-          {label:'Despesas',data:expenses,borderColor:'#f4a11a',backgroundColor:'rgba(244,161,26,.06)',fill:false,tension:.35,pointRadius:3}
-        ]},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf2ee'}}}}
-      });
-      const active=a.active_patients??a.patients_active??0;
-      const inactive=a.inactive_patients??a.patients_inactive??0;
-      new Chart(document.getElementById('nos16-patient-chart'),{
-        type:'doughnut',
-        data:{labels:['Ativos','Inativos'],datasets:[{data:[active,inactive],backgroundColor:['#169447','#8bd6a7'],borderColor:'#fff',borderWidth:3}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom'}}}
-      });
-    }
-  }).catch(()=>{});
-  fetch('/app/api/conversations').then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-    const rows=(Array.isArray(d)?d:(d.items||d.conversations||[])).slice(0,4);
-    const el=document.getElementById('nos16-conversations-list');
-    if(rows.length){el.innerHTML=rows.map(x=>`<div class="nos16-list-item"><strong>${x.patient_name||x.visitor_name||'Conversa'}</strong><div style="font-size:12px;color:#748078">${x.preview||x.last_message||''}</div></div>`).join('')}
-    else{el.innerHTML='<div class="nos16-empty">Sem conversas recentes</div>'}
-  }).catch(()=>{});
-})();
-</script>
 
 <script>
 const qs=s=>document.querySelector(s);
@@ -318,6 +284,6 @@ document.addEventListener('keydown',e=>{
 logout.onclick=()=>fetch('/auth/logout',{method:'POST'}).then(()=>location='/login');
 init().catch(()=>location='/login');
 </script>
-<script src="/static/nutrios-theme-v21.js?v=21"></script>
+<script src="/static/nutrios-v22-theme.js?v=22"></script>
 </body>
 </html>
