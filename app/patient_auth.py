@@ -4,6 +4,7 @@ import hashlib, hmac, os, secrets
 from datetime import datetime, timedelta, timezone
 from fastapi import Cookie, HTTPException, Request, Response
 from app import saas_store
+from app.auth import hash_password, verify_password
 
 COOKIE_NAME = "nutribot_patient_session"
 SECRET = os.getenv("SESSION_SECRET") or os.getenv("APP_TOKEN_SECRET", "")
@@ -37,6 +38,40 @@ def authenticate(code: str) -> dict | None:
     if not patient or not patient.get("active") or patient.get("archived_at") or datetime.fromisoformat(patient["access_expires_at"].replace("Z","+00:00")) <= now: return None
     saas_store._request("PATCH","patient_access_codes",params={"id":f"eq.{row['id']}"},payload={"used_at":now.isoformat()},prefer="return=minimal")
     return patient
+
+def authenticate_password(identifier: str, password: str) -> dict | None:
+    """Autentica somente pacientes ativos e dentro da validade contratada."""
+    normalized = identifier.strip().lower()
+    if not normalized or not password:
+        return None
+    rows = saas_store._request(
+        "GET", "patient_accounts",
+        params={"select": "*", "login_identifier": f"eq.{normalized}", "active": "eq.true", "archived_at": "is.null", "limit": "1"},
+    ) or []
+    if not rows:
+        return None
+    patient = rows[0]
+    if datetime.fromisoformat(patient["access_expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
+        return None
+    return patient if verify_password(patient.get("password_hash"), password) else None
+
+def set_credentials(patient: dict, identifier: str, password: str) -> dict:
+    """Conclui o primeiro acesso sem expor senha ou código em texto puro."""
+    normalized = identifier.strip().lower()
+    if len(normalized) < 4 or len(normalized) > 160:
+        raise ValueError("Use um e-mail ou identificador com pelo menos 4 caracteres")
+    existing = saas_store._request(
+        "GET", "patient_accounts",
+        params={"select": "id", "login_identifier": f"eq.{normalized}", "id": f"neq.{patient['id']}", "limit": "1"},
+    ) or []
+    if existing:
+        raise ValueError("Este identificador já está em uso")
+    rows = saas_store._request(
+        "PATCH", "patient_accounts", params={"id": f"eq.{patient['id']}"},
+        payload={"login_identifier": normalized, "password_hash": hash_password(password), "password_created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()},
+        prefer="return=representation",
+    ) or []
+    return rows[0] if rows else patient
 
 def create_session(patient: dict, response: Response):
     raw=secrets.token_urlsafe(48); now=datetime.now(timezone.utc); plan_end=datetime.fromisoformat(patient["access_expires_at"].replace("Z","+00:00")); expires=min(now+timedelta(seconds=SESSION_SECONDS),plan_end)

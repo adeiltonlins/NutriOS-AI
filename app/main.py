@@ -241,7 +241,18 @@ class PatientRequest(BaseModel):
 
 
 class PatientLoginRequest(BaseModel):
-    code: str = Field(..., min_length=8, max_length=64)
+    code: str | None = Field(default=None, min_length=8, max_length=64)
+    identifier: str | None = Field(default=None, min_length=4, max_length=160)
+    password: str | None = Field(default=None, min_length=10, max_length=128)
+
+
+class PatientCredentialRequest(BaseModel):
+    identifier: str = Field(..., min_length=4, max_length=160)
+    password: str = Field(..., min_length=10, max_length=128)
+
+
+class PatientCodeRequest(BaseModel):
+    expires_in_hours: int = Field(default=24, ge=1, le=8760)
 
 
 class PatientRenewRequest(BaseModel):
@@ -990,10 +1001,10 @@ def edit_patient(patient_id: str, payload: dict, user: dict = Depends(auth.curre
 
 
 @app.post("/app/api/pacientes/{patient_id}/codigo")
-def generate_patient_code(patient_id: str, user: dict = Depends(auth.current_user)):
+def generate_patient_code(patient_id: str, payload: PatientCodeRequest, user: dict = Depends(auth.current_user)):
     patient = _owned_patient(patient_id, user["id"])
     if patient.get("archived_at") or not patient.get("active"): raise HTTPException(409, "Ative o paciente antes de gerar o código")
-    return {"code": patient_auth.issue_code(patient_id, 24), "expires_in_hours": 24, "show_once": True}
+    return {"code": patient_auth.issue_code(patient_id, payload.expires_in_hours), "expires_in_hours": payload.expires_in_hours, "show_once": True}
 
 
 @app.post("/app/api/pacientes/{patient_id}/renovar")
@@ -1265,12 +1276,35 @@ def patient_login_page():
 @limiter.limit("5/minute")
 def patient_login(request: Request, payload: PatientLoginRequest, response: Response):
     try:
-        patient = patient_auth.authenticate(payload.code)
+        if payload.code:
+            patient = patient_auth.authenticate(payload.code)
+            method = "code"
+        elif payload.identifier and payload.password:
+            patient = patient_auth.authenticate_password(payload.identifier, payload.password)
+            method = "password"
+        else:
+            raise HTTPException(400, "Informe o código ou suas credenciais")
     except RuntimeError:
         raise HTTPException(503, "Serviço de autenticação temporariamente indisponível")
-    if not patient: raise HTTPException(401, "Código inválido, usado ou expirado")
+    if not patient: raise HTTPException(401, "Acesso inválido, expirado ou indisponível")
     patient_auth.create_session(patient, response)
-    return {"ok": True, "redirect": "/paciente"}
+    redirect = "/paciente/primeiro-acesso" if method == "code" and not patient.get("password_hash") else "/paciente"
+    return {"ok": True, "redirect": redirect}
+
+
+@app.get("/paciente/primeiro-acesso")
+def patient_first_access_page(patient: dict = Depends(patient_auth.current_patient)):
+    return FileResponse(STATIC_DIR / "patient-first-access.html", headers={"Cache-Control": "no-store"})
+
+
+@app.post("/paciente/auth/credenciais")
+@limiter.limit("5/minute")
+def patient_create_credentials(request: Request, payload: PatientCredentialRequest, patient: dict = Depends(patient_auth.current_patient)):
+    try:
+        updated = patient_auth.set_credentials(patient, payload.identifier, payload.password)
+    except ValueError as error:
+        raise HTTPException(400, str(error))
+    return {"ok": True, "identifier": updated.get("login_identifier"), "redirect": "/paciente"}
 
 
 @app.post("/paciente/auth/logout")
