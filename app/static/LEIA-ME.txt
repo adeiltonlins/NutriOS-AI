@@ -1,14 +1,12 @@
-NUTRIOS V7 — UPLOAD FÁCIL
+NUTRIOS V8 — CORREÇÃO DA PÁGINA PÚBLICA
 
 No GitHub:
 nutri-chatbot > app > static > Add file > Upload files
 
-Envie:
-- app.html
-- client-conversations.html
-- nutrios-dashboard-v7.css
+Envie somente:
+- saas-landing.html
 
-Commit:
-NutriOS Premium v7 - marca e icones refinados
+Commit sugerido:
+NutriOS v8 - corrige marca da pagina publica
 
-Depois aguarde o Render concluir o deploy e pressione Ctrl+F5 no navegador.
+Depois aguarde o deploy do Render e pressione Ctrl+F5.
