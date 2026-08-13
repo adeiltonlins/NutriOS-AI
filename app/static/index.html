@@ -71,6 +71,7 @@
 
 
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
+<link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-50 text-slate-900 dark:from-[#0b1a11] dark:via-[#12271a] dark:to-[#17301f] dark:text-slate-100 transition-colors public-page">
 
@@ -92,11 +93,11 @@
     </div>
     <div class="flex items-center gap-2">
       <button id="newChatBtn" title="Nova conversa" aria-label="Nova conversa"
-        class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-brand-soft hover:text-brand dark:hover:bg-slate-700 hover:border-brand-soft transition-colors">
+        class="w-9 h-9 rounded-lg border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-brand-soft hover:text-brand dark:hover:bg-emerald-900/40 hover:border-brand-soft transition-colors">
         <svg viewBox="0 0 24 24" class="w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       </button>
       <button id="themeToggle" title="Alternar tema" aria-label="Alternar tema"
-        class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-brand-soft hover:text-brand dark:hover:bg-slate-700 hover:border-brand-soft transition-colors">
+        class="w-9 h-9 rounded-lg border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-brand-soft hover:text-brand dark:hover:bg-emerald-900/40 hover:border-brand-soft transition-colors">
         <svg viewBox="0 0 24 24" class="w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       </button>
     </div>
@@ -118,19 +119,19 @@
       <h2 id="heroTitle" class="hero-gradient text-3xl sm:text-[38px] leading-tight font-extrabold tracking-[-.035em] mb-3">Converse antes de agendar</h2>
       <p id="welcomeText" class="text-sm sm:text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 max-w-lg mb-5">Tire suas primeiras dúvidas e descubra o próximo passo para cuidar da sua alimentação.</p>
       <div id="quickActions" class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-2">
-        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
           data-icon="🥗" data-q="Pode me ajudar a montar uma dieta?">
           <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Montar dieta</span>
         </button>
-        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
           data-icon="⚡" data-q="Como calculo minhas calorias diárias?">
           <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Calcular calorias</span>
         </button>
-        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
           data-icon="💪" data-q="O que preciso saber para ganhar massa muscular?">
           <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Ganhar massa</span>
         </button>
-        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-brand hover:bg-brand-soft dark:hover:bg-slate-700 transition-colors shadow-sm"
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
           data-icon="🎯" data-q="Como posso perder gordura de forma saudável?">
           <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Perder gordura</span>
         </button>
@@ -143,7 +144,7 @@
 
     <!-- Composer -->
     <div class="border-t border-slate-200/70 dark:border-white/10 p-3 sm:p-4 bg-white/40 dark:bg-black/10 shrink-0">
-      <form id="composer" class="flex items-end gap-2 bg-white/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl px-3 py-2 shadow-sm focus-within:border-brand focus-within:ring-4 focus-within:ring-brand-soft dark:focus-within:ring-emerald-500/10 transition-shadow">
+      <form id="composer" class="flex items-end gap-2 bg-white/90 dark:bg-emerald-950/30/80 border border-slate-200 dark:border-emerald-800/60 rounded-2xl px-3 py-2 shadow-sm focus-within:border-brand focus-within:ring-4 focus-within:ring-brand-soft dark:focus-within:ring-emerald-500/10 transition-shadow">
         <textarea id="pergunta" rows="1" maxlength="500"
           placeholder="Pergunte algo sobre sua dieta..."
           aria-label="Sua pergunta sobre nutrição"
@@ -158,11 +159,11 @@
   </main>
 </div>
 
-<dialog id="contactDialog" class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-0 shadow-2xl backdrop:bg-slate-950/70 w-[min(92vw,460px)]">
+<dialog id="contactDialog" class="rounded-2xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-0 shadow-2xl backdrop:bg-slate-950/70 w-[min(92vw,460px)]">
   <form id="contactForm" class="p-6 space-y-4">
     <div><h2 class="text-xl font-bold">Dados para atendimento</h2><p class="text-sm text-slate-500 mt-1">A clínica usará estes dados somente para conferir o pagamento e falar com você.</p></div>
-    <label class="block text-sm font-semibold">Nome completo<input id="leadName" required minlength="2" maxlength="120" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-3 font-normal" autocomplete="name"></label>
-    <label class="block text-sm font-semibold">WhatsApp com DDD<input id="leadPhone" required minlength="10" maxlength="30" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent px-3 py-3 font-normal" autocomplete="tel" placeholder="Ex.: 55 11 99999-9999"></label>
+    <label class="block text-sm font-semibold">Nome completo<input id="leadName" required minlength="2" maxlength="120" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-emerald-800/60 bg-transparent px-3 py-3 font-normal" autocomplete="name"></label>
+    <label class="block text-sm font-semibold">WhatsApp com DDD<input id="leadPhone" required minlength="10" maxlength="30" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-emerald-800/60 bg-transparent px-3 py-3 font-normal" autocomplete="tel" placeholder="Ex.: 55 11 99999-9999"></label>
     <label class="flex gap-2 text-xs text-slate-500"><input id="leadConsent" required type="checkbox" class="mt-0.5"><span>Autorizo a clínica a entrar em contato comigo pelo WhatsApp sobre este atendimento.</span></label>
     <p id="contactError" class="hidden text-sm text-red-500"></p>
     <div class="flex gap-2"><button type="button" id="cancelContact" class="flex-1 rounded-xl border border-slate-300 px-4 py-3">Agora não</button><button type="submit" id="submitContact" class="flex-1 rounded-xl bg-emerald-600 text-white font-bold px-4 py-3">Continuar</button></div>
@@ -231,7 +232,7 @@
     if (cfg.instagram) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.instagram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Instagram</a>`);
     if (clientSlug) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="/paciente/login?nutri=${encodeURIComponent(clientSlug)}">Já sou paciente</a>`);
     const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
-    if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 transition-colors shadow-sm" data-icon="✦" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
+    if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 transition-colors shadow-sm" data-icon="✦" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
     document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;
     const intro = cfg.mensagem_inicial || `Olá! Sou a assistente virtual de ${cfg.nome}. Como posso ajudar você hoje?`;
     mostrarChat();
@@ -312,7 +313,7 @@
     const bubble = document.createElement('div');
     bubble.className = isUser
       ? 'px-4 py-2.5 text-[14.5px] leading-relaxed shadow-sm bg-brand text-white rounded-2xl rounded-tr-sm break-words whitespace-pre-wrap'
-      : 'px-4 py-2.5 text-[14.5px] leading-relaxed shadow-sm bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm break-words whitespace-pre-wrap';
+      : 'px-4 py-2.5 text-[14.5px] leading-relaxed shadow-sm bg-slate-50 dark:bg-emerald-950/30 border border-slate-100 dark:border-emerald-800/60 rounded-2xl rounded-tl-sm break-words whitespace-pre-wrap';
     return bubble;
   }
 
@@ -361,7 +362,7 @@
     const col = criarLinha('bot');
     col.id = 'thinkingCol';
     const bubble = document.createElement('div');
-    bubble.className = 'flex items-center gap-1.5 px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl rounded-tl-sm shadow-sm';
+    bubble.className = 'flex items-center gap-1.5 px-4 py-3 bg-slate-50 dark:bg-emerald-950/30 border border-slate-100 dark:border-emerald-800/60 rounded-2xl rounded-tl-sm shadow-sm';
     bubble.innerHTML = `
       <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounceDot" style="animation-delay:0ms"></span>
       <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounceDot" style="animation-delay:150ms"></span>
@@ -520,7 +521,7 @@
 })();
 </script>
 
-<a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#64748b;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
+<a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#718077;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
 <script src="/static/nutrios-v22-theme.js?v=22"></script>
 </body>
 </html>

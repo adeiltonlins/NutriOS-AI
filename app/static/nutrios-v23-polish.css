@@ -1,0 +1,326 @@
+
+/* ==========================================================
+   NutriOS V23 — acabamento premium e consistência visual
+   ========================================================== */
+:root{
+  --v23-bg:#f7faf8;
+  --v23-surface:#ffffff;
+  --v23-soft:#f2f8f4;
+  --v23-mint:#e7f6ec;
+  --v23-line:#dce8df;
+  --v23-line2:#c8dccf;
+  --v23-text:#142018;
+  --v23-muted:#718077;
+  --v23-green:#168f43;
+  --v23-green2:#22ad55;
+  --v23-green3:#64cf86;
+  --v23-green-dark:#205f36;
+  --v23-danger:#c94b4b;
+  --v23-warning:#d98b11;
+  --v23-shadow:0 10px 30px rgba(25,85,46,.065);
+}
+html[data-theme="dark"]{
+  --v23-bg:#0b1a11;
+  --v23-surface:#12271a;
+  --v23-soft:#17301f;
+  --v23-mint:#1d3b27;
+  --v23-line:#294a35;
+  --v23-line2:#355c42;
+  --v23-text:#edf8ef;
+  --v23-muted:#a9baaf;
+  --v23-green:#51d879;
+  --v23-green2:#43c96a;
+  --v23-green3:#8be5a4;
+  --v23-green-dark:#b7efc5;
+  --v23-danger:#ff8686;
+  --v23-warning:#f2b654;
+  --v23-shadow:0 14px 34px rgba(0,0,0,.22);
+}
+html,body{
+  max-width:100%!important;
+  overflow-x:hidden!important;
+  background:var(--v23-bg)!important;
+  color:var(--v23-text)!important;
+}
+body *{box-sizing:border-box}
+
+/* All main containers */
+main,.main,.content,.app-content,.admin-content,.record-shell,.record-content,
+.patient-page,.shell,.wrap,.admin-main,.app-main{
+  min-width:0!important;
+}
+.card,.panel,.box,.stat,.metric-card,.finance-kpi,.glass-card,
+.record-metrics article,.admin-v3-banner,.system-health{
+  background:var(--v23-surface)!important;
+  color:var(--v23-text)!important;
+  border-color:var(--v23-line)!important;
+  box-shadow:var(--v23-shadow)!important;
+}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .box,
+html[data-theme="dark"] .stat,
+html[data-theme="dark"] .metric-card,
+html[data-theme="dark"] .finance-kpi,
+html[data-theme="dark"] .glass-card,
+html[data-theme="dark"] .record-metrics article{
+  background:var(--v23-surface)!important;
+}
+
+/* Kill legacy navy/slate utility backgrounds in our product surfaces */
+html[data-theme="dark"] .bg-slate-700,
+html[data-theme="dark"] .bg-slate-800,
+html[data-theme="dark"] .bg-slate-900,
+html[data-theme="dark"] [class*="dark:bg-slate"],
+html[data-theme="dark"] [class*="dark:from-slate"],
+html[data-theme="dark"] [class*="dark:to-slate"]{
+  background:var(--v23-surface)!important;
+}
+html[data-theme="dark"] [class*="border-slate"]{border-color:var(--v23-line2)!important}
+html[data-theme="dark"] [class*="text-slate"]{color:var(--v23-muted)!important}
+
+/* Admin Mestre — no blue hero/cards */
+.admin-v3-banner{
+  background:linear-gradient(135deg,var(--v23-mint),var(--v23-surface))!important;
+  border:1px solid var(--v23-line)!important;
+}
+html[data-theme="dark"] .admin-v3-banner{
+  background:linear-gradient(135deg,#17301f,#12271a)!important;
+}
+.admin-v3-pill,.admin-welcome,.admin-side .nav.active{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+  border-color:var(--v23-line2)!important;
+}
+.admin-shell .stat,.admin-shell .panel,.admin-stats .stat,
+.system-health,.professionals-panel{
+  background:var(--v23-surface)!important;
+  border-color:var(--v23-line)!important;
+}
+.admin-shell .stat.featured{background:linear-gradient(145deg,var(--v23-surface),var(--v23-soft))!important}
+.admin-shell .eyebrow,.admin-shell .money,.admin-shell .admin-v3-pill{color:var(--v23-green)!important}
+
+/* Patient list / management */
+.patient-page .stat,
+.patient-page .panel,
+.client-patient-card,
+.patient-management-card{
+  background:var(--v23-surface)!important;
+  border-color:var(--v23-line)!important;
+}
+.patient-page .tabs .on,
+.patient-page .tabs button.on{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+  border-color:var(--v23-line2)!important;
+}
+
+/* Prontuário tabs */
+.record-tabs{
+  background:color-mix(in srgb,var(--v23-surface) 94%,transparent)!important;
+  border:1px solid var(--v23-line)!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.07)!important;
+}
+.record-tabs .tab{
+  background:transparent!important;
+  color:var(--v23-muted)!important;
+  border:1px solid transparent!important;
+  white-space:nowrap!important;
+}
+.record-tabs .tab:hover{background:var(--v23-soft)!important;color:var(--v23-green)!important}
+.record-tabs .tab.on{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+  border-color:var(--v23-line2)!important;
+  box-shadow:none!important;
+}
+
+/* Patient record metrics — remove legacy blue/cyan/violet tiles */
+.record-metrics .metric-icon,
+.metric-icon.blue,.metric-icon.cyan,.metric-icon.violet,.metric-icon.orange,.metric-icon.green{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+  border-color:var(--v23-line2)!important;
+}
+
+/* Photo evolution */
+#photos .tabs button,
+#photos .tab,
+#assessment .tabs button,
+#assessment .tab,
+#mealplan .meal-tabs button{
+  background:var(--v23-surface)!important;
+  color:var(--v23-green-dark)!important;
+  border-color:var(--v23-line2)!important;
+}
+#photos .tabs button.on,
+#assessment .tabs button.on,
+#mealplan .meal-tabs button.on,
+#mealplan .meal-tabs .on{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+}
+#photos input[type=file]::file-selector-button{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green-dark)!important;
+  border:0!important;
+  border-radius:8px!important;
+  padding:8px 10px!important;
+}
+
+/* Meal plan layout */
+#mealplan .mealplan-grid{min-width:0!important}
+#mealplan .panel{min-width:0!important}
+#mealplan .meal-toolbar,
+#mealplan .food-search{
+  gap:10px!important;
+}
+#mealplan .food-search input{min-width:0!important;width:100%!important}
+#mealplan .food-search button,
+#mealplan #addMeal,
+#mealplan #foodSearch{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green-dark)!important;
+  border-color:var(--v23-line2)!important;
+  white-space:nowrap!important;
+}
+#mealplan #savePlan{
+  background:linear-gradient(135deg,var(--v23-green),var(--v23-green2))!important;
+  color:#fff!important;
+  border-color:var(--v23-green)!important;
+}
+#mealplan article.panel > label{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:8px!important;
+  width:100%!important;
+  margin:16px 0!important;
+  min-width:0!important;
+}
+#mealplan #patientNotes,
+#mealplan #signatureText{
+  width:100%!important;
+  max-width:100%!important;
+}
+#mealplan #patientNotes{min-height:110px!important}
+#mealplan .consent{
+  display:flex!important;
+  align-items:flex-start!important;
+  gap:12px!important;
+  padding:14px!important;
+  background:var(--v23-soft)!important;
+  border:1px solid var(--v23-line)!important;
+  border-radius:14px!important;
+}
+
+/* Finance: no horizontal clipping, all 4 KPIs fit */
+#finance{max-width:100%!important;overflow:hidden!important}
+#finance .finance-summary{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:14px!important;
+  width:100%!important;
+}
+#finance .finance-kpi{
+  min-width:0!important;
+  overflow:hidden!important;
+  background:var(--v23-surface)!important;
+}
+#finance .finance-kpi strong{
+  font-size:clamp(22px,2.1vw,30px)!important;
+  white-space:nowrap!important;
+}
+#finance .content-split{
+  grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)!important;
+  gap:18px!important;
+  width:100%!important;
+}
+#finance .panel{min-width:0!important}
+#finance .finance-legend{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+}
+#finance .finance-legend .pill{
+  background:var(--v23-soft)!important;
+  color:var(--v23-muted)!important;
+  border:1px solid var(--v23-line)!important;
+}
+#finance .panel-icon{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+}
+
+/* Generic patient record form polish */
+.record-content input,.record-content select,.record-content textarea{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+.record-content textarea{resize:vertical!important}
+.record-content .form-grid label{min-width:0!important}
+
+/* Virtual assistant/chat */
+#newChatBtn,#themeToggle{
+  background:var(--v23-surface)!important;
+  color:var(--v23-green)!important;
+  border-color:var(--v23-line2)!important;
+}
+.quick-action{
+  background:var(--v23-surface)!important;
+  color:var(--v23-text)!important;
+  border-color:var(--v23-line2)!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"] .quick-action{
+  background:var(--v23-soft)!important;
+  color:var(--v23-text)!important;
+}
+.quick-action:hover{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+  border-color:var(--v23-green)!important;
+}
+.quick-action::before{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+}
+#enviarBtn{
+  background:linear-gradient(135deg,var(--v23-green),var(--v23-green2))!important;
+  color:#fff!important;
+  border-color:var(--v23-green)!important;
+}
+#messageInput,#inputMessage,#chatInput,
+form input[type=text]{
+  border-color:var(--v23-line2);
+}
+.profile-card{
+  background:linear-gradient(145deg,var(--v23-mint),var(--v23-surface))!important;
+  border-color:var(--v23-line2)!important;
+}
+html[data-theme="dark"] .profile-card{
+  background:linear-gradient(145deg,#17301f,#12271a)!important;
+}
+
+/* Typography / secondary accents */
+.eyebrow,.kicker,[class*="operation"] .eyebrow{color:var(--v23-green)!important}
+.panel-icon,.stat-icon,.icon-box{
+  background:var(--v23-mint)!important;
+  color:var(--v23-green)!important;
+}
+.badge.info,.status-info{background:var(--v23-mint)!important;color:var(--v23-green)!important}
+
+/* Responsive: prevent all screenshots' clipping */
+@media(max-width:1200px){
+  #finance .finance-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #finance .content-split{grid-template-columns:1fr!important}
+}
+@media(max-width:900px){
+  #mealplan .meal-toolbar,
+  #mealplan .food-search{grid-template-columns:1fr!important}
+  #finance .finance-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:560px){
+  #finance .finance-summary{grid-template-columns:1fr!important}
+  .record-tabs{border-radius:14px!important}
+}

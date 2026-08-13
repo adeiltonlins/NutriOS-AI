@@ -1,41 +1,23 @@
-NUTRIOS V17 — IDENTIDADE COMPLETA + DARK GREEN
+NUTRIOS V23 — ACABAMENTO PREMIUM
 
-Esta versão muda TODO o frontend:
-- página pública
-- login
-- primeiro acesso
-- criação/recuperação de senha
-- painel do nutricionista
-- Admin Mestre
-- portal do paciente
-- prontuário
-- agenda
-- financeiro
-- conversas
-- leads
-- relatórios
-- módulos clínicos
-- formulários públicos
-- treino
-- onboarding
-- configurações
+Esta versão é frontend e deve ser aplicada SOBRE a V22.
 
-APARÊNCIA:
-- padrão: branco + verde + verde-claro
-- opção: Dark Green premium
-- botão flutuante de aparência em todas as páginas
-- escolha salva no navegador
+Corrige:
+- cards e botões ainda azulados no Admin e Nutricionista
+- Assistente virtual/chat em verde/mint + Dark Green
+- tabs do prontuário
+- Evolução fotográfica
+- Plano alimentar: labels/inputs e botões
+- Financeiro: overflow, KPIs e histórico
+- responsividade e conteúdo cortado à direita
+- consistência visual de Admin, paciente e profissional
 
 UPLOAD:
-1. Extraia este ZIP.
-2. GitHub > nutri-chatbot > app > static
-3. Add file > Upload files
-4. Envie TODOS os arquivos, EXCETO LEIA-ME.txt.
-5. São 31 arquivos, abaixo do limite de 100.
-6. Substitua os existentes.
-7. Commit:
-   NutriOS v17 - tema completo e Dark Green
-8. Aguarde o Render concluir o deploy.
-9. Ctrl + F5 na pública, login, /app, Admin e portal do paciente.
+GitHub > nutri-chatbot > app > static > Add file > Upload files
 
-Não altera backend, banco, domínio ou autenticação.
+Envie TODOS os arquivos deste pacote, menos LEIA-ME.txt.
+Commit:
+NutriOS v23 - acabamento premium e responsividade
+
+A V23 NÃO substitui o main.py da V22.
+Mantenha o main.py da V22, pois ele contém as correções de rotas.
