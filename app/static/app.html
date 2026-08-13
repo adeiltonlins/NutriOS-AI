@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/static/nutrios-analytics-v14.css?v=14">
 <link rel="stylesheet" href="/static/nutrios-reference-light-v15.css?v=15">
 <link rel="stylesheet" href="/static/nutrios-premium-v16.css?v=16">
+<link rel="stylesheet" href="/static/nutrios-unified-v17.css?v=17">
 </head>
 <body>
 <div class="nos16-shell">
@@ -313,5 +314,6 @@ document.addEventListener('keydown',e=>{
 });
 logout.onclick=()=>fetch('/auth/logout',{method:'POST'}).then(()=>location='/login');
 init().catch(()=>location='/login');
-</script></body>
+</script><script src="/static/nutrios-theme-v17.js?v=17"></script>
+</body>
 </html>

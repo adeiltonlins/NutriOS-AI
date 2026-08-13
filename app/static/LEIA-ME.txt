@@ -1,29 +1,41 @@
-NUTRIOS V16 — DASHBOARD PREMIUM PARA NUTRICIONISTAS
+NUTRIOS V17 — IDENTIDADE COMPLETA + DARK GREEN
 
-Objetivo:
-- layout estrutural premium
-- sidebar branca
-- topbar profissional
-- 4 KPIs
-- gráfico financeiro real
-- gráfico de pacientes real
-- próximas consultas
-- conversas recentes
-- alertas e avisos
-- visual de clínica/saúde
+Esta versão muda TODO o frontend:
+- página pública
+- login
+- primeiro acesso
+- criação/recuperação de senha
+- painel do nutricionista
+- Admin Mestre
+- portal do paciente
+- prontuário
+- agenda
+- financeiro
+- conversas
+- leads
+- relatórios
+- módulos clínicos
+- formulários públicos
+- treino
+- onboarding
+- configurações
+
+APARÊNCIA:
+- padrão: branco + verde + verde-claro
+- opção: Dark Green premium
+- botão flutuante de aparência em todas as páginas
+- escolha salva no navegador
 
 UPLOAD:
-GitHub > nutri-chatbot > app > static > Add file > Upload files
+1. Extraia este ZIP.
+2. GitHub > nutri-chatbot > app > static
+3. Add file > Upload files
+4. Envie TODOS os arquivos, EXCETO LEIA-ME.txt.
+5. São 31 arquivos, abaixo do limite de 100.
+6. Substitua os existentes.
+7. Commit:
+   NutriOS v17 - tema completo e Dark Green
+8. Aguarde o Render concluir o deploy.
+9. Ctrl + F5 na pública, login, /app, Admin e portal do paciente.
 
-Envie:
-- app.html
-- admin-v2.html
-- nutrios-premium-v16.css
-
-Commit:
-NutriOS v16 - dashboard premium nutricionistas
-
-Depois aguarde o Render e use Ctrl+F5 em /app e no Admin Mestre.
-
-IMPORTANTE:
-A V16 preserva o backend e usa as rotas reais já existentes.
+Não altera backend, banco, domínio ou autenticação.
