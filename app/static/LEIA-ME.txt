@@ -1,21 +1,29 @@
-NUTRIOS V11 — ADMIN MESTRE CORRIGIDO
+NUTRIOS V16 — DASHBOARD PREMIUM PARA NUTRICIONISTAS
 
-Arquivo correto: admin-v2.html
+Objetivo:
+- layout estrutural premium
+- sidebar branca
+- topbar profissional
+- 4 KPIs
+- gráfico financeiro real
+- gráfico de pacientes real
+- próximas consultas
+- conversas recentes
+- alertas e avisos
+- visual de clínica/saúde
 
-GitHub:
-nutri-chatbot > app > static > Add file > Upload files
+UPLOAD:
+GitHub > nutri-chatbot > app > static > Add file > Upload files
 
 Envie:
-admin-v2.html
+- app.html
+- admin-v2.html
+- nutrios-premium-v16.css
 
 Commit:
-NutriOS v11 - corrige marca do Admin Mestre
+NutriOS v16 - dashboard premium nutricionistas
 
-Depois:
-aguarde o Render finalizar o deploy e pressione Ctrl + F5.
+Depois aguarde o Render e use Ctrl+F5 em /app e no Admin Mestre.
 
-Resultado:
-- remove o N duplicado
-- remove o OS pequeno
-- remove ADMINISTRAÇÃO da marca
-- deixa apenas ✦ + NutriOS
+IMPORTANTE:
+A V16 preserva o backend e usa as rotas reais já existentes.

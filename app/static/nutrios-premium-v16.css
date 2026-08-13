@@ -1,0 +1,77 @@
+
+/* NutriOS V16 — Premium Nutrition SaaS Structural UI */
+:root{
+  --bg:#f6faf7;
+  --surface:#ffffff;
+  --surface-soft:#f1f7f3;
+  --border:#e3ebe5;
+  --text:#101814;
+  --muted:#6f7b73;
+  --green:#169447;
+  --green-2:#24b85a;
+  --green-soft:#e7f6ec;
+  --orange:#f4a11a;
+  --blue:#3b82f6;
+  --purple:#8b5cf6;
+  --shadow:0 10px 30px rgba(20,65,38,.06);
+  --radius:18px;
+}
+html,body{background:var(--bg)!important;color:var(--text)!important}
+body{color-scheme:light!important}
+.nos16-shell{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh;background:var(--bg)}
+.nos16-sidebar{background:#fff;border-right:1px solid var(--border);padding:22px 14px;display:flex;flex-direction:column;gap:18px}
+.nos16-brand{display:flex;align-items:center;gap:12px;padding:0 10px 10px}
+.nos16-brand-mark{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(145deg,#1fa853,#69db91);color:#fff;font-size:20px;font-weight:900}
+.nos16-brand strong{font-size:28px;letter-spacing:-.045em;color:#205f36}
+.nos16-nav-title{padding:8px 12px 4px;color:#8a948d;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.nos16-nav{display:flex;flex-direction:column;gap:6px}
+.nos16-nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;color:#344139!important;text-decoration:none!important;font-weight:600}
+.nos16-nav a:hover{background:#f5f8f6!important;color:var(--green)!important}
+.nos16-nav a.active{background:#eef5f0!important;color:var(--green)!important}
+.nos16-main{min-width:0;background:var(--bg)}
+.nos16-topbar{height:80px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:20}
+.nos16-search{width:min(520px,48vw);height:44px;border:1px solid var(--border);border-radius:12px;background:#fff;display:flex;align-items:center;padding:0 14px;color:var(--muted)}
+.nos16-user{display:flex;align-items:center;gap:12px}
+.nos16-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,#39b96a,#71d998);color:#fff;display:grid;place-items:center;font-weight:800}
+.nos16-content{padding:30px 28px 40px}
+.nos16-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}
+.nos16-head h1{margin:0 0 4px;font-size:30px;letter-spacing:-.04em;color:var(--text)!important}
+.nos16-head p{margin:0;color:var(--muted)!important}
+.nos16-date{background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:#223127;font-weight:600}
+.nos16-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px}
+.nos16-kpi{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);display:flex;gap:14px;min-height:140px}
+.nos16-kpi-icon{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:var(--green);font-weight:900;flex:0 0 46px}
+.nos16-kpi-body{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.nos16-kpi-label{font-size:13px;color:#516056;margin-bottom:5px}
+.nos16-kpi-value{font-size:29px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+.nos16-kpi-foot{margin-top:8px;font-size:12px;color:var(--green)}
+.nos16-analytics{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr);gap:16px;margin-bottom:16px}
+.nos16-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+.nos16-card h3{margin:0 0 2px;font-size:18px;color:var(--text)!important}
+.nos16-card .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+.nos16-bottom{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.nos16-list{display:flex;flex-direction:column;gap:10px}
+.nos16-list-item{padding:12px 0;border-bottom:1px solid #edf2ee}
+.nos16-list-item:last-child{border-bottom:none}
+.nos16-status{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;font-size:11px;background:#e8f7ec;color:#11833c}
+.nos16-empty{min-height:220px;display:grid;place-items:center;color:var(--muted);background:#f9fbf9;border:1px dashed #d8e6dc;border-radius:14px}
+.nos16-chart-wrap{min-height:300px}
+.nos16-donut-wrap{min-height:300px}
+.nos16-footer{padding:26px 2px 0;color:#8b958f;font-size:12px;display:flex;justify-content:space-between}
+@media(max-width:1100px){
+ .nos16-shell{grid-template-columns:88px minmax(0,1fr)}
+ .nos16-brand strong,.nos16-nav-title,.nos16-nav a span:last-child{display:none}
+ .nos16-nav a{justify-content:center}
+ .nos16-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .nos16-analytics{grid-template-columns:1fr}
+ .nos16-bottom{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ .nos16-shell{display:block}
+ .nos16-sidebar{display:none}
+ .nos16-content{padding:20px 14px 28px}
+ .nos16-topbar{padding:0 14px}
+ .nos16-search{width:60vw}
+ .nos16-head{flex-direction:column}
+ .nos16-kpis{grid-template-columns:1fr}
+}
