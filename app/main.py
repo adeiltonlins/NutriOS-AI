@@ -1048,6 +1048,7 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
     plans = optional_rows(lambda: business_store.list_rows("meal_plans", client_id, order="created_at.desc"))
     transactions = optional_rows(lambda: business_store.list_rows("clinic_transactions", client_id, order="created_at.desc"))
     checkins = optional_rows(lambda: business_store.list_rows("patient_checkins", client_id, order="created_at.desc"))
+    assessments = optional_rows(lambda: business_store.list_rows("anthropometric_assessments", client_id, order="assessed_at.desc"))
     leads = optional_rows(lambda: leads_store.listar_leads(limite=500, client_id=client_id))
     patient_names = {p["id"]: p["name"] for p in patients}
     for collection in (alerts, plans, checkins):
@@ -1064,8 +1065,95 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
     paid_leads = [lead for lead in leads if lead.get("pago")]
     appointment_leads = [lead for lead in leads if lead.get("quis_agendar")]
     qualified_leads = [lead for lead in leads if int(lead.get("lead_score") or 0) >= 60 or str(lead.get("lead_status") or "").lower() in {"quente", "convertido"}]
+
+    # Dashboard analítico real: séries calculadas exclusivamente a partir dos
+    # registros do próprio profissional. Nenhum valor de demonstração é usado.
+    now = datetime.now(timezone.utc)
+    months = []
+    cursor = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    for _ in range(11, -1, -1):
+        offset = _
+        year = cursor.year
+        month = cursor.month - offset
+        while month <= 0:
+            month += 12
+            year -= 1
+        months.append(f"{year:04d}-{month:02d}")
+
+    finance_map = {m: {"income": 0.0, "expense": 0.0} for m in months}
+    for row in transactions:
+        if row.get("status") != "paid":
+            continue
+        stamp = str(row.get("competence_month") or row.get("paid_at") or row.get("created_at") or "")[:7]
+        if stamp not in finance_map:
+            continue
+        amount = float(row.get("amount") or 0)
+        if row.get("kind") == "income":
+            finance_map[stamp]["income"] += amount
+        elif row.get("kind") == "expense":
+            finance_map[stamp]["expense"] += amount
+
+    patient_map = {m: 0 for m in months}
+    for patient in patients:
+        stamp = str(patient.get("created_at") or "")[:7]
+        if stamp in patient_map:
+            patient_map[stamp] += 1
+
+    appointment_map = {m: {"scheduled": 0, "completed": 0, "cancelled": 0, "other": 0} for m in months}
+    all_appointments = optional_rows(lambda: business_store.list_rows("appointments", client_id, order="starts_at.desc"))
+    for row in all_appointments:
+        stamp = str(row.get("starts_at") or row.get("created_at") or "")[:7]
+        if stamp not in appointment_map:
+            continue
+        status = str(row.get("status") or "scheduled").lower()
+        if status in {"scheduled", "confirmed", "pending"}:
+            appointment_map[stamp]["scheduled"] += 1
+        elif status in {"completed", "done", "attended", "realized"}:
+            appointment_map[stamp]["completed"] += 1
+        elif status in {"cancelled", "canceled", "no_show"}:
+            appointment_map[stamp]["cancelled"] += 1
+        else:
+            appointment_map[stamp]["other"] += 1
+
+    adherence_buckets = {m: [] for m in months}
+    for row in checkins:
+        stamp = str(row.get("created_at") or "")[:7]
+        if stamp in adherence_buckets and row.get("adherence") is not None:
+            adherence_buckets[stamp].append(float(row.get("adherence") or 0))
+
+    assessment_map = {m: 0 for m in months}
+    for row in assessments:
+        stamp = str(row.get("assessed_at") or row.get("created_at") or "")[:7]
+        if stamp in assessment_map:
+            assessment_map[stamp] += 1
+
+    finance_series = []
+    appointment_series = []
+    for month in months:
+        f = finance_map[month]
+        finance_series.append({"month": month, "income": round(f["income"], 2), "expense": round(f["expense"], 2), "balance": round(f["income"] - f["expense"], 2)})
+        a = appointment_map[month]
+        appointment_series.append({"month": month, **a, "total": sum(a.values())})
+
+    analytics = {
+        "months": months,
+        "finance": finance_series,
+        "patients_new": [{"month": m, "value": patient_map[m]} for m in months],
+        "patient_status": {"active": sum(bool(p.get("active")) for p in patients), "inactive": sum(not bool(p.get("active")) for p in patients)},
+        "appointments": appointment_series,
+        "checkin_adherence": [{"month": m, "value": round(sum(adherence_buckets[m]) / len(adherence_buckets[m]), 1) if adherence_buckets[m] else None, "count": len(adherence_buckets[m])} for m in months],
+        "assessments": [{"month": m, "value": assessment_map[m]} for m in months],
+        "totals": {
+            "transactions": len(transactions),
+            "appointments": len(all_appointments),
+            "checkins": len(checkins),
+            "assessments": len(assessments),
+        },
+    }
+
     return {
         "metrics": {"patients": len(patients), "active": sum(bool(p.get("active")) for p in patients), "open_alerts": len(alerts), "upcoming_appointments": len(appointments), "monthly_income": round(monthly_income, 2), "without_checkin": sum(p["id"] not in latest_checkin for p in patients), "visitors": len(leads), "qualified_leads": len(qualified_leads), "appointment_leads": len(appointment_leads), "converted_leads": len(paid_leads)},
+        "analytics": analytics,
         "patients": patients, "alerts": alerts[:30], "appointments": appointments, "plans": plans[:30], "checkins": list(latest_checkin.values())[:30]
     }
 
