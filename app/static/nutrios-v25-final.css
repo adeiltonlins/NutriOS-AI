@@ -1,0 +1,21 @@
+
+/* NutriOS V25 — leitura confortável + central de acesso */
+:root{--v25-card:#ffffff;--v25-card-soft:#f6faf7;--v25-chart:#f3f8f4;--v25-chart-line:#d7e6db}
+html[data-theme="dark"]{--v25-card:#12271a;--v25-card-soft:#17301f;--v25-chart:#102219;--v25-chart-line:#2f513b}
+.os-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.os-primary-action,.os-secondary-action{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 15px;border-radius:11px;font-weight:850;text-decoration:none!important}
+.os-primary-action{background:linear-gradient(135deg,var(--v-green),var(--v-green2))!important;color:#fff!important}
+.os-secondary-action{background:var(--v-surface)!important;border:1px solid var(--v-line2)!important;color:var(--v-green-dark)!important}
+/* Analytics must not become glowing white islands in dark mode */
+.os-chart-card{background:var(--v25-card)!important;border:1px solid var(--v-line)!important;color:var(--v-text)!important;box-shadow:var(--v-shadow)!important}
+.os-chart-stage,.os-donut-wrap{background:var(--v25-chart)!important;border-color:var(--v25-chart-line)!important}
+.os-chart-empty{background:transparent!important;color:var(--v-muted)!important}
+.os-chart-empty strong,.os-chart-head h3,.os-chart-total{color:var(--v-text)!important}
+.os-chart-head p,.os-chart-legend,.os-chart-empty span{color:var(--v-muted)!important}
+html[data-theme="dark"] .os-chart-svg text{fill:#a9baaf!important}
+html[data-theme="dark"] .os-chart-card{box-shadow:0 12px 30px rgba(0,0,0,.16)!important}
+/* No clinical compliance badge in the patient hero; keep hero clean */
+.patient-quick-status{gap:8px!important}
+/* Invite/access UI */
+.access-center input[readonly],#patientInviteUrl{cursor:text}
+@media(max-width:980px){.os-heading-row{align-items:flex-start!important}.os-heading-actions{justify-content:flex-start}.os-date-card{order:3;width:100%}}

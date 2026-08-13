@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
 <link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
+<link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
 </head><body class="leads-page"><main class="wrap"><header class="top"><div><a href="/app">← Voltar</a><div class="eyebrow">COMERCIAL</div><h1>Conversas e oportunidades</h1><div class="muted">Acompanhe contatos, intenção de agendamento e pagamentos em um só lugar.</div></div><button onclick="load()">Atualizar</button></header><section class="stats"><div class="stat"><b id="total">—</b><span class="muted">Conversas</span></div><div class="stat"><b id="verify">—</b><span class="muted">Aguardando conferência</span></div><div class="stat"><b id="paid">—</b><span class="muted">Pagamentos confirmados</span></div></section><section class="panel"><div id="list" class="list">Carregando...</div></section></main><script>
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const labels={new:'Nova conversa',awaiting_payment:'Aguardando pagamento',awaiting_verification:'Aguardando conferência',payment_confirmed:'Pagamento confirmado',contacted:'Cliente contatado',anamnesis_sent:'Anamnese enviada',scheduled:'Consulta agendada'};let config={};
