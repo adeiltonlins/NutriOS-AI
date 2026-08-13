@@ -271,6 +271,57 @@ class PatientCheckinRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=3000)
 
 
+class AnthropometryRequest(BaseModel):
+    assessed_at: str | None = None
+    weight_kg: float | None = Field(default=None, ge=20, le=500)
+    height_cm: float | None = Field(default=None, ge=80, le=250)
+    waist_cm: float | None = Field(default=None, ge=20, le=300)
+    hip_cm: float | None = Field(default=None, ge=20, le=300)
+    body_fat_percent: float | None = Field(default=None, ge=0, le=80)
+    muscle_mass_kg: float | None = Field(default=None, ge=0, le=300)
+    notes: str | None = Field(default=None, max_length=3000)
+
+
+class MealPlanRequest(BaseModel):
+    title: str = Field(..., min_length=2, max_length=160)
+    objective: str | None = Field(default=None, max_length=1000)
+    content: list[dict] = Field(default_factory=list, max_length=30)
+    professional_notes: str | None = Field(default=None, max_length=5000)
+    patient_notes: str | None = Field(default=None, max_length=5000)
+
+
+class DiaryFeedbackRequest(BaseModel):
+    professional_feedback: str = Field(..., min_length=2, max_length=3000)
+
+
+class FoodDiaryRequest(BaseModel):
+    meal_type: str = Field(..., min_length=2, max_length=60)
+    consumed_at: datetime | None = None
+    description: str = Field(..., min_length=2, max_length=3000)
+    hunger_before: int | None = Field(default=None, ge=0, le=10)
+    satiety_after: int | None = Field(default=None, ge=0, le=10)
+    mood: str | None = Field(default=None, max_length=80)
+    symptoms: str | None = Field(default=None, max_length=1000)
+
+
+class TransactionRequest(BaseModel):
+    patient_id: str | None = Field(default=None, max_length=64)
+    kind: str = Field(..., pattern=r"^(income|expense)$")
+    category: str = Field(default="consulta", max_length=80)
+    description: str = Field(..., min_length=2, max_length=300)
+    amount: float = Field(..., ge=0, le=10000000)
+    status: str = Field(default="pending", pattern=r"^(pending|paid|cancelled)$")
+    due_date: str | None = None
+
+
+class ReminderRequest(BaseModel):
+    patient_id: str | None = Field(default=None, max_length=64)
+    title: str = Field(..., min_length=2, max_length=200)
+    reminder_at: datetime
+    type: str = Field(default="followup", max_length=60)
+    notes: str | None = Field(default=None, max_length=1000)
+
+
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
     """Classificação comercial local: rápida e sem consumir outra chamada do Gemini."""
     falas = [str(m.get("texto", "")).strip() for m in historico if m.get("autor") == "user"]
@@ -750,6 +801,34 @@ def _owned_patient(patient_id: str, client_id: str) -> dict:
     return rows[0]
 
 
+_TACO_ROWS = json.loads((Path(__file__).resolve().parents[1] / "data" / "alimentos_taco.json").read_text(encoding="utf-8"))
+_TACO_BY_ID = {int(row["id"]): row for row in _TACO_ROWS}
+
+
+def _meal_plan_content(content: list[dict]) -> tuple[list[dict], dict]:
+    clean: list[dict] = []
+    totals = {"kcal": 0.0, "proteina_g": 0.0, "carboidrato_g": 0.0, "lipideos_g": 0.0, "fibra_g": 0.0, "sodio_mg": 0.0}
+    for meal in content[:30]:
+        meal_name = str(meal.get("name") or "Refeição")[:80]
+        items = []
+        for raw in list(meal.get("items") or [])[:40]:
+            food = _TACO_BY_ID.get(int(raw.get("food_id") or 0))
+            grams = max(1.0, min(2000.0, float(raw.get("grams") or 0)))
+            if not food:
+                continue
+            factor = grams / 100.0
+            snapshot = {"food_id": food["id"], "name": food["nome"], "grams": grams, "substitutions": [str(x)[:120] for x in list(raw.get("substitutions") or [])[:8]]}
+            for key in totals:
+                source = key if key != "kcal" else "kcal"
+                value = round(float(food.get(source) or 0) * factor, 2)
+                snapshot[key] = value
+                totals[key] += value
+            items.append(snapshot)
+        if items:
+            clean.append({"name": meal_name, "time": str(meal.get("time") or "")[:5], "items": items})
+    return clean, {key: round(value, 2) for key, value in totals.items()}
+
+
 @app.get("/app/pacientes")
 def patient_management_page(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-patients.html", headers={"Cache-Control": "no-store"})
@@ -835,8 +914,91 @@ def patient_followup_data(patient_id: str, user: dict = Depends(auth.current_use
     patient = _owned_patient(patient_id, user["id"])
     records = saas_store._request("GET", "patient_records", params={"select": "*", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
     checkins = saas_store._request("GET", "patient_checkins", params={"select": "*", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc", "limit": "50"}) or []
-    documents = saas_store._request("GET", "patient_documents", params={"select": "id,title,original_name,version,is_current,created_at", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
-    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents}
+    documents = saas_store._request("GET", "patient_documents", params={"select": "id,title,original_name,version,is_current,category,created_at", "patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "order": "created_at.desc"}) or []
+    anthropometry = business_store.list_rows("anthropometric_assessments", user["id"], order="assessed_at.desc", extra={"patient_id": f"eq.{patient_id}"})
+    meal_plans = business_store.list_rows("meal_plans", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"})
+    diary = business_store.list_rows("food_diary_entries", user["id"], order="consumed_at.desc", extra={"patient_id": f"eq.{patient_id}", "limit": "100"})
+    appointments = business_store.list_rows("appointments", user["id"], order="starts_at.desc", extra={"patient_id": f"eq.{patient_id}"})
+    transactions = business_store.list_rows("clinic_transactions", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"})
+    reminders = business_store.list_rows("clinic_reminders", user["id"], order="reminder_at.asc", extra={"patient_id": f"eq.{patient_id}"})
+    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents, "anthropometry": anthropometry, "meal_plans": meal_plans, "diary": diary, "appointments": appointments, "transactions": transactions, "reminders": reminders}
+
+
+@app.get("/app/api/alimentos")
+def search_foods(q: str = Query(default="", max_length=80), user: dict = Depends(auth.current_user)):
+    needle = unicodedata.normalize("NFKD", q.lower()).encode("ascii", "ignore").decode().strip()
+    if len(needle) < 2: return []
+    found = []
+    for food in _TACO_ROWS:
+        name = unicodedata.normalize("NFKD", food["nome"].lower()).encode("ascii", "ignore").decode()
+        if needle in name: found.append(food)
+        if len(found) >= 25: break
+    return found
+
+
+@app.post("/app/api/pacientes/{patient_id}/avaliacoes")
+def create_anthropometry(patient_id: str, payload: AnthropometryRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    data = payload.model_dump()
+    if data.get("weight_kg") and data.get("height_cm"):
+        data["bmi"] = round(data["weight_kg"] / ((data["height_cm"] / 100) ** 2), 2)
+    data["assessed_at"] = data.get("assessed_at") or datetime.now(timezone.utc).date().isoformat()
+    return business_store.create_row("anthropometric_assessments", user["id"], {"patient_id": patient_id, **data})
+
+
+@app.post("/app/api/pacientes/{patient_id}/planos")
+def create_meal_plan(patient_id: str, payload: MealPlanRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    content, totals = _meal_plan_content(payload.content)
+    if not content: raise HTTPException(400, "Adicione ao menos um alimento válido ao plano")
+    return business_store.create_row("meal_plans", user["id"], {"patient_id": patient_id, **payload.model_dump(exclude={"content"}), "content": content, "totals": totals})
+
+
+@app.patch("/app/api/pacientes/{patient_id}/planos/{plan_id}/aprovar")
+def approve_meal_plan(patient_id: str, plan_id: str, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    row = business_store.get_row("meal_plans", plan_id, user["id"])
+    if not row or row.get("patient_id") != patient_id: raise HTTPException(404, "Plano não encontrado")
+    saas_store._request("PATCH", "meal_plans", params={"patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "status": "eq.approved"}, payload={"status": "archived", "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
+    return business_store.update_row("meal_plans", plan_id, user["id"], {"status": "approved", "approved_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()})
+
+
+@app.patch("/app/api/pacientes/{patient_id}/diario/{entry_id}")
+def review_diary(patient_id: str, entry_id: str, payload: DiaryFeedbackRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    row = business_store.get_row("food_diary_entries", entry_id, user["id"])
+    if not row or row.get("patient_id") != patient_id: raise HTTPException(404, "Registro não encontrado")
+    return business_store.update_row("food_diary_entries", entry_id, user["id"], {"professional_feedback": payload.professional_feedback, "reviewed_at": datetime.now(timezone.utc).isoformat()})
+
+
+@app.post("/app/api/pacientes/{patient_id}/financeiro")
+def create_patient_transaction(patient_id: str, payload: TransactionRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    data = payload.model_dump(); data["patient_id"] = patient_id
+    if data["status"] == "paid": data["paid_at"] = datetime.now(timezone.utc).isoformat()
+    return business_store.create_row("clinic_transactions", user["id"], data)
+
+
+@app.get("/app/api/financeiro")
+def clinic_finance(user: dict = Depends(auth.current_user)):
+    rows = business_store.list_rows("clinic_transactions", user["id"], order="created_at.desc")
+    paid = [r for r in rows if r.get("status") == "paid"]
+    income = sum(float(r.get("amount") or 0) for r in paid if r.get("kind") == "income")
+    expense = sum(float(r.get("amount") or 0) for r in paid if r.get("kind") == "expense")
+    return {"rows": rows, "income": round(income,2), "expense": round(expense,2), "balance": round(income-expense,2)}
+
+
+@app.post("/app/api/pacientes/{patient_id}/lembretes")
+def create_reminder(patient_id: str, payload: ReminderRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    data = payload.model_dump(); data["patient_id"] = patient_id
+    return business_store.create_row("clinic_reminders", user["id"], data)
+
+
+@app.patch("/app/api/lembretes/{reminder_id}/concluir")
+def complete_reminder(reminder_id: str, user: dict = Depends(auth.current_user)):
+    if not business_store.get_row("clinic_reminders", reminder_id, user["id"]): raise HTTPException(404, "Lembrete não encontrado")
+    return business_store.update_row("clinic_reminders", reminder_id, user["id"], {"completed_at": datetime.now(timezone.utc).isoformat()})
 
 
 @app.post("/app/api/pacientes/{patient_id}/prontuario")
@@ -847,7 +1009,7 @@ def save_patient_record(patient_id: str, payload: PatientRecordRequest, user: di
 
 
 @app.post("/app/api/pacientes/{patient_id}/documentos")
-async def upload_patient_document(patient_id: str, title: str = Form(..., min_length=2, max_length=160), file: UploadFile = File(...), user: dict = Depends(auth.current_user)):
+async def upload_patient_document(patient_id: str, title: str = Form(..., min_length=2, max_length=160), category: str = Form(default="diet", max_length=30), file: UploadFile = File(...), user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
     if file.content_type != "application/pdf" or not str(file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(400, "Envie somente arquivo PDF")
@@ -860,7 +1022,8 @@ async def upload_patient_document(patient_id: str, title: str = Form(..., min_le
     previous = saas_store._request("GET", "patient_documents", params={"select": "version", "patient_id": f"eq.{patient_id}", "order": "version.desc", "limit": "1"}) or []
     version = int(previous[0]["version"]) + 1 if previous else 1
     saas_store._request("PATCH", "patient_documents", params={"patient_id": f"eq.{patient_id}", "is_current": "eq.true"}, payload={"is_current": False}, prefer="return=minimal")
-    rows = saas_store._request("POST", "patient_documents", payload={"patient_id": patient_id, "client_id": user["id"], "title": title.strip(), "original_name": safe_name, "storage_path": object_path, "version": version, "is_current": True}, prefer="return=representation") or []
+    if category not in {"diet", "exam", "report", "other"}: category = "other"
+    rows = saas_store._request("POST", "patient_documents", payload={"patient_id": patient_id, "client_id": user["id"], "title": title.strip(), "category": category, "original_name": safe_name, "storage_path": object_path, "version": version, "is_current": True}, prefer="return=representation") or []
     return {"ok": True, "document": rows[0]}
 
 
@@ -915,6 +1078,23 @@ def patient_me(patient: dict = Depends(patient_auth.current_patient)):
 @app.get("/paciente/api/documentos")
 def patient_documents(patient: dict = Depends(patient_auth.current_patient)):
     return saas_store._request("GET", "patient_documents", params={"select": "id,title,original_name,version,is_current,created_at", "patient_id": f"eq.{patient['id']}", "order": "created_at.desc"}) or []
+
+
+@app.get("/paciente/api/plano")
+def patient_meal_plan(patient: dict = Depends(patient_auth.current_patient)):
+    rows = saas_store._request("GET", "meal_plans", params={"select": "id,title,objective,content,totals,patient_notes,approved_at", "patient_id": f"eq.{patient['id']}", "status": "eq.approved", "order": "approved_at.desc", "limit": "1"}) or []
+    return rows[0] if rows else None
+
+
+@app.get("/paciente/api/diario")
+def patient_food_diary(patient: dict = Depends(patient_auth.current_patient)):
+    return saas_store._request("GET", "food_diary_entries", params={"select": "*", "patient_id": f"eq.{patient['id']}", "order": "consumed_at.desc", "limit": "100"}) or []
+
+
+@app.post("/paciente/api/diario")
+def create_food_diary(payload: FoodDiaryRequest, patient: dict = Depends(patient_auth.current_patient)):
+    rows = saas_store._request("POST", "food_diary_entries", payload={"patient_id": patient["id"], "client_id": patient["client_id"], **payload.model_dump(exclude_none=True, mode="json")}, prefer="return=representation") or []
+    return rows[0]
 
 
 @app.get("/paciente/api/documentos/{document_id}/baixar")
