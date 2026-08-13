@@ -1,3 +1,181 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Painel profissional — NutriOS</title><link rel="stylesheet" href="/static/titanium.css"><link rel="stylesheet" href="/static/nutrios-premium.css"><link rel="stylesheet" href="/static/nutribot-ux.css"><script src="/static/nutribot-ux.js"></script><style>
-*{box-sizing:border-box}body{margin:0;color:#f4f7ff;font:15px Inter,system-ui}.shell{display:grid;grid-template-columns:260px 1fr;min-height:100vh}.side{padding:28px 18px;border-right:1px solid #213653}.brand{font-size:22px;font-weight:900;margin:4px 10px 34px;background:linear-gradient(90deg,#8eb1ff,#52dfce);color:transparent;background-clip:text}.nav{display:flex;gap:11px;align-items:center;color:#aec0dd;text-decoration:none;padding:13px;margin:6px 0;border-radius:12px}.main{padding:32px}.top{display:flex;justify-content:space-between;align-items:center;gap:15px}.eyebrow{color:#64dacd;text-transform:uppercase;letter-spacing:.13em;font-size:11px;font-weight:800}h1{margin:6px 0;font-size:32px}.status{color:#55e3ae}.hero{margin:26px 0;padding:29px;border:1px solid #315382;border-radius:24px;display:flex;justify-content:space-between;align-items:center;gap:20px}.hero h2{font-size:26px;margin:4px 0}.hero p{color:#b7c9e5;max-width:650px}.pill{padding:12px 17px;border-radius:12px;background:#fff;color:#102044;text-decoration:none;font-weight:850;white-space:nowrap}.section-title{margin:27px 0 14px}.section-title h2{margin:0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.card{min-height:162px;padding:21px;border:1px solid #213653;border-radius:19px;color:inherit;text-decoration:none;transition:.2s;position:relative;overflow:hidden}.card:hover{transform:translateY(-4px)}.icon{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,#274d91,#253164);font-size:20px}.card h3{margin:17px 0 6px;font-size:18px}.card p{margin:0;color:#93a8c8}.live-card .icon{background:linear-gradient(135deg,#0a806d,#315cdd);box-shadow:0 0 24px #34d9ba44}@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.shell{display:block}.side{display:none}.main{padding:20px}.hero{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.top h1{font-size:26px}}
-</style></head><body><div class="shell"><aside class="side"><div class="brand">NutriOS</div><a class="nav active" href="/app">◈ Visão geral</a><a class="nav" href="/app/conversas">◉ Assistente IA</a><a class="nav" href="/app/pacientes">♡ Pacientes</a><a class="nav" href="/app/leads">◎ Comercial</a><a class="nav" href="/app/metricas">▥ Indicadores</a><a class="nav" href="/app/gestao">▦ Operação clínica</a><a class="nav" href="/app/configuracoes">⚙ Configurações</a></aside><main class="main"><header class="top"><div><div class="eyebrow">Central do profissional</div><h1 id="hello">Olá</h1><div class="status">● Sistema ativo e protegido</div></div><button class="logout" id="logout">Sair</button></header><section class="hero"><div><div class="eyebrow">NutriOS Clinical</div><h2>Sua operação clínica, finalmente conectada.</h2><p>Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência — com você no controle.</p></div><a class="pill" href="/app/clinica">Abrir central clínica →</a></section><div class="section-title"><h2>Módulos da sua operação</h2><span class="muted">Acesse rapidamente o que precisa para conduzir o consultório.</span></div><section class="grid"><a class="card live-card" href="/app/conversas"><div class="icon">◉</div><h3>Assistente IA</h3><p>Acompanhe interações e use a inteligência da plataforma como apoio ao atendimento.</p></a><a class="card" href="/app/pacientes"><div class="icon">♡</div><h3>Pacientes</h3><p>Gerencie prontuários, acessos, evolução e continuidade do acompanhamento.</p></a><a class="card" href="/app/leads"><div class="icon">◎</div><h3>Comercial</h3><p>Acompanhe oportunidades, pagamentos e a jornada até a primeira consulta.</p></a><a class="card" href="/app/metricas"><div class="icon">▥</div><h3>Indicadores</h3><p>Veja desempenho, conversão, faturamento e evolução da operação.</p></a><a class="card" href="/app/gestao"><div class="icon">▦</div><h3>Operação clínica</h3><p>Organize agenda, serviços, consultas, anamneses e rotinas do consultório.</p></a><a class="card" href="/app/configuracoes"><div class="icon">⚙</div><h3>Inteligência e marca</h3><p>Configure identidade, inteligência, integrações, pagamentos e canais de contato.</p></a><a class="card" href="/app/onboarding"><div class="icon">◇</div><h3>Implantação guiada</h3><p>Configure sua operação e deixe o ambiente pronto para uso profissional.</p></a></section></main></div><script>fetch('/api/me').then(r=>{if(!r.ok)location='/login';return r.json()}).then(x=>hello.textContent='Olá, '+x.name);logout.onclick=()=>fetch('/auth/logout',{method:'POST'}).then(()=>location='/login')</script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NutriOS — Painel profissional</title>
+<link rel="stylesheet" href="/static/nutrios-dashboard-v5.css?v=20260813">
+</head>
+<body>
+<div class="os-shell">
+  <aside class="os-sidebar">
+    <a class="os-brand" href="/app" aria-label="NutriOS">
+      <span class="os-brand-mark" aria-hidden="true"></span>
+      <span class="os-brand-name">NutriOS</span>
+    </a>
+
+    <nav class="os-nav" aria-label="Navegação principal">
+      <a class="os-nav-item active" href="/app"><span class="os-nav-icon">⌂</span><span>Início</span></a>
+      <a class="os-nav-item" href="/app/pacientes"><span class="os-nav-icon">♙</span><span>Pacientes</span></a>
+      <a class="os-nav-item" href="/app/gestao"><span class="os-nav-icon">□</span><span>Agenda</span></a>
+      <a class="os-nav-item" href="/app/clinica"><span class="os-nav-icon">◇</span><span>Atendimentos</span></a>
+      <a class="os-nav-item" href="/app/clinica#planos"><span class="os-nav-icon">◫</span><span>Planos alimentares</span></a>
+      <a class="os-nav-item" href="/app/clinica#evolucao"><span class="os-nav-icon">↗</span><span>Evolução</span></a>
+      <a class="os-nav-item" href="/app/clinica#assessment"><span class="os-nav-icon">♧</span><span>Análise corporal</span></a>
+      <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">$</span><span>Financeiro</span></a>
+      <a class="os-nav-item" href="/app/conversas"><span class="os-nav-icon">○</span><span>Conversas</span><span class="os-badge">Novo</span></a>
+      <a class="os-nav-item" href="/app/leads"><span class="os-nav-icon">◎</span><span>Oportunidades</span></a>
+      <a class="os-nav-item" href="/app/treinos"><span class="os-nav-icon">↔</span><span>Treinos</span></a>
+      <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">▥</span><span>Relatórios</span></a>
+      <a class="os-nav-item" href="/app/configuracoes"><span class="os-nav-icon">⚙</span><span>Configurações</span></a>
+    </nav>
+
+    <div class="os-sidebar-footer">
+      <a class="os-help" href="/app/onboarding"><span>?</span> Central de ajuda</a>
+    </div>
+  </aside>
+
+  <section class="os-workspace">
+    <header class="os-topbar">
+      <div class="os-search-wrap">
+        <span class="os-search-icon">⌕</span>
+        <input id="moduleSearch" class="os-search" type="search" placeholder="Buscar módulo ou recurso..." autocomplete="off">
+        <kbd>Ctrl + K</kbd>
+      </div>
+      <div class="os-top-actions">
+        <button class="os-icon-btn" type="button" title="Notificações">♢<span class="os-notification-dot" id="alertCount">0</span></button>
+        <a class="os-icon-btn" href="/app/conversas" title="Conversas">○</a>
+        <div class="os-profile">
+          <div class="os-avatar" id="avatarInitial">N</div>
+          <div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div>
+        </div>
+        <button class="os-logout" id="logout" type="button">Sair</button>
+      </div>
+    </header>
+
+    <main class="os-main">
+      <section class="os-heading-row">
+        <div>
+          <p class="os-kicker">VISÃO GERAL</p>
+          <h1 id="hello">Bem-vindo de volta!</h1>
+          <p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p>
+        </div>
+        <div class="os-date-card"><span>□</span><strong id="todayDate">—</strong></div>
+      </section>
+
+      <section class="os-metrics" aria-label="Indicadores principais">
+        <a class="os-metric-card" href="/app/pacientes">
+          <span class="os-metric-icon blue">♙</span>
+          <div><span>Pacientes ativos</span><strong id="metricPatients">—</strong><small>Ver pacientes →</small></div>
+        </a>
+        <a class="os-metric-card" href="/app/gestao">
+          <span class="os-metric-icon green">□</span>
+          <div><span>Próximas consultas</span><strong id="metricAppointments">—</strong><small>Ver agenda →</small></div>
+        </a>
+        <a class="os-metric-card" href="/app/metricas">
+          <span class="os-metric-icon orange">$</span>
+          <div><span>Receita do mês</span><strong id="metricIncome">—</strong><small>Ver financeiro →</small></div>
+        </a>
+        <a class="os-metric-card" href="/app/clinica">
+          <span class="os-metric-icon purple">↗</span>
+          <div><span>Alertas clínicos</span><strong id="metricAlerts">—</strong><small>Ver central clínica →</small></div>
+        </a>
+      </section>
+
+      <section class="os-section">
+        <div class="os-section-head"><div><p class="os-kicker">ATALHOS</p><h2>Acesso rápido</h2></div></div>
+        <div class="os-quick-grid" id="quickGrid">
+          <a class="os-quick-card" data-search="dashboard clinico prioridades consultas check-ins evolucao" href="/app/clinica">
+            <span class="os-quick-icon blue">▥</span><div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="treinos opcional series repeticoes carga descanso" href="/app/treinos">
+            <span class="os-quick-icon purple">↔</span><div><h3>Treinos opcional</h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="planos alimentares dieta acompanhamento" href="/app/clinica#planos">
+            <span class="os-quick-icon green">◫</span><div><h3>Planos alimentares</h3><p>Crie, edite e acompanhe planos alimentares personalizados.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="analise corporal avaliacao medidas fotos body visual" href="/app/clinica#assessment">
+            <span class="os-quick-icon cyan">♧</span><div><h3>Análise corporal</h3><p>Registre avaliações e acompanhe medidas e fotos.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="conversas tempo real pacientes oportunidades" href="/app/conversas">
+            <span class="os-quick-icon pink">○</span><div><h3>Conversas em tempo real</h3><p>Acompanhe conversas e oportunidades em uma única tela.</p></div><span class="os-arrow">›</span>
+          </a>
+          <a class="os-quick-card" data-search="relatorios evolucao graficos metricas indicadores" href="/app/metricas">
+            <span class="os-quick-icon indigo">↗</span><div><h3>Relatórios e evolução</h3><p>Visualize indicadores, gráficos e evolução da operação.</p></div><span class="os-arrow">›</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="os-section os-activity-section">
+        <div class="os-section-head"><div><p class="os-kicker">ACOMPANHAMENTO</p><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div>
+        <div id="activityList" class="os-activity-list"><div class="os-empty">Carregando atividades...</div></div>
+      </section>
+    </main>
+  </section>
+</div>
+
+<script>
+const qs=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,'');
+const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtDate=v=>{try{return new Date(v).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch{return '—'}};
+
+function setDate(){
+  todayDate.textContent=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(new Date());
+}
+
+function renderActivities(data){
+  const items=[];
+  (data.checkins||[]).slice(0,3).forEach(x=>items.push({
+    title:`${x.patient_name||'Paciente'} · Check-in respondido`,
+    meta:`Adesão: ${x.adherence??'—'} · Energia: ${x.energy??'—'} · ${fmtDate(x.created_at)}`,
+    status:'Concluído',href:'/app/clinica'
+  }));
+  (data.appointments||[]).slice(0,2).forEach(x=>items.push({
+    title:`${x.patient_name||'Paciente'} · Consulta agendada`,
+    meta:`${fmtDate(x.starts_at)}`,
+    status:'Agendado',href:'/app/gestao'
+  }));
+  activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${x.href}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`;
+}
+
+async function init(){
+  setDate();
+  const me=await fetch('/api/me');
+  if(!me.ok){location='/login';return}
+  const user=await me.json();
+  const name=user.name||'Nutricionista';
+  profileName.textContent=name;
+  avatarInitial.textContent=name.trim().charAt(0).toUpperCase()||'N';
+  hello.textContent=`Bem-vindo de volta, ${name.split(' ')[0]}!`;
+
+  const r=await fetch('/app/api/dashboard-clinico');
+  if(r.ok){
+    const data=await r.json(),m=data.metrics||{};
+    metricPatients.textContent=m.active??m.patients??0;
+    metricAppointments.textContent=String(m.upcoming_appointments??0).padStart(2,'0');
+    metricIncome.textContent=money(m.monthly_income);
+    metricAlerts.textContent=String(m.open_alerts??0).padStart(2,'0');
+    alertCount.textContent=m.open_alerts??0;
+    alertCount.hidden=!(m.open_alerts>0);
+    renderActivities(data);
+  }else{
+    activityList.innerHTML='<div class="os-empty">Não foi possível carregar o resumo agora.</div>';
+  }
+}
+
+moduleSearch.addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.os-quick-card').forEach(card=>{
+    card.hidden=q && !card.dataset.search.includes(q) && !card.innerText.toLowerCase().includes(q);
+  });
+});
+
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();moduleSearch.focus()}
+});
+logout.onclick=()=>fetch('/auth/logout',{method:'POST'}).then(()=>location='/login');
+init().catch(()=>location='/login');
+</script>
+</body>
+</html>
