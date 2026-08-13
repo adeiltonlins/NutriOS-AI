@@ -1,0 +1,15 @@
+
+/* NutriOS Admin v10 */
+.admin-brand small,
+.admin-brand .brand-os,
+.admin-brand .brand-suffix,
+.admin-brand .brand-n,
+.admin-brand .brand-letter,
+.sidebar-brand small,
+.sidebar-brand .brand-os,
+.sidebar-brand .brand-suffix,
+.sidebar-brand .brand-n,
+.sidebar-brand .brand-letter {display:none!important;}
+.admin-brand,.sidebar-brand{display:flex!important;align-items:center!important;gap:12px!important;}
+.admin-brand strong,.sidebar-brand strong{font-size:1.55rem!important;letter-spacing:-.04em!important;}
+.admin-shell a,.admin-card a,.quick-card a{text-decoration:none!important;}

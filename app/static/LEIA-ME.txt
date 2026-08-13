@@ -1,19 +1,11 @@
-NUTRIOS V9 — UPLOAD FÁCIL
+NUTRIOS V10 — UPLOAD FÁCIL
 
-1. Extraia este ZIP.
-2. No GitHub, abra:
-   nutri-chatbot > app > static
-3. Clique em:
-   Add file > Upload files
-4. Envie apenas:
-   saas-landing.html
-5. Commit:
-   NutriOS v9 - landing premium alinhada
-6. Aguarde o Render concluir o deploy.
-7. No site, pressione Ctrl + F5.
+GitHub:
+nutri-chatbot > app > static > Add file > Upload files
 
-ALTERAÇÕES:
-- Hero alinhada e com quebra visual melhor.
-- “em um único sistema.” mantido em uma linha quando houver espaço.
-- Posicionamento como plataforma SaaS clínica.
-- Textos antigos de chatbot substituídos por linguagem de plataforma/IA integrada.
+Envie os arquivos desta pasta e substitua os existentes.
+
+Commit:
+NutriOS v10 - corrige admin e textos
+
+Depois aguarde o Render e use Ctrl+F5.
