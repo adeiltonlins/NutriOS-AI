@@ -31,7 +31,7 @@
   }
   const explanations = [
     [/novo nutricionista/i, 'Cria uma nova conta profissional e define o limite de pacientes do plano.'],
-    [/testar chatbot|laboratório/i, 'Abre o ambiente seguro para testar IA, WhatsApp e pagamento sem gerar leads.'],
+    [/testar experiência|laboratório/i, 'Abre o ambiente seguro para validar IA, WhatsApp e pagamento sem gerar leads.'],
     [/gerar código/i, 'Gera um código temporário exibido uma única vez.'],
     [/renovar/i, 'Estende a validade do acesso sem alterar os dados cadastrados.'],
     [/arquivar/i, 'Remove da lista principal e preserva histórico e métricas.'],

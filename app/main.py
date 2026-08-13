@@ -469,7 +469,7 @@ def payment_next_steps(lead: dict | None, owner: dict | None, base_url: str = ""
     if raw_whatsapp:
         try:
             phone = normalizar_whatsapp(raw_whatsapp)
-            message = str(config.get("whatsapp_message_template") or "Olá! Meu pagamento foi confirmado no NutriBot e gostaria de continuar meu atendimento.").strip()
+            message = str(config.get("whatsapp_message_template") or "Olá! Meu pagamento foi confirmado no NutriOS e gostaria de continuar meu atendimento.").strip()
             from urllib.parse import quote
             whatsapp_url = f"https://wa.me/{phone}?text={quote(message)}"
         except HTTPException:
@@ -492,7 +492,7 @@ def public_chat_config(user: dict) -> dict:
     config = dict(user.get("ai_config") or {})
     safe_keys = {"nome", "especialidade", "identidade_ia", "mensagem_inicial", "horario", "logo_url", "crn", "cor_principal", "instagram", "acoes_rapidas"}
     safe = {k: config.get(k) for k in safe_keys if config.get(k)}
-    safe["nome"] = safe.get("nome") or user.get("name") or "NutriBot AI"
+    safe["nome"] = safe.get("nome") or user.get("name") or "NutriOS"
     safe["identidade_ia"] = safe.get("identidade_ia") or f"Assistente de {safe['nome']}"
     color = safe.get("cor_principal", "#2563eb")
     safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#2563eb"
@@ -570,7 +570,7 @@ def client_app(background_tasks: BackgroundTasks, user: dict = Depends(auth.curr
             metrics = _metricas_periodo(leads, start, end)
             address = str((user.get("ai_config") or {}).get("notification_email") or user.get("identifier"))
             body = f"Resumo dos últimos 7 dias\nConversas: {metrics['conversations']}\nVendas: {metrics['sales']}\nFaturamento: R$ {metrics['revenue']:.2f}\nConversão: {metrics['conversion_rate']}%\nAgendamentos: {metrics['scheduled']}"
-            background_tasks.add_task(emailer.send_notification, address, "Seu relatório semanal — NutriBot AI", body)
+            background_tasks.add_task(emailer.send_notification, address, "Seu relatório semanal — NutriOS", body)
             saas_store.update_user(user["id"], {"last_weekly_report_at": datetime.now(timezone.utc).isoformat()})
     return FileResponse(STATIC_DIR / "app.html", headers={"Cache-Control": "no-store"})
 
@@ -1264,13 +1264,13 @@ def _visual_analysis_pdf(assessment: dict, history: list[dict], patient: dict, o
     from reportlab.lib.units import mm
     buffer = io.BytesIO(); page_w, page_h = A4
     cfg = owner.get("ai_config") or {}; brand = HexColor(str(cfg.get("cor_principal") or "#2878ff")); navy = HexColor("#071526"); muted = HexColor("#60718a"); pale = HexColor("#edf4ff")
-    c = canvas.Canvas(buffer, pagesize=A4); c.setTitle("Análise Corporal Visual NutriBot")
+    c = canvas.Canvas(buffer, pagesize=A4); c.setTitle("Análise Corporal Visual NutriOS")
     def text(x, y, value, size=9, color=navy, bold=False):
         c.setFillColor(color); c.setFont("Helvetica-Bold" if bold else "Helvetica", size); c.drawString(x, y, str(value))
     def metric(x, y, label, value, width=42*mm):
         c.setFillColor(pale); c.roundRect(x, y, width, 18*mm, 3*mm, fill=1, stroke=0); text(x+4*mm,y+11*mm,label,7,muted); text(x+4*mm,y+4*mm,value,12,navy,True)
     c.setFillColor(navy); c.rect(0,page_h-39*mm,page_w,39*mm,fill=1,stroke=0); c.setFillColor(brand); c.rect(0,page_h-4*mm,page_w,4*mm,fill=1,stroke=0)
-    text(16*mm,page_h-17*mm,"NUTRIBOT CLÍNICA",9,white,True); text(16*mm,page_h-28*mm,"Análise Corporal Visual",21,white,True)
+    text(16*mm,page_h-17*mm,"NUTRIOS CLÍNICA",9,white,True); text(16*mm,page_h-28*mm,"Análise Corporal Visual",21,white,True)
     text(16*mm,page_h-48*mm,f"Paciente: {patient.get('name') or 'Não informado'}",11,navy,True); text(16*mm,page_h-55*mm,f"Avaliação: {assessment.get('assessed_at')}  •  Método: {assessment.get('evaluation_method') or 'Não informado'}",8,muted)
     analysis = assessment.get("analysis_data") or {}
     items = [("Peso",f"{assessment.get('weight_kg') or '—'} kg"),("IMC",analysis.get("bmi") or "—"),("Cintura/altura",analysis.get("waist_height_ratio") or "—"),("Cintura/quadril",analysis.get("waist_hip_ratio") or "—"),("Massa magra",f"{analysis.get('lean_mass_kg','—')} kg"),("Massa gorda",f"{analysis.get('fat_mass_kg','—')} kg"),("Índice magro",analysis.get("lean_mass_index") or "—"),("Conicidade",analysis.get("conicity_index") or "—")]
@@ -1311,7 +1311,7 @@ def _visual_analysis_pdf(assessment: dict, history: list[dict], patient: dict, o
         else: current=test
     lines.append(current)
     for i,line in enumerate(lines[:5]): text(16*mm,32*mm-i*5*mm,line,8,muted)
-    text(16*mm,8*mm,"Análise Corporal Visual NutriBot • sem promessa de escaneamento 3D",7,muted); c.save(); return buffer.getvalue()
+    text(16*mm,8*mm,"Análise Corporal Visual NutriOS • sem promessa de escaneamento 3D",7,muted); c.save(); return buffer.getvalue()
 
 
 @app.get("/app/api/pacientes/{patient_id}/avaliacoes/{assessment_id}/relatorio.pdf")
@@ -1553,7 +1553,7 @@ def patient_portal(patient: dict = Depends(patient_auth.current_patient)):
 @app.get("/paciente/api/me")
 def patient_me(patient: dict = Depends(patient_auth.current_patient)):
     client = saas_store.get_user(patient["client_id"]); config = (client or {}).get("ai_config") or {}
-    return {"name": patient["name"], "plan_name": patient.get("plan_name"), "expires_at": patient["access_expires_at"], "messages_used": patient.get("messages_used") or 0, "message_limit": patient.get("message_limit") or 200, "professional_name": config.get("nome") or (client or {}).get("name"), "assistant_name": config.get("identidade_ia") or "NutriBot AI", "logo_url": config.get("logo_url"), "color": config.get("cor_principal") or "#4f7cff"}
+    return {"name": patient["name"], "plan_name": patient.get("plan_name"), "expires_at": patient["access_expires_at"], "messages_used": patient.get("messages_used") or 0, "message_limit": patient.get("message_limit") or 200, "professional_name": config.get("nome") or (client or {}).get("name"), "assistant_name": config.get("identidade_ia") or "NutriOS", "logo_url": config.get("logo_url"), "color": config.get("cor_principal") or "#4f7cff"}
 
 
 @app.get("/paciente/api/documentos")
@@ -1682,7 +1682,7 @@ def claim_paid(request: Request, payload: LeadClaimPaidRequest, background_tasks
     config = client.get("ai_config") or {}
     notify_email = str(config.get("notification_email") or client.get("identifier") or "").strip()
     if "@" in notify_email:
-        background_tasks.add_task(emailer.send_notification, notify_email, "Novo pagamento aguardando conferência — NutriBot AI", f"{lead.get('lead_name') or 'Um paciente'} informou que realizou o pagamento.\nWhatsApp: {lead.get('lead_phone') or 'não informado'}\nAcesse seu painel para conferir e dar continuidade.")
+        background_tasks.add_task(emailer.send_notification, notify_email, "Novo pagamento aguardando conferência — NutriOS", f"{lead.get('lead_name') or 'Um paciente'} informou que realizou o pagamento.\nWhatsApp: {lead.get('lead_phone') or 'não informado'}\nAcesse seu painel para conferir e dar continuidade.")
     return {"ok": True, "message": "Recebemos seu aviso. A clínica verificará o pagamento e entrará em contato pelo WhatsApp informado em até 24 horas.", "workflow_status": "awaiting_verification"}
 
 
@@ -1805,7 +1805,7 @@ def create_public_appointment(request: Request, public_slug: str, payload: Appoi
     config = client.get("ai_config") or {}
     notify_email = str(config.get("notification_email") or client.get("identifier") or "")
     if "@" in notify_email:
-        background_tasks.add_task(emailer.send_notification, notify_email, "Nova consulta agendada — NutriBot AI", f"Paciente: {payload.patient_name}\nWhatsApp: {payload.patient_phone}\nHorário: {payload.starts_at.isoformat()}")
+        background_tasks.add_task(emailer.send_notification, notify_email, "Nova consulta agendada — NutriOS", f"Paciente: {payload.patient_name}\nWhatsApp: {payload.patient_phone}\nHorário: {payload.starts_at.isoformat()}")
     return {"ok": True, "appointment": row}
 
 
@@ -1853,7 +1853,7 @@ def admin_all_leads(admin: dict = Depends(auth.require_admin)):
             "lead_name": lead_name,
             "lead_phone": lead_phone,
             "payer_email": payer_email,
-            "owner_name": owner.get("name") if owner else "Meu chatbot mestre",
+            "owner_name": owner.get("name") if owner else "Minha experiência pública",
             "owner_identifier": owner.get("identifier") if owner else "admin mestre",
             "owner_type": "nutritionist" if owner else "master",
         })

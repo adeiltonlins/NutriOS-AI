@@ -129,7 +129,7 @@ confiante — nunca hesitante ou robótico.
 def montar_system_prompt(config: dict | None = None) -> str:
     config = config or {}
     return SYSTEM_PROMPT_TEMPLATE.format(
-        ASSISTENTE_NOME=config.get("identidade_ia") or "NutriBot",
+        ASSISTENTE_NOME=config.get("identidade_ia") or "NutriOS",
         NUTRICIONISTA_NOME=config.get("nome") or NUTRICIONISTA_NOME,
         NUTRICIONISTA_ESPECIALIDADE=config.get("especialidade") or NUTRICIONISTA_ESPECIALIDADE,
         MARCADOR_LINK_PAGAMENTO=MARCADOR_LINK_PAGAMENTO,

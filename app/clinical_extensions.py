@@ -201,7 +201,7 @@ async def google_sync(user:dict=Depends(auth.current_user)):
    if not start: continue
    try: start_dt=datetime.fromisoformat(start.replace("Z","+00:00")); end_dt=start_dt+timedelta(hours=1)
    except ValueError: continue
-   event={"summary":f"Consulta - {row.get('patient_name') or 'Paciente'}","description":"Sincronizado pelo NutriBot AI","start":{"dateTime":start_dt.isoformat()},"end":{"dateTime":end_dt.isoformat()}}
+   event={"summary":f"Consulta - {row.get('patient_name') or 'Paciente'}","description":"Sincronizado pelo NutriOS","start":{"dateTime":start_dt.isoformat()},"end":{"dateTime":end_dt.isoformat()}}
    response=await client.post(f"https://www.googleapis.com/calendar/v3/calendars/{integration.get('calendar_id') or 'primary'}/events",headers={"Authorization":f"Bearer {access}"},json=event)
    if response.status_code in {200,201}: business_store.update_row("appointments",row["id"],user["id"],{"google_event_id":response.json().get("id")}); synced+=1
  business_store.update_row("calendar_integrations",integration["id"],user["id"],{"last_sync_at":datetime.now(timezone.utc).isoformat(),"updated_at":datetime.now(timezone.utc).isoformat()})

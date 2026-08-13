@@ -9,10 +9,10 @@
   }
   const chatbotRevenueCard = document.getElementById('revenue')?.closest('.stat');
   if (chatbotRevenueCard) {
-    chatbotRevenueCard.title = 'Pagamentos feitos pelos pacientes nos chatbots';
+    chatbotRevenueCard.title = 'Pagamentos feitos pelos pacientes nos canais inteligentes';
     const label = chatbotRevenueCard.querySelector('.muted');
     const note = chatbotRevenueCard.querySelector('small');
-    if (label) label.textContent = 'Receita dos chatbots';
+    if (label) label.textContent = 'Receita dos canais inteligentes';
     if (note) note.textContent = 'Pagamentos feitos por pacientes';
   }
   const billingTitle = document.querySelector('#billingDialog h2');
@@ -74,7 +74,7 @@
     topShare.id = 'copyMasterChatTop';
     topShare.className = 'primary';
     topShare.type = 'button';
-    topShare.textContent = 'Copiar link do meu chatbot';
+    topShare.textContent = 'Copiar link público';
     topShare.title = 'Copia o link público para você enviar a qualquer pessoa';
     topShare.addEventListener('click', () => copyMasterChatLink(topShare));
     topActions.prepend(topShare);
@@ -85,9 +85,9 @@
   const section = document.createElement('section');
   section.className = 'panel finance-panel';
   section.innerHTML = `
-    <div class="panel-head"><div class="finance-copy"><h2 style="margin:0">Pagamentos do meu chatbot</h2><span class="muted">Vendas dos pacientes no seu link mestre — separado das mensalidades dos nutricionistas</span></div><div class="finance-actions"><button class="primary" id="copyMasterChatFinance">Copiar link do chatbot</button><button class="ghost" id="refreshMasterPayments">Atualizar pagamentos</button></div></div>
+    <div class="panel-head"><div class="finance-copy"><h2 style="margin:0">Pagamentos da experiência pública</h2><span class="muted">Vendas dos pacientes no seu link mestre — separado das mensalidades dos nutricionistas</span></div><div class="finance-actions"><button class="primary" id="copyMasterChatFinance">Copiar link público</button><button class="ghost" id="refreshMasterPayments">Atualizar pagamentos</button></div></div>
     <div class="table"><table class="finance-table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Status Mercado Pago</th><th>Valor</th><th>Data</th><th>Liberação</th><th>Ação</th></tr></thead><tbody id="masterPaymentRows"><tr><td colspan="7" class="finance-empty">Carregando pagamentos…</td></tr></tbody></table></div>
-    <div class="finance-note">“Receita mensal” é o que os nutricionistas pagam pelo SaaS. “Receita gerada” são as vendas realizadas pelos chatbots.</div>`;
+    <div class="finance-note">“Receita mensal” é o que os nutricionistas pagam pelo SaaS. “Receita gerada” são as vendas realizadas pela experiência pública.</div>`;
   nutritionists.parentNode.insertBefore(section, nutritionists);
 
   const rows = document.getElementById('masterPaymentRows');
@@ -108,7 +108,7 @@
         const phone = item.phone ? String(item.phone).replace(/\D/g, '') : '';
         const date = item.paid_at || item.updated_at;
         return `<tr><td><b>${safe(item.name)}</b><br><small class="muted">${safe(item.session_id)}</small></td><td>${phone ? `<a href="https://wa.me/${safe(phone)}" target="_blank" rel="noopener">${safe(phone)}</a>` : '—'}</td><td><span class="badge ${approved ? '' : 'trial'}">${status}</span></td><td>${brl(item.amount)}</td><td>${date ? new Date(date).toLocaleString('pt-BR') : '—'}</td><td>${approved ? '<span class="badge">Contato liberado</span>' : '<span class="badge trial">Bloqueado</span>'}</td><td><div class="finance-actions">${approved ? '<b class="money">OK ✓</b>' : `<button class="primary" data-verify="${safe(item.session_id)}">Verificar agora</button>`}</div></td></tr>`;
-      }).join('') || '<tr><td colspan="7" class="finance-empty">Nenhum pagamento iniciado no chatbot mestre.</td></tr>';
+      }).join('') || '<tr><td colspan="7" class="finance-empty">Nenhum pagamento iniciado na experiência pública.</td></tr>';
     } catch (error) {
       rows.innerHTML = `<tr><td colspan="7" class="finance-empty">${safe(error.message)}</td></tr>`;
     }

@@ -1,1 +1,1 @@
-"""NutriBot AI backend."""
+"""NutriOS backend."""

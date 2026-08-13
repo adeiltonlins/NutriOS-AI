@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NutriBot AI — seu nutricionista com IA</title>
-<link rel="stylesheet" href="/static/titanium.css">
+<title>NutriOS — seu nutricionista com IA</title>
+<link rel="stylesheet" href="/static/titanium.css"><link rel="stylesheet" href="/static/nutrios-premium.css">
 <link rel="stylesheet" href="/static/nutribot-ux.css">
 <script src="/static/nutribot-ux.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,7 +81,7 @@
         </svg>
       </div>
       <div>
-        <h1 id="brandName" class="font-extrabold text-[15px] sm:text-base tracking-tight leading-tight">NutriBot AI</h1>
+        <h1 id="brandName" class="font-extrabold text-[15px] sm:text-base tracking-tight leading-tight">NutriOS</h1>
         <p id="brandSpecialty" class="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Assistente virtual de nutrição</p>
       </div>
     </div>
@@ -108,7 +108,7 @@
 
     <!-- Landing / empty state -->
     <div id="landing" class="flex-1 flex items-center justify-center px-5 py-7 sm:py-10 animate-fadeIn">
-      <div class="landing-layout"><aside class="profile-card"><div id="profilePhotoLarge" class="profile-photo">NB</div><div class="profile-copy"><div class="text-[10px] font-bold tracking-[.14em] text-blue-500 mb-2">ATENDIMENTO DIGITAL</div><h3 id="profileNameLarge" class="text-lg font-extrabold mb-1">NutriBot AI</h3><p id="profileSpecialty" class="text-xs text-slate-500 dark:text-slate-400 mb-2">Nutrição inteligente e segura</p><div id="professionalLinks" class="flex justify-center sm:justify-start lg:justify-center gap-3 text-xs"></div><div class="mt-4 text-[11px] text-emerald-600 dark:text-emerald-400">● Assistente disponível agora</div></div></aside><section>
+      <div class="landing-layout"><aside class="profile-card"><div id="profilePhotoLarge" class="profile-photo">NB</div><div class="profile-copy"><div class="text-[10px] font-bold tracking-[.14em] text-blue-500 mb-2">ATENDIMENTO DIGITAL</div><h3 id="profileNameLarge" class="text-lg font-extrabold mb-1">NutriOS</h3><p id="profileSpecialty" class="text-xs text-slate-500 dark:text-slate-400 mb-2">Nutrição inteligente e segura</p><div id="professionalLinks" class="flex justify-center sm:justify-start lg:justify-center gap-3 text-xs"></div><div class="mt-4 text-[11px] text-emerald-600 dark:text-emerald-400">● Assistente disponível agora</div></div></aside><section>
       <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-200/70 dark:border-blue-400/20 bg-blue-50/80 dark:bg-blue-500/10 px-3 py-1.5 text-[11px] font-bold tracking-wide text-blue-700 dark:text-blue-300"><span>✦</span> ACOLHIMENTO INTELIGENTE 24H</div>
       <h2 id="heroTitle" class="hero-gradient text-3xl sm:text-[38px] leading-tight font-extrabold tracking-[-.035em] mb-3">Converse antes de agendar</h2>
       <p id="welcomeText" class="text-sm sm:text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 max-w-lg mb-5">Tire suas primeiras dúvidas e descubra o próximo passo para cuidar da sua alimentação.</p>
@@ -178,7 +178,7 @@
   const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
   sessionStorage.setItem('nutribot-source', detectedSource);
   let tenantColor = '#2563eb';
-  let assistantDisplayName = 'NutriBot AI';
+  let assistantDisplayName = 'NutriOS';
   const clientReady = testMode
     ? fetch(adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
     : window.location.pathname === '/app/chat'
