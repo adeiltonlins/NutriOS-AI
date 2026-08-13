@@ -65,7 +65,11 @@
   document.addEventListener('focusout', () => tip.classList.remove('show'));
   document.addEventListener('pointerdown', e => { const el=e.target.closest('button,.btn,.pill'); if(!el) return; const r=el.getBoundingClientRect(),s=document.createElement('i'); s.className='nutri-ripple'; const size=Math.max(r.width,r.height); Object.assign(s.style,{width:`${size}px`,height:`${size}px`,left:`${e.clientX-r.left-size/2}px`,top:`${e.clientY-r.top-size/2}px`}); el.appendChild(s); setTimeout(()=>s.remove(),520); });
   document.documentElement.classList.add('nutri-loading');
-  document.addEventListener('DOMContentLoaded', () => { document.body.appendChild(tip); enrichActions(); new MutationObserver(enrichActions).observe(document.body,{childList:true,subtree:true}); }, { once:true });
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.appendChild(tip); enrichActions(); new MutationObserver(enrichActions).observe(document.body,{childList:true,subtree:true});
+    const patientNav=document.querySelector('.side a[href="/app/pacientes"]');
+    if(patientNav&&!document.querySelector('.side a[href="/app/clinica"]')){const link=document.createElement('a');link.className='nav';link.href='/app/clinica';link.textContent='✦ Dashboard clínico';patientNav.insertAdjacentElement('afterend',link)}
+  }, { once:true });
   document.addEventListener('submit', event => setBusy(event.submitter || event.target.querySelector('[type="submit"]'), true, event.submitter?.dataset.loadingLabel || 'Processando...'), true);
   const nativeFetch = window.fetch.bind(window);
   window.fetch = async (...args) => {

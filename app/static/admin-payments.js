@@ -1,4 +1,10 @@
 (() => {
+  const adminNav = document.querySelector('.side');
+  if (adminNav && !adminNav.querySelector('[href="/admin/clinica"]')) {
+    const link = document.createElement('a');
+    link.className = 'nav'; link.href = '/admin/clinica'; link.textContent = 'Monitor clínico global';
+    adminNav.appendChild(link);
+  }
   document.querySelectorAll('a[href="/painel"]').forEach(link => {
     link.href = '/admin/leads';
     link.textContent = 'Central de conversas';

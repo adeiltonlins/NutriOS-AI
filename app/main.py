@@ -288,6 +288,46 @@ class MealPlanRequest(BaseModel):
     content: list[dict] = Field(default_factory=list, max_length=30)
     professional_notes: str | None = Field(default=None, max_length=5000)
     patient_notes: str | None = Field(default=None, max_length=5000)
+    template_name: str | None = Field(default=None, max_length=120)
+    is_template: bool = False
+    signature_text: str | None = Field(default=None, max_length=300)
+
+
+class EnergyCalculationRequest(BaseModel):
+    weight_kg: float = Field(..., ge=20, le=500)
+    height_cm: float = Field(..., ge=80, le=250)
+    age: int = Field(..., ge=12, le=120)
+    sex: str = Field(..., pattern=r"^(female|male|other)$")
+    activity_factor: float = Field(default=1.2, ge=1.0, le=2.5)
+    goal: str = Field(default="maintenance", pattern=r"^(loss|maintenance|gain)$")
+    protein_g_per_kg: float = Field(default=1.6, ge=0.8, le=3.5)
+    fat_percent: float = Field(default=25, ge=15, le=45)
+
+
+class FullAnamnesisRequest(BaseModel):
+    birth_date: str | None = None
+    sex: str | None = Field(default=None, pattern=r"^(female|male|other)$")
+    occupation: str | None = Field(default=None, max_length=160)
+    objective: str | None = Field(default=None, max_length=1000)
+    diagnoses: str | None = Field(default=None, max_length=3000)
+    medications: str | None = Field(default=None, max_length=3000)
+    allergies: str | None = Field(default=None, max_length=2000)
+    intolerances: str | None = Field(default=None, max_length=2000)
+    surgeries: str | None = Field(default=None, max_length=2000)
+    family_history: str | None = Field(default=None, max_length=3000)
+    food_routine: str | None = Field(default=None, max_length=5000)
+    preferred_foods: str | None = Field(default=None, max_length=3000)
+    disliked_foods: str | None = Field(default=None, max_length=3000)
+    sleep_hours: float | None = Field(default=None, ge=0, le=24)
+    sleep_quality: str | None = Field(default=None, max_length=80)
+    bowel_habits: str | None = Field(default=None, max_length=500)
+    water_liters: float | None = Field(default=None, ge=0, le=20)
+    exercise: str | None = Field(default=None, max_length=2000)
+    alcohol: str | None = Field(default=None, max_length=500)
+    smoking: str | None = Field(default=None, max_length=500)
+    notes: str | None = Field(default=None, max_length=5000)
+    lgpd_consent: bool = False
+    lgpd_consent_version: str = Field(default="1.0", max_length=20)
 
 
 class DiaryFeedbackRequest(BaseModel):
@@ -829,9 +869,73 @@ def _meal_plan_content(content: list[dict]) -> tuple[list[dict], dict]:
     return clean, {key: round(value, 2) for key, value in totals.items()}
 
 
+def _energy_targets(payload: EnergyCalculationRequest) -> dict:
+    sex_adjustment = 5 if payload.sex == "male" else (-161 if payload.sex == "female" else -78)
+    bmr = 10 * payload.weight_kg + 6.25 * payload.height_cm - 5 * payload.age + sex_adjustment
+    expenditure = bmr * payload.activity_factor
+    target = expenditure + ({"loss": -400, "maintenance": 0, "gain": 300}[payload.goal])
+    protein = payload.weight_kg * payload.protein_g_per_kg
+    fat = target * (payload.fat_percent / 100) / 9
+    carbs = max(0, (target - protein * 4 - fat * 9) / 4)
+    return {"bmr_kcal": round(bmr), "expenditure_kcal": round(expenditure), "target_kcal": round(target), "protein_g": round(protein), "fat_g": round(fat), "carbohydrate_g": round(carbs), "formula": "Mifflin-St Jeor", "requires_professional_review": True}
+
+
+def _refresh_clinical_alerts(patient: dict, checkins: list[dict], assessments: list[dict], client_id: str) -> list[dict]:
+    existing = business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"patient_id": f"eq.{patient['id']}", "resolved_at": "is.null"})
+    active_types = {x.get("alert_type") for x in existing}
+    candidates = []
+    latest = checkins[0] if checkins else {}
+    if latest and (int(latest.get("energy") or 10) <= 3 or int(latest.get("sleep") or 10) <= 3): candidates.append(("low_wellbeing", "high", "Check-in com energia ou sono muito baixos"))
+    if latest and latest.get("symptoms"): candidates.append(("symptoms", "high", "Paciente relatou sintomas no check-in"))
+    if latest and int(latest.get("adherence") or 10) <= 3: candidates.append(("low_adherence", "medium", "Baixa adesão ao plano"))
+    if len(assessments) >= 2 and assessments[0].get("weight_kg") and assessments[1].get("weight_kg"):
+        delta = abs(float(assessments[0]["weight_kg"]) - float(assessments[1]["weight_kg"]))
+        if delta >= max(3, float(assessments[1]["weight_kg"]) * .05): candidates.append(("weight_change", "medium", "Variação relevante de peso entre avaliações"))
+    if not checkins: candidates.append(("missing_checkin", "low", "Paciente ainda não realizou check-in"))
+    for alert_type, severity, title in candidates:
+        if alert_type not in active_types:
+            business_store.create_row("clinical_alerts", client_id, {"patient_id": patient["id"], "alert_type": alert_type, "severity": severity, "title": title})
+    return business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"patient_id": f"eq.{patient['id']}", "resolved_at": "is.null"})
+
+
 @app.get("/app/pacientes")
 def patient_management_page(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-patients.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/app/clinica")
+def clinical_dashboard_page(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "clinical-dashboard.html", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/app/api/dashboard-clinico")
+def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
+    client_id = user["id"]
+    patients = saas_store._request("GET", "patient_accounts", params={"select": "id,name,active,access_expires_at,last_seen_at,created_at,macro_targets", "client_id": f"eq.{client_id}", "hidden_at": "is.null", "order": "created_at.desc"}) or []
+    alerts = business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"resolved_at": "is.null"})
+    appointments = business_store.list_rows("appointments", client_id, order="starts_at.asc", extra={"starts_at": f"gte.{datetime.now(timezone.utc).isoformat()}", "limit": "12"})
+    plans = business_store.list_rows("meal_plans", client_id, order="created_at.desc")
+    transactions = business_store.list_rows("clinic_transactions", client_id, order="created_at.desc")
+    checkins = business_store.list_rows("patient_checkins", client_id, order="created_at.desc")
+    patient_names = {p["id"]: p["name"] for p in patients}
+    for collection in (alerts, appointments, plans, checkins):
+        for row in collection:
+            row["patient_name"] = patient_names.get(row.get("patient_id"), "Paciente")
+    today = datetime.now(timezone.utc).date()
+    paid = [r for r in transactions if r.get("status") == "paid" and r.get("kind") == "income"]
+    monthly_income = sum(float(r.get("amount") or 0) for r in paid if str(r.get("paid_at") or r.get("created_at") or "")[:7] == today.isoformat()[:7])
+    latest_checkin = {}
+    for row in checkins:
+        latest_checkin.setdefault(row.get("patient_id"), row)
+    return {
+        "metrics": {"patients": len(patients), "active": sum(bool(p.get("active")) for p in patients), "open_alerts": len(alerts), "upcoming_appointments": len(appointments), "monthly_income": round(monthly_income, 2), "without_checkin": sum(p["id"] not in latest_checkin for p in patients)},
+        "patients": patients, "alerts": alerts[:30], "appointments": appointments, "plans": plans[:30], "checkins": list(latest_checkin.values())[:30]
+    }
+
+
+@app.patch("/app/api/alertas/{alert_id}/resolver")
+def resolve_clinical_alert(alert_id: str, user: dict = Depends(auth.current_user)):
+    return business_store.update_row("clinical_alerts", alert_id, user["id"], {"resolved_at": datetime.now(timezone.utc).isoformat()})
 
 
 @app.get("/app/pacientes/{patient_id}")
@@ -921,7 +1025,27 @@ def patient_followup_data(patient_id: str, user: dict = Depends(auth.current_use
     appointments = business_store.list_rows("appointments", user["id"], order="starts_at.desc", extra={"patient_id": f"eq.{patient_id}"})
     transactions = business_store.list_rows("clinic_transactions", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"})
     reminders = business_store.list_rows("clinic_reminders", user["id"], order="reminder_at.asc", extra={"patient_id": f"eq.{patient_id}"})
-    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents, "anthropometry": anthropometry, "meal_plans": meal_plans, "diary": diary, "appointments": appointments, "transactions": transactions, "reminders": reminders}
+    alerts = _refresh_clinical_alerts(patient, checkins, anthropometry, user["id"])
+    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents, "anthropometry": anthropometry, "meal_plans": meal_plans, "diary": diary, "appointments": appointments, "transactions": transactions, "reminders": reminders, "alerts": alerts}
+
+
+@app.post("/app/api/pacientes/{patient_id}/calculo-energetico")
+def calculate_energy(patient_id: str, payload: EnergyCalculationRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    targets = _energy_targets(payload)
+    saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload={"activity_factor": payload.activity_factor, "energy_goal": payload.goal, "macro_targets": targets, "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
+    return targets
+
+
+@app.patch("/app/api/pacientes/{patient_id}/anamnese")
+def save_full_anamnesis(patient_id: str, payload: FullAnamnesisRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    data = payload.model_dump(exclude={"lgpd_consent", "lgpd_consent_version"})
+    update = {"full_anamnesis": data, "birth_date": payload.birth_date, "sex": payload.sex, "updated_at": datetime.now(timezone.utc).isoformat()}
+    if payload.lgpd_consent:
+        update.update({"lgpd_consent_at": datetime.now(timezone.utc).isoformat(), "lgpd_consent_version": payload.lgpd_consent_version})
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload=update, prefer="return=representation") or []
+    return rows[0]
 
 
 @app.get("/app/api/alimentos")
@@ -961,6 +1085,68 @@ def approve_meal_plan(patient_id: str, plan_id: str, user: dict = Depends(auth.c
     if not row or row.get("patient_id") != patient_id: raise HTTPException(404, "Plano não encontrado")
     saas_store._request("PATCH", "meal_plans", params={"patient_id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}", "status": "eq.approved"}, payload={"status": "archived", "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
     return business_store.update_row("meal_plans", plan_id, user["id"], {"status": "approved", "approved_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()})
+
+
+@app.post("/app/api/pacientes/{patient_id}/planos/{plan_id}/duplicar")
+def duplicate_meal_plan(patient_id: str, plan_id: str, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"]); row = business_store.get_row("meal_plans", plan_id, user["id"])
+    if not row or row.get("patient_id") != patient_id: raise HTTPException(404, "Plano não encontrado")
+    return business_store.create_row("meal_plans", user["id"], {"patient_id": patient_id, "title": f"Cópia de {row['title']}"[:160], "objective": row.get("objective"), "content": row.get("content") or [], "totals": row.get("totals") or {}, "professional_notes": row.get("professional_notes"), "patient_notes": row.get("patient_notes"), "signature_text": row.get("signature_text"), "status": "draft"})
+
+
+@app.get("/app/api/modelos-planos")
+def list_plan_templates(user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("meal_plans", user["id"], order="created_at.desc", extra={"is_template": "eq.true"})
+
+
+def _meal_plan_pdf(plan: dict, patient: dict, owner: dict) -> bytes:
+    import reportlab
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import mm
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    font_dir = Path(reportlab.__file__).resolve().parent / "fonts"
+    pdfmetrics.registerFont(TTFont("Vera", font_dir / "Vera.ttf")); pdfmetrics.registerFont(TTFont("Vera-Bold", font_dir / "VeraBd.ttf")); pdfmetrics.registerFont(TTFont("Vera-Italic", font_dir / "VeraIt.ttf"))
+    pdfmetrics.registerFontFamily("Vera", normal="Vera", bold="Vera-Bold", italic="Vera-Italic", boldItalic="Vera-Bold")
+    buffer = io.BytesIO(); cfg = owner.get("ai_config") or {}; styles = getSampleStyleSheet()
+    for style in styles.byName.values(): style.fontName = "Vera"
+    brand = colors.HexColor(str(cfg.get("cor_principal") or "#2563eb"))
+    title_style = ParagraphStyle("Title", parent=styles["Title"], fontName="Vera-Bold", textColor=brand, alignment=TA_CENTER, spaceAfter=8)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=18*mm, leftMargin=18*mm, topMargin=18*mm, bottomMargin=16*mm)
+    story = [Paragraph(html.escape(str(cfg.get("nome") or owner.get("name") or "Nutricionista")), title_style), Paragraph(html.escape(str(cfg.get("especialidade") or "Nutrição")), ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER)), Spacer(1, 8), Paragraph(f"<b>Plano alimentar:</b> {html.escape(plan['title'])}", styles["Heading2"]), Paragraph(f"<b>Paciente:</b> {html.escape(patient['name'])}", styles["Normal"]), Paragraph(f"<b>Objetivo:</b> {html.escape(str(plan.get('objective') or 'Acompanhamento nutricional'))}", styles["Normal"]), Spacer(1, 12)]
+    for meal in plan.get("content") or []:
+        heading = html.escape(str(meal.get("name") or "Refeição")) + (f" - {html.escape(str(meal.get('time')))}" if meal.get("time") else "")
+        story.append(Paragraph(heading, styles["Heading3"]))
+        rows = [["Alimento", "Quantidade", "Substituições"]]
+        for item in meal.get("items") or []: rows.append([str(item.get("name") or ""), f"{item.get('grams') or 0:g} g", ", ".join(item.get("substitutions") or []) or "-"])
+        table = Table(rows, colWidths=[78*mm, 28*mm, 54*mm], repeatRows=1)
+        table.setStyle(TableStyle([("FONTNAME",(0,0),(-1,-1),"Vera"),("FONTNAME",(0,0),(-1,0),"Vera-Bold"),("BACKGROUND",(0,0),(-1,0),brand),("TEXTCOLOR",(0,0),(-1,0),colors.white),("GRID",(0,0),(-1,-1),.4,colors.HexColor("#ccd5e3")),("VALIGN",(0,0),(-1,-1),"TOP"),("FONTSIZE",(0,0),(-1,-1),8),("ROWBACKGROUNDS",(0,1),(-1,-1),[colors.white,colors.HexColor("#f3f6fa")])]))
+        story.extend([table, Spacer(1, 10)])
+    totals = plan.get("totals") or {}; story.append(Paragraph(f"<b>Totais aproximados:</b> {totals.get('kcal',0)} kcal | Proteínas {totals.get('proteina_g',0)} g | Carboidratos {totals.get('carboidrato_g',0)} g | Gorduras {totals.get('lipideos_g',0)} g", styles["Normal"]))
+    if plan.get("patient_notes"): story.extend([Spacer(1,8),Paragraph("<b>Orientações:</b>",styles["Heading3"]),Paragraph(html.escape(str(plan["patient_notes"])).replace("\n","<br/>"),styles["Normal"])])
+    signature = plan.get("signature_text") or f"{cfg.get('nome') or owner.get('name')} - CRN {cfg.get('crn') or 'não informado'}"
+    story.extend([Spacer(1,20),Paragraph(html.escape(str(signature)),ParagraphStyle("sig",parent=styles["Normal"],alignment=TA_CENTER)),Spacer(1,8),Paragraph("Documento de apoio ao acompanhamento nutricional. Alterações devem ser avaliadas pelo nutricionista responsável.",ParagraphStyle("foot",parent=styles["Normal"],fontSize=7,textColor=colors.grey,alignment=TA_CENTER))])
+    doc.build(story); return buffer.getvalue()
+
+
+@app.get("/app/api/pacientes/{patient_id}/planos/{plan_id}/pdf")
+def professional_plan_pdf(patient_id: str, plan_id: str, user: dict = Depends(auth.current_user)):
+    patient = _owned_patient(patient_id, user["id"]); plan = business_store.get_row("meal_plans", plan_id, user["id"])
+    if not plan or plan.get("patient_id") != patient_id: raise HTTPException(404, "Plano não encontrado")
+    content = _meal_plan_pdf(plan, patient, user)
+    return Response(content, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="plano-{patient_id[:8]}.pdf"', "Cache-Control": "private, no-store"})
+
+
+@app.get("/paciente/api/plano/pdf")
+def patient_plan_pdf(patient: dict = Depends(patient_auth.current_patient)):
+    rows = saas_store._request("GET", "meal_plans", params={"select": "*", "patient_id": f"eq.{patient['id']}", "status": "eq.approved", "order": "approved_at.desc", "limit": "1"}) or []
+    if not rows: raise HTTPException(404, "Plano ainda não publicado")
+    owner = saas_store.get_user(patient["client_id"]) or {}; content = _meal_plan_pdf(rows[0], patient, owner)
+    return Response(content, media_type="application/pdf", headers={"Content-Disposition": 'inline; filename="meu-plano-alimentar.pdf"', "Cache-Control": "private, no-store"})
 
 
 @app.patch("/app/api/pacientes/{patient_id}/diario/{entry_id}")
@@ -1315,6 +1501,11 @@ def admin_page(user: dict = Depends(auth.require_admin)):
     return FileResponse(STATIC_DIR / "admin-v2.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/admin/clinica")
+def admin_clinical_page(user: dict = Depends(auth.require_admin)):
+    return FileResponse(STATIC_DIR / "admin-clinical.html", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/admin/leads")
 def admin_leads_page(user: dict = Depends(auth.require_admin)):
     return FileResponse(STATIC_DIR / "admin-leads.html", headers={"Cache-Control": "no-store"})
@@ -1477,6 +1668,16 @@ def admin_update_test_client(user_id: str, payload: dict, admin: dict = Depends(
 def admin_dashboard(user: dict = Depends(auth.require_admin)):
     all_clients = [u for u in saas_store.list_users() if u["role"] == "client"]
     patient_rows = saas_store._request("GET", "patient_accounts", params={"select": "client_id,active,archived_at,hidden_at,access_expires_at"}) or []
+    # Mantém o painel mestre disponível durante uma implantação incremental,
+    # inclusive se a migration clínica ainda não tiver sido executada.
+    try:
+        clinical_alert_rows = saas_store._request("GET", "clinical_alerts", params={"select": "id,client_id,patient_id,severity,title,created_at,resolved_at", "resolved_at": "is.null", "order": "created_at.desc", "limit": "200"}) or []
+    except Exception:
+        clinical_alert_rows = []
+    try:
+        clinical_plan_rows = saas_store._request("GET", "meal_plans", params={"select": "id,client_id,patient_id,status,created_at", "order": "created_at.desc", "limit": "500"}) or []
+    except Exception:
+        clinical_plan_rows = []
     patient_counts: dict[str, int] = {}
     for patient in patient_rows:
         if patient.get("hidden_at") or patient.get("archived_at"):
@@ -1546,6 +1747,15 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
         "clients": clients,
         "archived_count": len(archived_clients),
         "archived_clients": archived_clients,
+        "clinical": {
+            "patients_total": len(patient_rows),
+            "patients_active": sum(bool(row.get("active")) and not row.get("archived_at") and not row.get("hidden_at") for row in patient_rows),
+            "alerts_open": len(clinical_alert_rows),
+            "alerts_high": sum(row.get("severity") == "high" for row in clinical_alert_rows),
+            "plans_total": len(clinical_plan_rows),
+            "plans_published": sum(row.get("status") == "approved" for row in clinical_plan_rows),
+            "by_nutritionist": [{"id": client["id"], "name": client["name"], "patients": patient_counts.get(client["id"], 0), "alerts": sum(a.get("client_id") == client["id"] for a in clinical_alert_rows), "plans": sum(p.get("client_id") == client["id"] for p in clinical_plan_rows)} for client in clients]
+        },
         "series": series,
     }
 

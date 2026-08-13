@@ -150,3 +150,18 @@ Nas configurações do GitHub, proteja a branch `main` e exija o status **Qualit
 # Módulos de clínica
 
 Após executar `migrations/007_clinic_management.sql`, cada nutricionista passa a ter CRM visual, serviços/planos, anamnese interna, disponibilidade e agenda. As notificações por e-mail usam `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` e `SMTP_FROM`; sem SMTP, o restante do sistema continua funcionando normalmente.
+
+## Central clínica avançada (v24)
+
+Execute, nessa ordem, `migrations/015_clinical_suite.sql` e `migrations/016_advanced_clinical_features.sql`. A central do paciente passa a incluir:
+
+- gráficos de peso, gordura corporal e massa muscular;
+- cálculo de TMB, gasto energético, meta calórica e macronutrientes (Mifflin-St Jeor, sempre sujeito à revisão profissional);
+- anamnese clínica e nutricional completa, com registro versionado do consentimento LGPD;
+- planos por refeição e horário, alimentos TACO, quantidades, substituições, modelos reutilizáveis, duplicação e publicação;
+- PDF de plano alimentar com identidade do nutricionista, assinatura/CRN e acesso privado do paciente;
+- diário alimentar, alertas automáticos, prontuário, agenda, financeiro e documentos versionados;
+- dashboard clínico do nutricionista em `/app/clinica`;
+- monitor operacional global do ADMIN mestre em `/admin/clinica`, sem quebrar o isolamento entre contas.
+
+O ADMIN mestre visualiza contagens globais por nutricionista. Cada nutricionista continua autorizado somente sobre seus próprios pacientes e registros. O cálculo energético e os totais nutricionais são auxiliares e não substituem avaliação clínica.
