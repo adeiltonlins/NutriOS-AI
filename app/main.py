@@ -11,6 +11,7 @@ import csv
 import html
 import io
 import json
+import logging
 import math
 import re
 import secrets
@@ -36,6 +37,7 @@ from app import pagamento
 from app import auth, business_store, emailer, patient_auth, saas_store, clinical_extensions
 import os
 
+logger = logging.getLogger("nutrios")
 
 def token_valido(token: str) -> bool:
     """Compara o token do admin usando comparação de tempo constante
@@ -2050,10 +2052,11 @@ def admin_master_chat_data(request: Request, admin: dict = Depends(auth.require_
     return {
         "id": "master", "name": admin.get("name"), "identifier": admin.get("identifier"),
         "ai_config": config, "public_url": f"{base}/assistente",
-        "test_chat_url": f"{base}/static/index.html?admin_test=mestre",
+        "test_chat_url": f"{base}/admin/testes/master/chat",
         "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
         "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
         "mercado_pago_api": bool(pagamento.PAGAMENTO_ATIVO),
+        "ai_ready": bool(os.getenv("GEMINI_API_KEY")) and os.getenv("IA_ATIVA", "true").lower() == "true",
         "visitors_today": len(today_sessions),
     }
 
@@ -2089,9 +2092,10 @@ def admin_test_client_data(request: Request, user_id: str, admin: dict = Depends
         "id": client["id"], "name": client["name"], "identifier": client["identifier"],
         "active": client.get("active"), "public_slug": slug, "ai_config": config,
         "public_url": f"{base}/n/{slug}" if slug else None,
-        "test_chat_url": f"{base}/static/index.html?admin_test={client['id']}",
+        "test_chat_url": f"{base}/admin/testes/{client['id']}/chat",
         "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
         "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
+        "ai_ready": bool(os.getenv("GEMINI_API_KEY")) and os.getenv("IA_ATIVA", "true").lower() == "true",
     }
 
 
@@ -2517,9 +2521,13 @@ def chat(request: Request, req: PerguntaRequest):
             resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
             if not str(resposta or "").strip():
                 raise RuntimeError("Resposta vazia do provedor")
-        except Exception:
-            # Falha transitória do provedor não derruba a experiência nem
-            # expõe detalhes técnicos. O usuário pode tentar novamente.
+        except Exception as exc:
+            # Registra a causa real nos logs do Render sem expor segredo ou
+            # detalhe técnico ao usuário. A experiência recebe um fallback.
+            logger.exception(
+                "Falha ao gerar resposta da IA (test_mode=%s, client_id=%s, client_slug=%s): %s",
+                req.test_mode, req.client_id, req.client_slug, type(exc).__name__,
+            )
             resposta = "Tive uma instabilidade rápida ao preparar essa resposta. Pode repetir sua dúvida em uma frase? Se você deseja marcar uma consulta, escreva ‘quero agendar’."
 
     # O Bruce usa um marcador em vez de escrever o link — aqui a gente
