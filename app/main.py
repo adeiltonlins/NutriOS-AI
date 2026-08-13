@@ -965,6 +965,32 @@ def _refresh_clinical_alerts(patient: dict, checkins: list[dict], assessments: l
     return business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"patient_id": f"eq.{patient['id']}", "resolved_at": "is.null"})
 
 
+
+# NutriOS V22 — compatibility aliases for dashboard navigation
+@app.get("/app/agenda")
+def app_agenda_alias(user: dict = Depends(auth.current_user)):
+    return RedirectResponse("/app/gestao", status_code=307)
+
+@app.get("/app/planos")
+def app_planos_alias(user: dict = Depends(auth.current_user)):
+    return RedirectResponse("/app/clinica#planos", status_code=307)
+
+@app.get("/app/evolucao")
+def app_evolucao_alias(user: dict = Depends(auth.current_user)):
+    return RedirectResponse("/app/clinica#evolucao", status_code=307)
+
+@app.get("/app/analise-corporal")
+def app_analise_corporal_alias(user: dict = Depends(auth.current_user)):
+    return RedirectResponse("/app/clinica#assessment", status_code=307)
+
+@app.get("/app/financeiro")
+def app_financeiro_alias(user: dict = Depends(auth.current_user)):
+    return RedirectResponse("/app/metricas", status_code=307)
+
+@app.get("/app/relatorios")
+def app_relatorios_alias(user: dict = Depends(auth.current_user)):
+    return RedirectResponse("/app/metricas", status_code=307)
+
 @app.get("/app/pacientes")
 def patient_management_page(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "client-patients.html", headers={"Cache-Control": "no-store"})
