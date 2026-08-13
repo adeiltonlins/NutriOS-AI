@@ -95,7 +95,14 @@ async def security_middleware(request: Request, call_next):
         if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
             return Response("Origem não autorizada", status_code=403)
         multipart_allowed = request.url.path == "/app/api/logo" or is_patient_pdf or is_clinical_image
-        if request.method in {"POST", "PUT", "PATCH"} and request.url.path != "/auth/logout" and not multipart_allowed and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
+        # Requisições sem corpo (por exemplo, ações PATCH idempotentes) não
+        # possuem mídia para validar. Quando houver corpo, JSON continua
+        # obrigatório, preservando a proteção já existente.
+        has_body = bool(
+            int(request.headers.get("content-length") or "0") > 0
+            or request.headers.get("transfer-encoding")
+        )
+        if request.method in {"POST", "PUT", "PATCH"} and has_body and request.url.path != "/auth/logout" and not multipart_allowed and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -963,7 +970,14 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
 
 @app.patch("/app/api/alertas/{alert_id}/resolver")
 def resolve_clinical_alert(alert_id: str, user: dict = Depends(auth.current_user)):
-    return business_store.update_row("clinical_alerts", alert_id, user["id"], {"resolved_at": datetime.now(timezone.utc).isoformat()})
+    resolved_at = datetime.now(timezone.utc).isoformat()
+    alert = business_store.update_row("clinical_alerts", alert_id, user["id"], {"resolved_at": resolved_at})
+    if not alert:
+        # A consulta inclui client_id: um profissional não consegue resolver
+        # alerta pertencente a outra conta.
+        raise HTTPException(404, "Alerta não encontrado ou já resolvido")
+    business_store.audit(user["id"], user["id"], "clinical_alert.resolved", "clinical_alert", alert_id)
+    return {"status": "resolved", "alert": alert}
 
 
 @app.get("/app/pacientes/{patient_id}")
