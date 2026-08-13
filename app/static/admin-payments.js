@@ -37,7 +37,7 @@
       button.title = data.public_url;
     } catch (error) {
       button.textContent = 'Falhou — tentar novamente';
-      alert(error.message);
+      window.NutriUX?.toast(error.message, 'error');
     } finally {
       button.disabled = false;
       setTimeout(() => { button.textContent = original; }, 3500);
@@ -98,10 +98,10 @@
       const response = await fetch(`/admin/api/pagamentos-mestre/${encodeURIComponent(button.dataset.verify)}/verificar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.detail || 'Falha na verificação');
-      alert(data.status === 'approved' ? 'Pagamento confirmado e atendimento liberado.' : `Pagamento ainda está ${data.status || 'pendente'}.`);
+      window.NutriUX?.toast(data.status === 'approved' ? 'Pagamento confirmado e atendimento liberado.' : `Pagamento ainda está ${data.status || 'pendente'}.`, data.status === 'approved' ? 'success' : 'info', 5000);
       await loadMasterPayments();
       if (typeof load === 'function') load();
-    } catch (error) { alert(error.message); button.disabled = false; button.textContent = 'Tentar novamente'; }
+    } catch (error) { window.NutriUX?.toast(error.message, 'error'); button.disabled = false; button.textContent = 'Tentar novamente'; }
   });
   document.getElementById('refreshMasterPayments').addEventListener('click', loadMasterPayments);
   document.getElementById('copyMasterChatFinance').addEventListener('click', event => copyMasterChatLink(event.currentTarget));

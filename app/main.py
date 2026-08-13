@@ -1208,7 +1208,7 @@ async def upload_patient_document(patient_id: str, title: str = Form(..., min_le
     previous = saas_store._request("GET", "patient_documents", params={"select": "version", "patient_id": f"eq.{patient_id}", "order": "version.desc", "limit": "1"}) or []
     version = int(previous[0]["version"]) + 1 if previous else 1
     saas_store._request("PATCH", "patient_documents", params={"patient_id": f"eq.{patient_id}", "is_current": "eq.true"}, payload={"is_current": False}, prefer="return=minimal")
-    if category not in {"diet", "exam", "report", "other"}: category = "other"
+    if category not in {"diet", "exam", "report", "prescription", "other"}: category = "other"
     rows = saas_store._request("POST", "patient_documents", payload={"patient_id": patient_id, "client_id": user["id"], "title": title.strip(), "category": category, "original_name": safe_name, "storage_path": object_path, "version": version, "is_current": True}, prefer="return=representation") or []
     return {"ok": True, "document": rows[0]}
 
