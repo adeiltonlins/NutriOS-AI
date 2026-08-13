@@ -6,6 +6,8 @@
 <title>NutriOS — Painel profissional</title>
 <link rel="stylesheet" href="/static/nutrios-dashboard-v6.css?v=20260813">
   <link rel="stylesheet" href="/static/nutrios-dashboard-v7.css?v=7">
+<link rel="stylesheet" href="/static/nutrios-green-premium-v13.css?v=13">
+<link rel="stylesheet" href="/static/nutrios-analytics-v14.css?v=14">
 </head>
 <body>
 <div class="os-shell">
@@ -83,6 +85,46 @@
         </a>
       </section>
 
+      <section class="os-section os-analytics-section" aria-labelledby="analyticsTitle">
+        <div class="os-section-head os-analytics-head">
+          <div>
+            <h2 id="analyticsTitle">Visão analítica</h2>
+            <p>Indicadores calculados com os dados reais da sua operação.</p>
+          </div>
+          <span class="os-live-badge">Dados reais</span>
+        </div>
+
+        <div class="os-analytics-grid">
+          <article class="os-chart-card os-chart-wide">
+            <div class="os-chart-head">
+              <div><h3>Receita e despesas</h3><p>Últimos 12 meses</p></div>
+              <div class="os-chart-legend"><span><i class="income"></i>Receita</span><span><i class="expense"></i>Despesas</span></div>
+            </div>
+            <div id="financeChart" class="os-chart-stage" aria-label="Gráfico de receita e despesas"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Distribuição de pacientes</h3><p>Ativos e inativos</p></div></div>
+            <div id="patientDonut" class="os-donut-wrap" aria-label="Distribuição de pacientes"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Consultas</h3><p>Volume mensal</p></div><strong id="appointmentsTotal" class="os-chart-total">—</strong></div>
+            <div id="appointmentsChart" class="os-chart-stage compact" aria-label="Consultas por mês"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Adesão nos check-ins</h3><p>Média mensal de 0 a 10</p></div><strong id="adherenceAverage" class="os-chart-total">—</strong></div>
+            <div id="adherenceChart" class="os-chart-stage compact" aria-label="Adesão média dos check-ins"></div>
+          </article>
+
+          <article class="os-chart-card">
+            <div class="os-chart-head"><div><h3>Evolução clínica registrada</h3><p>Avaliações corporais por mês</p></div><strong id="assessmentTotal" class="os-chart-total">—</strong></div>
+            <div id="assessmentChart" class="os-chart-stage compact" aria-label="Avaliações corporais por mês"></div>
+          </article>
+        </div>
+      </section>
+
       <section class="os-section">
         <div class="os-section-head"><div><h2>Acesso rápido</h2></div></div>
         <div class="os-quick-grid" id="quickGrid">
@@ -90,7 +132,7 @@
             <span class="os-quick-icon blue">▥</span><div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></div><span class="os-arrow">›</span>
           </a>
           <a class="os-quick-card" data-search="treinos opcional series repeticoes carga descanso" href="/app/treinos">
-            <span class="os-quick-icon purple">↔</span><div><h3>Treinos opcionaisl</h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></div><span class="os-arrow">›</span>
+            <span class="os-quick-icon purple">↔</span><div><h3>Treinos opcionais</h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></div><span class="os-arrow">›</span>
           </a>
           <a class="os-quick-card" data-search="planos alimentares dieta acompanhamento" href="/app/clinica#planos">
             <span class="os-quick-icon green">◫</span><div><h3>Planos alimentares</h3><p>Crie, edite e acompanhe planos alimentares personalizados.</p></div><span class="os-arrow">›</span>
@@ -140,6 +182,69 @@ function renderActivities(data){
   activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${x.href}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`;
 }
 
+
+const monthLabel=m=>{const [y,mo]=String(m).split('-');return new Intl.DateTimeFormat('pt-BR',{month:'short'}).format(new Date(Number(y),Number(mo)-1,1)).replace('.','')};
+const hasPositive=arr=>arr.some(v=>Number(v)>0);
+const compactMoney=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',notation:'compact',maximumFractionDigits:1}).format(Number(v||0));
+const chartEmpty=msg=>`<div class="os-chart-empty"><strong>Ainda sem dados suficientes</strong><span>${msg}</span></div>`;
+
+function lineChart(target, series, opts={}){
+  const el=typeof target==='string'?qs(target):target;
+  if(!el)return;
+  const values=series.flatMap(s=>s.values.filter(v=>v!==null&&v!==undefined).map(Number));
+  if(!values.length || !hasPositive(values.map(Math.abs))){el.innerHTML=chartEmpty(opts.empty||'Os dados aparecerão conforme você usar o NutriOS.');return;}
+  const W=760,H=250,p={l:42,r:18,t:20,b:38};
+  const min=opts.min??0,max=Math.max(opts.max??0,...values,1);
+  const x=i=>p.l+(i*(W-p.l-p.r)/Math.max(1,(series[0].values.length-1)));
+  const y=v=>p.t+(max-Number(v||0))*(H-p.t-p.b)/Math.max(1,max-min);
+  const grid=[0,.25,.5,.75,1].map(k=>{const yy=p.t+k*(H-p.t-p.b);const val=max*(1-k);return `<line x1="${p.l}" y1="${yy}" x2="${W-p.r}" y2="${yy}" class="grid"/><text x="${p.l-8}" y="${yy+4}" text-anchor="end" class="axis-y">${opts.money?compactMoney(val):Math.round(val)}</text>`}).join('');
+  const labels=series[0].labels.map((lab,i)=>`<text x="${x(i)}" y="${H-12}" text-anchor="middle" class="axis-x">${esc(monthLabel(lab))}</text>`).join('');
+  const paths=series.map((s,idx)=>{
+    const pts=s.values.map((v,i)=>`${x(i)},${y(v??0)}`).join(' ');
+    const circles=s.values.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v??0)}" r="3.2" class="series-dot s${idx}"/>`).join('');
+    return `<polyline points="${pts}" class="series-line s${idx}"/>${circles}`;
+  }).join('');
+  el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico')}">${grid}${paths}${labels}</svg>`;
+}
+
+function barChart(target, labels, values, opts={}){
+  const el=typeof target==='string'?qs(target):target;if(!el)return;
+  if(!values.length||!hasPositive(values)){el.innerHTML=chartEmpty(opts.empty||'Nenhum registro no período.');return;}
+  const W=760,H=220,p={l:28,r:16,t:16,b:38},max=Math.max(...values,1),slot=(W-p.l-p.r)/values.length,bw=Math.min(34,slot*.55);
+  const bars=values.map((v,i)=>{const h=(Number(v)/max)*(H-p.t-p.b),xx=p.l+i*slot+(slot-bw)/2,yy=H-p.b-h;return `<rect x="${xx}" y="${yy}" width="${bw}" height="${h}" rx="7" class="bar"/><text x="${xx+bw/2}" y="${Math.max(13,yy-7)}" text-anchor="middle" class="bar-value">${Number(v)}</text><text x="${xx+bw/2}" y="${H-12}" text-anchor="middle" class="axis-x">${esc(monthLabel(labels[i]))}</text>`}).join('');
+  el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico de barras')}">${bars}</svg>`;
+}
+
+function donutChart(target, active, inactive){
+  const el=typeof target==='string'?qs(target):target;if(!el)return;
+  const total=Number(active||0)+Number(inactive||0);
+  if(!total){el.innerHTML=chartEmpty('Cadastre pacientes para visualizar a distribuição.');return;}
+  const pct=active/total, r=55,c=2*Math.PI*r,dash=c*pct;
+  el.innerHTML=`<div class="os-donut-layout"><svg viewBox="0 0 150 150" class="os-donut-svg" role="img" aria-label="${active} pacientes ativos e ${inactive} inativos"><circle cx="75" cy="75" r="55" class="donut-track"/><circle cx="75" cy="75" r="55" class="donut-value" stroke-dasharray="${dash} ${c-dash}" transform="rotate(-90 75 75)"/><text x="75" y="70" text-anchor="middle" class="donut-pct">${Math.round(pct*100)}%</text><text x="75" y="91" text-anchor="middle" class="donut-label">ativos</text></svg><div class="os-donut-legend"><div><span class="dot active"></span><span>Ativos</span><strong>${active}</strong></div><div><span class="dot inactive"></span><span>Inativos</span><strong>${inactive}</strong></div><div class="total"><span>Total</span><strong>${total}</strong></div></div></div>`;
+}
+
+function renderAnalytics(analytics){
+  const a=analytics||{};
+  const finance=a.finance||[];
+  lineChart('#financeChart',[
+    {labels:finance.map(x=>x.month),values:finance.map(x=>x.income)},
+    {labels:finance.map(x=>x.month),values:finance.map(x=>x.expense)}
+  ],{money:true,label:'Receita e despesas dos últimos 12 meses',empty:'Registre pagamentos no Financeiro para formar a série histórica.'});
+
+  const ps=a.patient_status||{};donutChart('#patientDonut',ps.active||0,ps.inactive||0);
+  const ap=a.appointments||[];barChart('#appointmentsChart',ap.map(x=>x.month),ap.map(x=>x.total),{label:'Consultas por mês',empty:'Consultas agendadas aparecerão aqui.'});
+  appointmentsTotal.textContent=(a.totals?.appointments??0).toLocaleString('pt-BR');
+
+  const adh=a.checkin_adherence||[];const valid=adh.filter(x=>x.value!==null&&Number(x.count||0)>0);
+  lineChart('#adherenceChart',[{labels:valid.map(x=>x.month),values:valid.map(x=>x.value)}],{max:10,label:'Adesão média dos check-ins',empty:'A média será calculada após os pacientes responderem check-ins.'});
+  const adhCount=valid.reduce((sum,x)=>sum+Number(x.count||0),0);
+  const adhWeighted=valid.reduce((sum,x)=>sum+Number(x.value||0)*Number(x.count||0),0);
+  adherenceAverage.textContent=adhCount?`${(adhWeighted/adhCount).toFixed(1)}/10`:'—';
+
+  const ass=a.assessments||[];barChart('#assessmentChart',ass.map(x=>x.month),ass.map(x=>x.value),{label:'Avaliações corporais por mês',empty:'Avaliações corporais registradas aparecerão aqui.'});
+  assessmentTotal.textContent=(a.totals?.assessments??0).toLocaleString('pt-BR');
+}
+
 async function init(){
   setDate();
   const me=await fetch('/api/me');
@@ -160,6 +265,7 @@ async function init(){
     alertCount.textContent=m.open_alerts??0;
     alertCount.hidden=!(m.open_alerts>0);
     renderActivities(data);
+    renderAnalytics(data.analytics||{});
   }else{
     activityList.innerHTML='<div class="os-empty">Não foi possível carregar o resumo agora.</div>';
   }
