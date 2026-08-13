@@ -18,6 +18,7 @@ import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -502,8 +503,8 @@ def public_chat_config(user: dict) -> dict:
     safe = {k: config.get(k) for k in safe_keys if config.get(k)}
     safe["nome"] = safe.get("nome") or user.get("name") or "NutriOS"
     safe["identidade_ia"] = safe.get("identidade_ia") or f"Assistente de {safe['nome']}"
-    color = safe.get("cor_principal", "#2563eb")
-    safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#2563eb"
+    color = safe.get("cor_principal", "#168f43")
+    safe["cor_principal"] = color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else "#168f43"
     if safe.get("logo_url") and not str(safe["logo_url"]).startswith("https://"):
         safe.pop("logo_url", None)
     if safe.get("instagram") and not str(safe["instagram"]).startswith("https://"):
@@ -1231,10 +1232,22 @@ def edit_patient(patient_id: str, payload: dict, user: dict = Depends(auth.curre
 
 
 @app.post("/app/api/pacientes/{patient_id}/codigo")
-def generate_patient_code(patient_id: str, payload: PatientCodeRequest, user: dict = Depends(auth.current_user)):
+def generate_patient_code(patient_id: str, payload: PatientCodeRequest, request: Request, user: dict = Depends(auth.current_user)):
     patient = _owned_patient(patient_id, user["id"])
-    if patient.get("archived_at") or not patient.get("active"): raise HTTPException(409, "Ative o paciente antes de gerar o código")
-    return {"code": patient_auth.issue_code(patient_id, payload.expires_in_hours), "expires_in_hours": payload.expires_in_hours, "show_once": True}
+    if patient.get("archived_at") or not patient.get("active"):
+        raise HTTPException(409, "Ative o paciente antes de gerar o código")
+    code = patient_auth.issue_code(patient_id, payload.expires_in_hours)
+    base = str(request.base_url).rstrip("/")
+    login_url = f"{base}/paciente/login"
+    invite_url = f"{login_url}?codigo={quote(code)}"
+    return {
+        "code": code,
+        "patient_name": patient.get("name"),
+        "expires_in_hours": payload.expires_in_hours,
+        "show_once": True,
+        "login_url": login_url,
+        "invite_url": invite_url,
+    }
 
 
 @app.post("/app/api/pacientes/{patient_id}/renovar")
@@ -1643,6 +1656,8 @@ def patient_login(request: Request, payload: PatientLoginRequest, response: Resp
         raise HTTPException(503, "Serviço de autenticação temporariamente indisponível")
     if not patient: raise HTTPException(401, "Acesso inválido, expirado ou indisponível")
     patient_auth.create_session(patient, response)
+    if method == "code" and patient.get("password_hash"):
+        patient_auth.consume_codes(patient["id"])
     redirect = "/paciente/primeiro-acesso" if method == "code" and not patient.get("password_hash") else "/paciente"
     return {"ok": True, "redirect": redirect}
 

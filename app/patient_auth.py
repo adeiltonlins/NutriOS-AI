@@ -1,6 +1,6 @@
 """Acesso temporário de pacientes ao canal privado de acompanhamento."""
 from __future__ import annotations
-import hashlib, hmac, os, secrets
+import hashlib, hmac, os, secrets, re
 from datetime import datetime, timedelta, timezone
 from fastapi import Cookie, HTTPException, Request, Response
 from app import saas_store
@@ -28,16 +28,36 @@ def issue_code(patient_id: str, hours: int = 24) -> str:
     saas_store._request("POST", "patient_access_codes", payload={"patient_id":patient_id,"code_hash":_digest(raw,"code"),"code_lookup":_lookup(raw,"code"),"expires_at":(now+timedelta(hours=hours)).isoformat()}, prefer="return=minimal")
     return raw
 
+def _normalize_code(code: str) -> str:
+    """Aceita o código com/sem espaços e hífens sem enfraquecer a validação."""
+    compact = re.sub(r"[^A-Z0-9]", "", (code or "").strip().upper())
+    if compact.startswith("PACI") and len(compact) == 12:
+        compact = compact[4:]
+    if len(compact) == 8:
+        return f"PACI-{compact[:4]}-{compact[4:]}"
+    return (code or "").strip().upper()
+
 def authenticate(code: str) -> dict | None:
-    normalized=code.strip().upper(); now=datetime.now(timezone.utc)
+    # O convite de primeiro acesso NÃO é consumido antes de a senha ser criada.
+    # Isso evita perder o convite se a aba for fechada ou o navegador bloquear o cookie
+    # entre a validação do código e a criação das credenciais.
+    normalized=_normalize_code(code); now=datetime.now(timezone.utc)
     rows=saas_store._request("GET","patient_access_codes",params={"select":"*","code_lookup":f"eq.{_lookup(normalized,'code')}","revoked_at":"is.null","used_at":"is.null","limit":"1"}) or []
     if not rows: return None
     row=rows[0]
     if datetime.fromisoformat(row["expires_at"].replace("Z","+00:00")) <= now or not hmac.compare_digest(row["code_hash"],_digest(normalized,"code")): return None
     patient=(saas_store._request("GET","patient_accounts",params={"select":"*","id":f"eq.{row['patient_id']}","limit":"1"}) or [None])[0]
     if not patient or not patient.get("active") or patient.get("archived_at") or datetime.fromisoformat(patient["access_expires_at"].replace("Z","+00:00")) <= now: return None
-    saas_store._request("PATCH","patient_access_codes",params={"id":f"eq.{row['id']}"},payload={"used_at":now.isoformat()},prefer="return=minimal")
     return patient
+
+def consume_codes(patient_id: str) -> None:
+    """Consome convites válidos somente quando o acesso foi efetivamente concluído."""
+    now=datetime.now(timezone.utc).isoformat()
+    saas_store._request(
+        "PATCH", "patient_access_codes",
+        params={"patient_id":f"eq.{patient_id}","revoked_at":"is.null","used_at":"is.null"},
+        payload={"used_at":now}, prefer="return=minimal"
+    )
 
 def authenticate_password(identifier: str, password: str) -> dict | None:
     """Autentica somente pacientes ativos e dentro da validade contratada."""
@@ -71,6 +91,7 @@ def set_credentials(patient: dict, identifier: str, password: str) -> dict:
         payload={"login_identifier": normalized, "password_hash": hash_password(password), "password_created_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()},
         prefer="return=representation",
     ) or []
+    consume_codes(patient["id"])
     return rows[0] if rows else patient
 
 def create_session(patient: dict, response: Response):
