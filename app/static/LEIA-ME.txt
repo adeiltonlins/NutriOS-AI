@@ -1,12 +1,19 @@
-NUTRIOS V8 — CORREÇÃO DA PÁGINA PÚBLICA
+NUTRIOS V9 — UPLOAD FÁCIL
 
-No GitHub:
-nutri-chatbot > app > static > Add file > Upload files
+1. Extraia este ZIP.
+2. No GitHub, abra:
+   nutri-chatbot > app > static
+3. Clique em:
+   Add file > Upload files
+4. Envie apenas:
+   saas-landing.html
+5. Commit:
+   NutriOS v9 - landing premium alinhada
+6. Aguarde o Render concluir o deploy.
+7. No site, pressione Ctrl + F5.
 
-Envie somente:
-- saas-landing.html
-
-Commit sugerido:
-NutriOS v8 - corrige marca da pagina publica
-
-Depois aguarde o deploy do Render e pressione Ctrl+F5.
+ALTERAÇÕES:
+- Hero alinhada e com quebra visual melhor.
+- “em um único sistema.” mantido em uma linha quando houver espaço.
+- Posicionamento como plataforma SaaS clínica.
+- Textos antigos de chatbot substituídos por linguagem de plataforma/IA integrada.
