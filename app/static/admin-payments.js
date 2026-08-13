@@ -39,7 +39,7 @@
     .top>div:last-child>a,.top>div:last-child>button{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 17px;border-radius:13px;text-decoration:none;font-weight:800}
     .finance-panel{margin-bottom:18px}.finance-copy{display:grid;gap:3px}.finance-table{min-width:850px}
     .finance-actions{display:flex;gap:8px;align-items:center}.finance-actions a,.finance-actions button{white-space:nowrap}
-    .finance-empty{padding:26px;color:var(--muted)}.finance-note{padding:13px 22px;border-top:1px solid #253857;color:var(--muted);font-size:12px}
+    .finance-empty{padding:26px;color:var(--muted)}.finance-note{padding:13px 22px;border-top:1px solid #294a35;color:var(--muted);font-size:12px}
     @media(max-width:850px){.top>div:last-child{width:100%}.top>div:last-child>a,.top>div:last-child>button{flex:1}.finance-table{min-width:760px}}
   `;
   document.head.appendChild(style);
@@ -51,6 +51,7 @@
     try {
       const response = await fetch('/admin/api/chatbot-mestre/link-publico', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {'Content-Type': 'application/json'},
         body: '{}'
       });
@@ -97,7 +98,7 @@
   async function loadMasterPayments() {
     rows.innerHTML = '<tr><td colspan="7" class="finance-empty">Atualizando…</td></tr>';
     try {
-      const response = await fetch('/admin/api/pagamentos-mestre');
+      const response = await fetch('/admin/api/pagamentos-mestre', {credentials:'same-origin'});
       if (response.status === 401 || response.status === 403) return location.assign('/login');
       const items = await response.json();
       if (!response.ok) throw new Error(items.detail || 'Erro ao carregar pagamentos');

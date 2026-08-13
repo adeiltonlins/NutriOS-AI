@@ -31,6 +31,7 @@
         : `/admin/api/clientes/${encodeURIComponent(profileId)}/link-publico`;
       const response = await fetch(target, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {'Content-Type': 'application/json'},
         body: '{}'
       });

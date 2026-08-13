@@ -20,6 +20,8 @@
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
 <link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 <link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
+<link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
 </head>
 <body><main class="page">
   <header class="top"><div><a class="back" href="/admin">← Voltar ao Admin mestre</a><h1>Central de conversas</h1><div class="muted">Veja a experiência mestre e todos os nutricionistas sem misturar os dados.</div></div><div class="actions"><a class="button" href="/admin/testes">Testar experiência</a><button class="button primary" id="reload">Atualizar dados</button></div></header>
@@ -38,4 +40,5 @@ async function load(){rows.innerHTML='<tr><td colspan="8" class="empty">Atualiza
 [search,owner,payment].forEach(element=>element.addEventListener(element===search?'input':'change',render));rows.addEventListener('click',event=>{const button=event.target.closest('[data-session]');if(button)openConversation(button.dataset.session)});reload.onclick=load;load();
 </script>
 <script src="/static/nutrios-v24-theme.js?v=24"></script>
+<script src="/static/nutrios-datetime.js?v=26"></script>
 </body></html>

@@ -9,6 +9,8 @@
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
 <link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 <link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
+<link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
 </head>
 <body class="record-body patient-page"><div id="pageLoader" class="page-loader"><span></span><p>Organizando o prontuário…</p></div><div id="toast" class="toast" role="status" aria-live="polite"></div>
 <header class="record-appbar"><a class="record-brand" href="/app"><span class="brand-mark">N</span><span>NutriOS <i>Clínica</i></span></a><nav class="record-breadcrumb"><a href="/app">Central</a><span>›</span><a href="/app/pacientes">Pacientes</a><span>›</span><b id="breadcrumbName">Prontuário</b></nav><div class="record-actions"><a class="button subtle" href="/app/clinica">Dashboard clínico</a><button id="refreshButton" class="icon-button" type="button" title="Atualizar prontuário">↻</button></div></header>
@@ -25,4 +27,5 @@
 <section id="documents" class="view"><div class="section-heading"><div><span class="eyebrow">ARQUIVOS</span><h2>Documentos e prescrições</h2><p>Envie PDFs privados e mantenha o histórico de versões organizado.</p></div></div><div class="content-split documents-layout"><article class="panel"><div class="panel-title"><div><span class="panel-icon">⇧</span><div><h3>Enviar novo PDF</h3><p>Tamanho máximo: 10 MB.</p></div></div></div><form id="uploadForm" class="form-grid"><label>Título<input name="title" required></label><label>Categoria<select name="category"><option value="diet">Plano alimentar</option><option value="exam">Exame</option><option value="report">Relatório</option><option value="prescription">Prescrição</option><option value="other">Outro</option></select></label><label class="full file-drop">Arquivo PDF<input name="file" type="file" accept="application/pdf,.pdf" required><small>Selecione um documento em formato PDF</small></label><button class="primary full">Enviar documento privado</button></form><div id="documentCompare" class="compare-box"></div></article><article class="panel"><div class="panel-title"><div><span class="panel-icon">▤</span><div><h3>Biblioteca do paciente</h3></div></div></div><div id="documentList" class="list"></div></article></div></section>
 </div></main><script src="/static/clinical-suite.js"></script>
 <script src="/static/nutrios-v24-theme.js?v=24"></script>
+<script src="/static/nutrios-datetime.js?v=26"></script>
 </body></html>

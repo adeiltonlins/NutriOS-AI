@@ -74,6 +74,8 @@
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
 <link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 <link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
+<link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-50 text-slate-900 dark:from-[#0b1a11] dark:via-[#12271a] dark:to-[#17301f] dark:text-slate-100 transition-colors public-page">
 
@@ -187,10 +189,22 @@
   sessionStorage.setItem('nutribot-source', detectedSource);
   let tenantColor = '#168f43';
   let assistantDisplayName = 'NutriOS';
+  let adminTestProfile = null;
+  const fetchJson = async (url, options={}) => {
+    const resp = await fetch(url, { credentials: 'same-origin', ...options });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.status === 401 || resp.status === 403) {
+      const err = new Error(data.detail || 'Sua sessão de administrador expirou. Entre novamente.');
+      err.auth = true;
+      throw err;
+    }
+    if (!resp.ok) throw new Error(data.detail || `Falha HTTP ${resp.status}`);
+    return data;
+  };
   const clientReady = testMode
-    ? fetch(adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(r => { if (!r.ok) throw new Error('Sessão mestre inválida'); return r.json(); }).then(x => { clientId = x.id; })
+    ? fetchJson(adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(x => { adminTestProfile = x; clientId = x.id; return x; })
     : window.location.pathname === '/app/chat'
-      ? fetch('/api/me').then(r => { if (!r.ok) throw new Error('Sessão inválida'); return r.json(); }).then(u => { clientId = u.id; })
+      ? fetchJson('/api/me').then(u => { clientId = u.id; return u; })
       : masterPublic ? Promise.resolve().then(() => { clientId = 'master'; })
       : Promise.resolve();
   const CONTATO_URL = window.location.origin + '/contato';
@@ -212,10 +226,9 @@
 
   async function carregarIdentidadePublica() {
     if (!clientSlug && !testMode && !masterPublic) return;
-    const identityUrl = testMode ? (adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste') : masterPublic ? '/public/chatbot-mestre' : '/public/clientes/' + encodeURIComponent(clientSlug);
-    const resp = await fetch(identityUrl);
-    if (!resp.ok) return;
-    const raw = await resp.json();
+    await clientReady;
+    const identityUrl = testMode ? null : masterPublic ? '/public/chatbot-mestre' : '/public/clientes/' + encodeURIComponent(clientSlug);
+    const raw = testMode ? adminTestProfile : await fetchJson(identityUrl);
     const cfg = testMode ? {...(raw.ai_config || {}), nome:(raw.ai_config || {}).nome || raw.name} : raw;
     tenantColor = cfg.cor_principal || tenantColor;
     assistantDisplayName = cfg.identidade_ia || `Assistente de ${cfg.nome}`;
@@ -242,7 +255,11 @@
     digitarResposta(intro);
     historicoConversa.push({autor:'bot', texto:intro});
   }
-  carregarIdentidadePublica();
+  carregarIdentidadePublica().catch((e) => {
+    mostrarChat();
+    mostrarErro(e.message || 'Não foi possível carregar este assistente.');
+    if (e.auth) setTimeout(() => { window.top.location.href = '/login'; }, 1200);
+  });
 
   /* ---- Tema unificado NutriOS ---- */
   const aplicarTema = (tema) => window.NutriOSTheme ? window.NutriOSTheme.apply(tema) : document.documentElement.classList.toggle('dark', tema === 'dark');
@@ -474,6 +491,7 @@
       await clientReady;
       const resp = await fetch(API_URL, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId, client_id: clientId, client_slug: clientSlug, lead_source: detectedSource, test_mode: testMode })
       });
@@ -497,7 +515,7 @@
 
     } catch (e) {
       removerPensando();
-      mostrarErro('O assistente não conseguiu concluir esta resposta agora. Tente novamente; se persistir, verifique a configuração da IA no painel.');
+      mostrarErro(e?.message || 'O assistente não conseguiu concluir esta resposta agora. Tente novamente em instantes.');
     } finally {
       enviarBtn.disabled = false;
       input.focus();
@@ -521,5 +539,6 @@
 
 <a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#718077;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
 <script src="/static/nutrios-v24-theme.js?v=24"></script>
+<script src="/static/nutrios-datetime.js?v=26"></script>
 </body>
 </html>
