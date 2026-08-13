@@ -72,6 +72,7 @@
 
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-50 text-slate-900 dark:from-[#0b1a11] dark:via-[#12271a] dark:to-[#17301f] dark:text-slate-100 transition-colors public-page">
 
@@ -193,7 +194,8 @@
       : Promise.resolve();
   const CONTATO_URL = window.location.origin + '/contato';
   let historicoConversa = [];
-  let sessionId = crypto.randomUUID();
+  const makeSessionId=()=>{try{return crypto.randomUUID()}catch(e){return 'sess-'+Date.now()+'-'+Math.random().toString(36).slice(2,12)}};
+  let sessionId = makeSessionId();
   let pollInterval = null;
   let pollAttempts = 0;
 
@@ -241,15 +243,10 @@
   }
   carregarIdentidadePublica();
 
-  /* ---- Tema ---- */
-  function aplicarTema(tema) {
-    document.documentElement.classList.toggle('dark', tema === 'dark');
-    localStorage.setItem('nutribot-theme', tema);
-  }
-  aplicarTema(localStorage.getItem('nutribot-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-  themeToggle.addEventListener('click', () => {
-    aplicarTema(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
-  });
+  /* ---- Tema unificado NutriOS ---- */
+  const aplicarTema = (tema) => window.NutriOSTheme ? window.NutriOSTheme.apply(tema) : document.documentElement.classList.toggle('dark', tema === 'dark');
+  if (window.NutriOSTheme) aplicarTema(window.NutriOSTheme.get());
+  themeToggle.addEventListener('click', () => window.NutriOSTheme ? window.NutriOSTheme.toggle() : aplicarTema(document.documentElement.classList.contains('dark') ? 'light' : 'dark'));
 
   /* ---- Textarea auto-resize ---- */
   input.addEventListener('input', () => {
@@ -263,7 +260,7 @@
   /* ---- Nova conversa ---- */
   function novaConversa() {
     historicoConversa = [];
-    sessionId = crypto.randomUUID();
+    sessionId = makeSessionId();
     pararPolling();
     conversation.innerHTML = '';
     conversation.classList.add('hidden');
@@ -465,7 +462,6 @@
 
   /* ---- Envio ---- */
   async function enviarPergunta(pergunta) {
-    await clientReady;
     mostrarChat();
     adicionarMensagemUsuario(pergunta);
     input.value = '';
@@ -474,6 +470,7 @@
     mostrarPensando();
 
     try {
+      await clientReady;
       const resp = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -499,7 +496,7 @@
 
     } catch (e) {
       removerPensando();
-      mostrarErro('Não consegui me conectar ao servidor. Verifique sua internet e tente de novo.');
+      mostrarErro('O assistente não conseguiu concluir esta resposta agora. Tente novamente; se persistir, verifique a configuração da IA no painel.');
     } finally {
       enviarBtn.disabled = false;
       input.focus();
@@ -522,6 +519,6 @@
 </script>
 
 <a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#718077;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
-<script src="/static/nutrios-v22-theme.js?v=22"></script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
 
 /* NutriOS Premium v7 — iconography + brand polish */
 :root{
-  --nos-line: rgba(143,174,220,.18);
-  --nos-muted:#9fb0c9;
-  --nos-text:#f5f8ff;
+  --nos-line: rgba(100,207,134,.18);
+  --nos-muted:#64cf86;
+  --nos-text:#f2f8f4;
 }
 
 /* Single brand: one symbol + NutriOS. Hide legacy isolated N and OS suffix. */
@@ -47,7 +47,7 @@
   justify-content:center !important;
   font-size:0 !important;
   color:transparent !important;
-  border:1.5px solid #aebed6 !important;
+  border:1.5px solid #64cf86 !important;
   border-radius:6px !important;
   opacity:.9;
   box-sizing:border-box;
@@ -58,8 +58,8 @@
 .nos-sidebar a.active > span:first-child,
 .sidebar a.active > span:first-child,
 .app-sidebar a.active > span:first-child{
-  border-color:#73a8ff !important;
-  box-shadow:0 0 0 3px rgba(65,112,255,.10);
+  border-color:#64cf86 !important;
+  box-shadow:0 0 0 3px rgba(100,207,134,.10);
 }
 
 /* Date control: no mystery square/glyph. */
@@ -81,7 +81,7 @@
   content:"";
   width:8px;
   height:8px;
-  border:2px solid #86a7d8;
+  border:2px solid #64cf86;
   border-radius:50%;
   display:block;
   flex:0 0 auto;

@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 </head><body><main class="wrap"><a href="/app">← Voltar</a><h1>Identidade e configurações</h1><div class="meta" id="account"></div>
 <section class="share"><h2>Link público do meu assistente</h2><p>Divulgue no Instagram, site ou WhatsApp.</p><div class="share-row"><input id="publicUrl" readonly><button id="copy" type="button">Copiar link</button></div></section>
 <form class="panel" id="form"><h2>Identidade profissional</h2><div class="grid">
@@ -23,5 +24,5 @@ uploadLogo.onclick=async()=>{if(!logoFile.files[0]){msg.textContent='Escolha uma
 form.onsubmit=async e=>{e.preventDefault();const data={};fields.forEach(k=>data[k]=document.querySelector(`[name=${k}]`).value.trim());data.free_message_limit=Number(data.free_message_limit||8);const r=await fetch('/app/api/configuracoes',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});msg.textContent=r.ok?'Configurações salvas com sucesso.':'Não foi possível salvar.'};
 passwordForm.onsubmit=async e=>{e.preventDefault();if(e.target.new_password.value!==e.target.confirm_password.value){passwordMsg.textContent='As novas senhas não coincidem.';return}const r=await fetch('/app/api/senha',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({current_password:e.target.current_password.value,new_password:e.target.new_password.value})});const out=await r.json().catch(()=>({}));passwordMsg.textContent=r.ok?'Senha alterada com sucesso.':out.detail||'Não foi possível alterar.';if(r.ok)e.target.reset()};init();
 </script>
-<script src="/static/nutrios-v22-theme.js?v=22"></script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
 </body></html>

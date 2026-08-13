@@ -6,6 +6,7 @@
 
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 </head>
 <body class="clinical-page"><main class="clinical-wrap">
   <header class="clinical-header"><div><a class="back-link" href="/admin">← Admin mestre</a><span class="eyebrow">OPERAÇÃO CLÍNICA GLOBAL</span><h1>Monitor clínico</h1><p>Visão consolidada da operação de todos os nutricionistas, sem romper o isolamento entre contas.</p></div><button class="primary" id="refreshButton" type="button">↻ Atualizar dados</button></header>
@@ -19,5 +20,5 @@ function render(){const q=search.value.trim().toLowerCase(),items=state.items.fi
 async function load(){refreshButton.disabled=true;refreshButton.textContent='Atualizando…';try{const r=await fetch('/admin/api/dashboard'),d=await r.json();if(!r.ok){location='/login';return}const c=d.clinical||{};patients.textContent=c.patients_total||0;active.textContent=c.patients_active||0;alerts.textContent=c.alerts_open||0;high.textContent=c.alerts_high||0;plans.textContent=c.plans_published||0;questionnaireCount.textContent=c.questionnaires||0;photoCount.textContent=c.progress_photos||0;state.items=c.by_nutritionist||[];render()}catch(e){notify('Não foi possível carregar o monitor.',true)}finally{refreshButton.disabled=false;refreshButton.textContent='↻ Atualizar dados'}}
 search.addEventListener('input',render);refreshButton.addEventListener('click',load);load();
 </script>
-<script src="/static/nutrios-v22-theme.js?v=22"></script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
 </body></html>

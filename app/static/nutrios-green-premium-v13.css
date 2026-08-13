@@ -1,0 +1,312 @@
+
+/* =========================================================
+   NutriOS Premium v13 — Health Green / White Design System
+   ========================================================= */
+:root{
+  --nos-bg:#f7faf8;
+  --nos-surface:#ffffff;
+  --nos-surface-soft:#f1f8f3;
+  --nos-surface-mint:#eaf7ee;
+  --nos-border:#dfe9e2;
+  --nos-border-strong:#cfe0d4;
+  --nos-text:#15211a;
+  --nos-muted:#6d7d73;
+  --nos-green:#159447;
+  --nos-green-2:#24b45a;
+  --nos-green-3:#6fd392;
+  --nos-green-soft:#dff5e6;
+  --nos-green-pale:#f0faf3;
+  --nos-amber:#f59e0b;
+  --nos-blue:#21ad55;
+  --nos-shadow:0 10px 30px rgba(25,70,43,.08);
+  --nos-shadow-hover:0 16px 38px rgba(25,70,43,.12);
+  --nos-radius:18px;
+}
+
+/* Base */
+html,body{
+  background:var(--nos-bg)!important;
+  color:var(--nos-text)!important;
+}
+body{
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+}
+a{color:inherit}
+*{box-sizing:border-box}
+
+/* Hide decorative duplicate brand artifacts from legacy themes */
+.brand::before,.brand::after,
+.admin-brand::before,.admin-brand::after,
+.nos-brand::before,.nos-brand::after{
+  content:none!important;
+  display:none!important;
+}
+.brand small,.admin-brand small,.nos-brand small,
+.brand .brand-os,.admin-brand .brand-os,.nos-brand .brand-os,
+.brand .brand-suffix,.admin-brand .brand-suffix,.nos-brand .brand-suffix,
+.brand .brand-n,.admin-brand .brand-n,.nos-brand .brand-n{
+  display:none!important;
+}
+
+/* Header / topbar */
+header,.topbar,.app-topbar,.admin-topbar,.nos-topbar{
+  background:rgba(255,255,255,.94)!important;
+  color:var(--nos-text)!important;
+  border-bottom:1px solid var(--nos-border)!important;
+  box-shadow:0 1px 0 rgba(18,80,43,.02)!important;
+  backdrop-filter:blur(16px)!important;
+}
+header a,.topbar a,.app-topbar a,.admin-topbar a,.nos-topbar a{
+  color:var(--nos-text)!important;
+}
+.brand,.admin-brand,.nos-brand,.sidebar-brand{
+  color:#1f5d34!important;
+}
+.brand strong,.admin-brand strong,.nos-brand strong,.sidebar-brand strong{
+  color:#1f5d34!important;
+}
+.brand .admin-logo,.admin-brand .admin-logo,.nos-brand .admin-logo,
+.brand .logo-mark,.nos-brand .logo-mark{
+  background:linear-gradient(145deg,#34c66b,#7de6a4)!important;
+  color:#fff!important;
+  border-radius:14px!important;
+  box-shadow:0 8px 22px rgba(34,168,83,.18)!important;
+}
+
+/* Sidebar */
+aside,.sidebar,.app-sidebar,.admin-sidebar,.nos-sidebar{
+  background:#fff!important;
+  color:var(--nos-text)!important;
+  border-right:1px solid var(--nos-border)!important;
+}
+.sidebar a,.app-sidebar a,.admin-sidebar a,.nos-sidebar a,
+.sidebar button,.app-sidebar button,.admin-sidebar button,.nos-sidebar button{
+  color:#34443a!important;
+  border-radius:12px!important;
+  text-decoration:none!important;
+}
+.sidebar a:hover,.app-sidebar a:hover,.admin-sidebar a:hover,.nos-sidebar a:hover{
+  background:var(--nos-green-pale)!important;
+  color:var(--nos-green)!important;
+}
+.sidebar a.active,.app-sidebar a.active,.admin-sidebar a.active,.nos-sidebar a.active,
+.sidebar .active,.app-sidebar .active,.admin-sidebar .active,.nos-sidebar .active{
+  background:linear-gradient(90deg,#e9f8ee,#f2fbf5)!important;
+  color:var(--nos-green)!important;
+  box-shadow:inset 3px 0 0 var(--nos-green)!important;
+}
+.sidebar .section-title,.app-sidebar .section-title,.admin-sidebar .section-title,.nos-sidebar .section-title{
+  color:#88978d!important;
+}
+
+/* Main containers */
+main,.content,.app-content,.admin-content,.nos-main,.page{
+  background:var(--nos-bg)!important;
+  color:var(--nos-text)!important;
+}
+.hero,.panel,.card,.metric-card,.stat-card,.quick-card,.module-card,
+.admin-card,.nos-card,.section-card,.table-wrap,.form-card,.modal-content{
+  background:var(--nos-surface)!important;
+  color:var(--nos-text)!important;
+  border:1px solid var(--nos-border)!important;
+  box-shadow:var(--nos-shadow)!important;
+  border-radius:var(--nos-radius)!important;
+}
+.card:hover,.quick-card:hover,.module-card:hover,.admin-card:hover,.nos-card:hover{
+  box-shadow:var(--nos-shadow-hover)!important;
+  border-color:var(--nos-border-strong)!important;
+}
+
+/* Typography */
+h1,h2,h3,h4,h5,h6,.title,.page-title,.hero-title{
+  color:var(--nos-text)!important;
+}
+p,.muted,.subtitle,.description,.help,.hint,.meta,small{
+  color:var(--nos-muted)!important;
+}
+.eyebrow,.kicker,.section-kicker,.badge-primary{
+  color:var(--nos-green)!important;
+}
+
+/* Buttons */
+button,.btn,.button,input[type="submit"]{
+  border-radius:12px!important;
+}
+.btn-primary,.primary,button.primary,.cta-primary,[data-variant="primary"]{
+  background:linear-gradient(135deg,#169c4c,#28b85d)!important;
+  color:#fff!important;
+  border-color:#169c4c!important;
+  box-shadow:0 8px 22px rgba(22,156,76,.18)!important;
+}
+.btn-primary:hover,.primary:hover,button.primary:hover,.cta-primary:hover{
+  filter:brightness(.98)!important;
+  transform:translateY(-1px);
+}
+.btn-secondary,.secondary,button.secondary{
+  background:#fff!important;
+  color:#2d5d3d!important;
+  border:1px solid var(--nos-border-strong)!important;
+}
+
+/* Inputs */
+input,select,textarea{
+  background:#fff!important;
+  color:var(--nos-text)!important;
+  border:1px solid var(--nos-border-strong)!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:#64c987!important;
+  box-shadow:0 0 0 4px rgba(45,180,95,.10)!important;
+  outline:none!important;
+}
+input::placeholder,textarea::placeholder{color:#9aaba0!important}
+
+/* Tables */
+table{background:#fff!important;color:var(--nos-text)!important}
+thead{background:#f4f8f5!important}
+th{color:#516158!important;border-color:var(--nos-border)!important}
+td{border-color:#edf2ee!important}
+tr:hover td{background:#fbfdfb!important}
+
+/* Metrics and icon tiles */
+.metric-icon,.stat-icon,.quick-icon,.module-icon,.icon-box{
+  background:var(--nos-green-soft)!important;
+  color:var(--nos-green)!important;
+  border:1px solid #caebd5!important;
+}
+.metric-value,.stat-value,.kpi-value{
+  color:#101a14!important;
+}
+.positive,.success,.status-success,.badge-success{
+  color:#138a40!important;
+  background:#e6f7eb!important;
+}
+.warning,.status-warning,.badge-warning{
+  color:#b66b00!important;
+  background:#fff5df!important;
+}
+.danger,.status-danger,.badge-danger{
+  color:#c83d3d!important;
+  background:#fff0f0!important;
+}
+
+/* Links that previously looked like markdown hyperlinks */
+.quick-card a,.module-card a,.admin-card a,.card a,
+.quick-card a *, .module-card a *{
+  text-decoration:none!important;
+}
+.quick-card h3,.module-card h3,.admin-card h3{
+  text-decoration:none!important;
+  color:var(--nos-text)!important;
+}
+
+/* Dashboard premium */
+.nos-dashboard-shell,.dashboard-shell{
+  background:var(--nos-bg)!important;
+}
+.nos-dashboard-grid,.dashboard-grid{
+  gap:18px!important;
+}
+.nos-metric-card,.dashboard-metric{
+  background:#fff!important;
+  border:1px solid var(--nos-border)!important;
+  box-shadow:var(--nos-shadow)!important;
+}
+.nos-metric-card:nth-child(1) .nos-metric-icon{background:#eef8f0!important;color:#168f43!important}
+.nos-metric-card:nth-child(2) .nos-metric-icon{background:#e7f8ef!important;color:#169c4c!important}
+.nos-metric-card:nth-child(3) .nos-metric-icon{background:#fff4df!important;color:#f59e0b!important}
+.nos-metric-card:nth-child(4) .nos-metric-icon{background:#e5f6ea!important;color:#21ad55!important}
+
+/* Hero/public landing */
+body.public-page,body.landing-page,.landing{
+  background:#fff!important;
+}
+.landing header,.public-header{
+  background:#fff!important;
+  border-bottom:1px solid var(--nos-border)!important;
+}
+.hero{
+  background:
+    radial-gradient(circle at 85% 10%,rgba(68,200,111,.12),transparent 35%),
+    linear-gradient(180deg,#ffffff 0%,#f6fbf7 100%)!important;
+}
+.hero-gradient{
+  background:linear-gradient(90deg,#1a9b4a,#62d28a)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+}
+.hero-badge,.eyebrow{
+  background:#effaf2!important;
+  border:1px solid #cfead7!important;
+  color:#168b42!important;
+}
+.feature-card,.pricing-card,.benefit-card{
+  background:#fff!important;
+  border:1px solid var(--nos-border)!important;
+  box-shadow:var(--nos-shadow)!important;
+}
+
+/* Admin master */
+.admin-shell,.admin-layout{
+  background:var(--nos-bg)!important;
+}
+.admin-topbar,.admin-header{
+  background:#fff!important;
+}
+.admin-logo{
+  background:linear-gradient(145deg,#159447,#5fd58a)!important;
+  color:#fff!important;
+}
+.admin-nav a.active{
+  background:#eff9f2!important;
+  color:#138b40!important;
+}
+
+/* Clinical/record forms */
+.record-section,.clinical-section,.assessment-section,.finance-summary,.appointment-card{
+  background:#fff!important;
+  border:1px solid var(--nos-border)!important;
+  box-shadow:var(--nos-shadow)!important;
+}
+.photo-slot,.upload-slot,.dropzone{
+  background:#f8fbf9!important;
+  border:1px dashed #b8d8c1!important;
+  color:#7c8d83!important;
+}
+.photo-slot:hover,.upload-slot:hover,.dropzone:hover{
+  border-color:#5ac47d!important;
+  background:#f2faf4!important;
+}
+
+/* Conversations */
+.chat-shell,.conversation-panel,.message-list{
+  background:#fff!important;
+}
+.message.user,.chat-message.user{
+  background:#eaf7ee!important;
+  color:#174c2b!important;
+}
+.message.assistant,.chat-message.assistant{
+  background:#f5f7f6!important;
+  color:#26362c!important;
+}
+
+/* Footer */
+footer,.footer{
+  background:#fff!important;
+  color:var(--nos-muted)!important;
+  border-top:1px solid var(--nos-border)!important;
+}
+
+/* Responsive */
+@media(max-width:900px){
+  aside,.sidebar,.app-sidebar,.admin-sidebar,.nos-sidebar{
+    background:#fff!important;
+  }
+  .hero,.panel,.card,.metric-card,.quick-card,.module-card,.admin-card,.nos-card{
+    border-radius:16px!important;
+  }
+}

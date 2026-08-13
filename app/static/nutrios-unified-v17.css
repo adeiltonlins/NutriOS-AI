@@ -17,7 +17,7 @@
   --nu-green3:#70d893;
   --nu-green-dark:#205f36;
   --nu-amber:#f59e0b;
-  --nu-blue:#3b82f6;
+  --nu-blue:#21ad55;
   --nu-danger:#c94a4a;
   --nu-shadow:0 10px 28px rgba(22,80,43,.06);
   --nu-shadow-lg:0 18px 44px rgba(22,80,43,.09);
@@ -48,7 +48,7 @@ html[data-theme="dark"]{
   --nu-green3:#8ae5a6;
   --nu-green-dark:#9eeab2;
   --nu-amber:#f4b64b;
-  --nu-blue:#70a5ff;
+  --nu-blue:#64cf86;
   --nu-danger:#ff8686;
   --nu-shadow:0 12px 34px rgba(0,0,0,.20);
   --nu-shadow-lg:0 18px 48px rgba(0,0,0,.28);
@@ -161,7 +161,7 @@ tbody tr:hover td{background:var(--nu-hover)!important}
 .success,.positive,.badge-success,.status-success,.pill-success{background:var(--nu-soft2)!important;color:var(--nu-green)!important}
 .warning,.badge-warning,.status-warning,.pill-warning{background:rgba(245,158,11,.14)!important;color:var(--nu-amber)!important}
 .danger,.badge-danger,.status-danger{background:rgba(201,74,74,.13)!important;color:var(--nu-danger)!important}
-.info,.badge-info,.status-info{background:rgba(59,130,246,.13)!important;color:var(--nu-blue)!important}
+.info,.badge-info,.status-info{background:rgba(22,143,67,.13)!important;color:var(--nu-blue)!important}
 
 /* KPI / ICONS */
 .metric-icon,.stat-icon,.quick-icon,.module-icon,.icon-box,.analytics-icon,.nos-metric-icon,.patient-icon,.portal-icon,.nos16-kpi-icon{

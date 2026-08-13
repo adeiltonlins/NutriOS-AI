@@ -18,6 +18,7 @@
 
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 </head>
 <body><main class="page">
   <header class="top"><div><a class="back" href="/admin">← Voltar ao Admin mestre</a><h1>Central de conversas</h1><div class="muted">Veja a experiência mestre e todos os nutricionistas sem misturar os dados.</div></div><div class="actions"><a class="button" href="/admin/testes">Testar experiência</a><button class="button primary" id="reload">Atualizar dados</button></div></header>
@@ -35,5 +36,5 @@ function openConversation(id){const row=leads.find(item=>item.session_id===id);i
 async function load(){rows.innerHTML='<tr><td colspan="8" class="empty">Atualizando…</td></tr>';const response=await fetch('/admin/api/leads');if(response.status===401||response.status===403)return location='/login';const data=await response.json().catch(()=>({}));if(!response.ok){rows.innerHTML=`<tr><td colspan="8" class="empty">${esc(data.detail||'Erro ao carregar')}</td></tr>`;return}leads=data;total.textContent=leads.length;interested.textContent=leads.filter(x=>x.quis_agendar).length;paid.textContent=leads.filter(x=>x.pago).length;revenue.textContent=brl(leads.reduce((sum,x)=>sum+Number(x.sale_amount||0),0));const owners=[...new Map(leads.filter(x=>x.client_id).map(x=>[x.client_id,x.owner_name])).entries()];owner.innerHTML='<option value="all">Todos os ambientes</option><option value="master">Minha experiência pública</option>'+owners.map(([id,name])=>`<option value="${esc(id)}">${esc(name)}</option>`).join('');render()}
 [search,owner,payment].forEach(element=>element.addEventListener(element===search?'input':'change',render));rows.addEventListener('click',event=>{const button=event.target.closest('[data-session]');if(button)openConversation(button.dataset.session)});reload.onclick=load;load();
 </script>
-<script src="/static/nutrios-v22-theme.js?v=22"></script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
 </body></html>

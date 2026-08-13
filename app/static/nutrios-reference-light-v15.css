@@ -1,0 +1,355 @@
+
+/* ==========================================================
+   NutriOS V15 — Approved Light Health UI
+   Reference target: white + green clinical SaaS dashboard
+   ========================================================== */
+:root{
+  --n-bg:#f7faf8;
+  --n-surface:#ffffff;
+  --n-surface-soft:#f3f8f4;
+  --n-border:#e3ebe5;
+  --n-border-2:#d6e4da;
+  --n-text:#101814;
+  --n-muted:#748078;
+  --n-green:#169647;
+  --n-green-2:#23b45a;
+  --n-green-soft:#e6f6eb;
+  --n-green-pale:#f4fbf6;
+  --n-orange:#f59e0b;
+  --n-blue:#21ad55;
+  --n-purple:#21ad55;
+  --n-shadow:0 8px 24px rgba(20,69,39,.055);
+  --n-radius:16px;
+}
+
+/* Reset dark inheritance */
+html, body{
+  background:var(--n-bg)!important;
+  color:var(--n-text)!important;
+}
+body{
+  color-scheme:light!important;
+}
+body::before,body::after{display:none!important}
+
+/* MAIN SHELL */
+.app-shell,.admin-shell,.dashboard-shell,.page-shell,.layout,.app-layout,
+main,.main,.content,.app-content,.admin-content,.dashboard-main{
+  background:var(--n-bg)!important;
+  color:var(--n-text)!important;
+}
+
+/* TOPBAR */
+header,.header,.topbar,.app-topbar,.admin-topbar,.nos-topbar,.dashboard-topbar{
+  background:#fff!important;
+  color:var(--n-text)!important;
+  border-bottom:1px solid var(--n-border)!important;
+  box-shadow:none!important;
+}
+.topbar input,.app-topbar input,.admin-topbar input,.search-input,.top-search{
+  background:#fff!important;
+  border:1px solid var(--n-border)!important;
+  color:var(--n-text)!important;
+}
+
+/* BRAND: green leaf/symbol + NutriOS */
+.brand,.admin-brand,.nos-brand,.sidebar-brand,.logo{
+  background:transparent!important;
+  color:#205f36!important;
+}
+.brand::before,.brand::after,.admin-brand::before,.admin-brand::after,
+.nos-brand::before,.nos-brand::after,.logo::before,.logo::after{
+  content:none!important;display:none!important;
+}
+.brand small,.admin-brand small,.nos-brand small,
+.brand .brand-os,.admin-brand .brand-os,.nos-brand .brand-os,
+.brand .brand-n,.admin-brand .brand-n,.nos-brand .brand-n,
+.brand .brand-suffix,.admin-brand .brand-suffix,.nos-brand .brand-suffix{
+  display:none!important;
+}
+.brand strong,.admin-brand strong,.nos-brand strong,.brand-name,.logo-text{
+  color:#205f36!important;
+  font-weight:800!important;
+  letter-spacing:-.04em!important;
+}
+.logo-mark,.admin-logo,.brand-icon,.brand-symbol{
+  background:linear-gradient(145deg,#25a653,#69d98c)!important;
+  color:#fff!important;
+  border:none!important;
+  border-radius:12px!important;
+  box-shadow:none!important;
+}
+
+/* SIDEBAR */
+aside,.sidebar,.app-sidebar,.admin-sidebar,.nos-sidebar,.side-nav{
+  background:#fff!important;
+  color:#313e35!important;
+  border-right:1px solid var(--n-border)!important;
+  box-shadow:none!important;
+}
+.sidebar a,.app-sidebar a,.admin-sidebar a,.nos-sidebar a,.side-nav a{
+  background:transparent!important;
+  color:#354139!important;
+  text-decoration:none!important;
+  border-radius:10px!important;
+  border:none!important;
+}
+.sidebar a:hover,.app-sidebar a:hover,.admin-sidebar a:hover,.nos-sidebar a:hover,.side-nav a:hover{
+  background:#f4f8f5!important;
+  color:var(--n-green)!important;
+}
+.sidebar a.active,.app-sidebar a.active,.admin-sidebar a.active,.nos-sidebar a.active,
+.side-nav a.active,.sidebar .active,.app-sidebar .active,.admin-sidebar .active{
+  background:#f1f5f2!important;
+  color:var(--n-green)!important;
+  box-shadow:none!important;
+}
+.sidebar a.active::before,.app-sidebar a.active::before,.admin-sidebar a.active::before{
+  display:none!important;
+}
+.sidebar [class*="section"],.app-sidebar [class*="section"],.admin-sidebar [class*="section"],
+.sidebar-label,.nav-section-title{
+  color:#8b948e!important;
+  font-size:12px!important;
+  text-transform:uppercase!important;
+  letter-spacing:.06em!important;
+}
+
+/* TITLES */
+h1,h2,h3,h4,h5,h6,.page-title,.section-title,.card-title,.hero-title,
+.metric-value,.stat-value,.kpi-value{
+  color:var(--n-text)!important;
+  text-shadow:none!important;
+}
+p,.muted,.subtitle,.description,.caption,.meta,.help,.hint,small{
+  color:var(--n-muted)!important;
+}
+
+/* CARDS */
+.card,.panel,.box,.metric-card,.stat-card,.quick-card,.module-card,.admin-card,
+.nos-card,.analytics-card,.chart-card,.summary-card,.table-card,.form-card,
+.record-section,.clinical-section,.assessment-section,.appointment-card,.finance-summary{
+  background:#fff!important;
+  color:var(--n-text)!important;
+  border:1px solid var(--n-border)!important;
+  border-radius:var(--n-radius)!important;
+  box-shadow:var(--n-shadow)!important;
+}
+.card:hover,.quick-card:hover,.module-card:hover,.admin-card:hover,.analytics-card:hover{
+  border-color:var(--n-border-2)!important;
+  box-shadow:0 10px 26px rgba(20,69,39,.07)!important;
+}
+
+/* KPI CARDS */
+.metric-icon,.stat-icon,.quick-icon,.module-icon,.icon-box,.analytics-icon,
+.nos-metric-icon{
+  background:var(--n-green-soft)!important;
+  color:var(--n-green)!important;
+  border:none!important;
+  box-shadow:none!important;
+}
+.metric-card:nth-child(1) .metric-icon,.nos-metric-card:nth-child(1) .nos-metric-icon{
+  background:#eaf7ee!important;color:#149447!important;
+}
+.metric-card:nth-child(2) .metric-icon,.nos-metric-card:nth-child(2) .nos-metric-icon{
+  background:#eaf7ee!important;color:#149447!important;
+}
+.metric-card:nth-child(3) .metric-icon,.nos-metric-card:nth-child(3) .nos-metric-icon{
+  background:#eef9f1!important;color:#169647!important;
+}
+.metric-card:nth-child(4) .metric-icon,.nos-metric-card:nth-child(4) .nos-metric-icon{
+  background:#eef9f1!important;color:#169647!important;
+}
+
+/* PRIMARY ACTIONS */
+.btn-primary,.primary,button.primary,.cta-primary,.action-primary,
+input[type="submit"]{
+  background:#18a34d!important;
+  color:#fff!important;
+  border:1px solid #18a34d!important;
+  box-shadow:none!important;
+  border-radius:10px!important;
+}
+.btn-primary:hover,.primary:hover,button.primary:hover,.cta-primary:hover{
+  background:#158f43!important;
+}
+.btn-secondary,.secondary,button.secondary,.ghost,.outline{
+  background:#fff!important;
+  color:#2d4936!important;
+  border:1px solid var(--n-border-2)!important;
+  box-shadow:none!important;
+}
+
+/* FORM CONTROLS */
+input,select,textarea{
+  background:#fff!important;
+  color:var(--n-text)!important;
+  border:1px solid var(--n-border-2)!important;
+  box-shadow:none!important;
+  border-radius:10px!important;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:#62c77e!important;
+  box-shadow:0 0 0 3px rgba(40,171,84,.09)!important;
+  outline:none!important;
+}
+
+/* TABLES */
+table{background:#fff!important;color:var(--n-text)!important}
+thead,thead tr{background:#f8faf8!important}
+th{color:#5d6961!important;border-color:var(--n-border)!important}
+td{color:#243128!important;border-color:#edf2ee!important}
+tbody tr:hover td{background:#fbfdfb!important}
+
+/* LINKS */
+a,.text-link,.link{color:var(--n-green)!important}
+.quick-card a,.module-card a,.admin-card a,.card a{
+  text-decoration:none!important;
+}
+
+/* STATUS */
+.success,.positive,.badge-success,.status-success,.pill-success{
+  background:#e8f7ec!important;color:#13843e!important;
+}
+.warning,.badge-warning,.status-warning,.pill-warning{
+  background:#fff6e5!important;color:#ae6900!important;
+}
+.danger,.badge-danger,.status-danger{
+  background:#fff0f0!important;color:#c24141!important;
+}
+.info,.badge-info,.status-info{
+  background:#e5f6ea!important;color:#168f43!important;
+}
+
+/* ANALYTICS — reference style */
+.analytics-section,.analytics-wrap,.analytics-grid{
+  background:transparent!important;
+}
+.analytics-card,.chart-card{
+  background:#fff!important;
+  border:1px solid var(--n-border)!important;
+  box-shadow:var(--n-shadow)!important;
+}
+.analytics-card h3,.chart-card h3{
+  color:#18221b!important;
+}
+.analytics-card canvas,.chart-card canvas{
+  background:#fff!important;
+}
+.analytics-empty,.chart-empty{
+  background:#f8fbf9!important;
+  color:var(--n-muted)!important;
+}
+
+/* LANDING PAGE — fully light */
+body.landing-page,body.public-page,.landing-page,.public-page{
+  background:#fff!important;
+  color:var(--n-text)!important;
+}
+.landing-page header,.public-header{
+  background:#fff!important;
+}
+.hero,.landing-hero,.public-hero{
+  background:
+    radial-gradient(circle at 88% 10%,rgba(57,191,98,.10),transparent 30%),
+    linear-gradient(180deg,#fff 0%,#f8fcf9 100%)!important;
+  border-color:var(--n-border)!important;
+  color:var(--n-text)!important;
+}
+.hero h1,.landing-hero h1,.public-hero h1{
+  color:#142019!important;
+}
+.hero-gradient,.gradient-text{
+  background:linear-gradient(90deg,#169647,#6bd58c)!important;
+  -webkit-background-clip:text!important;
+  background-clip:text!important;
+  color:transparent!important;
+}
+.hero-badge,.eyebrow,.platform-badge{
+  background:#f0faf3!important;
+  border:1px solid #cfead6!important;
+  color:#168f46!important;
+}
+.intelligence-card,.feature-card,.benefit-card,.pricing-card,.public-card{
+  background:#fff!important;
+  color:var(--n-text)!important;
+  border:1px solid var(--n-border)!important;
+  box-shadow:var(--n-shadow)!important;
+}
+.intelligence-card .message,.ai-message,.chat-bubble{
+  background:#f5f8f6!important;
+  color:#26352b!important;
+  border:1px solid var(--n-border)!important;
+}
+
+/* ADMIN MASTER */
+.admin-shell,.admin-layout{
+  background:var(--n-bg)!important;
+}
+.admin-header,.admin-topbar{
+  background:#fff!important;
+}
+.admin-logo{
+  background:linear-gradient(145deg,#20a552,#70db92)!important;
+  color:#fff!important;
+}
+
+/* LOGIN / PATIENT */
+.login-page,.auth-page,.login-shell,.auth-shell,
+.patient-page,.patient-shell,.patient-dashboard{
+  background:var(--n-bg)!important;
+}
+.login-card,.auth-card,.patient-card,.patient-panel,.patient-widget{
+  background:#fff!important;
+  color:var(--n-text)!important;
+  border:1px solid var(--n-border)!important;
+  box-shadow:var(--n-shadow)!important;
+}
+
+/* CONVERSATIONS */
+.chat-shell,.conversation-panel,.conversation-card,.message-list{
+  background:#fff!important;
+  color:var(--n-text)!important;
+}
+.message.user,.chat-message.user{
+  background:#eaf7ee!important;color:#194d2b!important;
+}
+.message.assistant,.chat-message.assistant{
+  background:#f4f7f5!important;color:#2b3930!important;
+}
+
+/* UPLOAD AREAS */
+.photo-slot,.upload-slot,.dropzone,.image-slot{
+  background:#f9fbf9!important;
+  border:1px dashed #bcd8c4!important;
+  color:#7c8b81!important;
+}
+
+/* FIX DARK INLINE STYLES */
+[style*="background:#0"],[style*="background: #0"],
+[style*="background-color:#0"],[style*="background-color: #0"],
+[style*="background:#1"],[style*="background: #1"]{
+  background:#fff!important;
+  background-color:#fff!important;
+}
+[style*="color:#fff"],[style*="color: #fff"],[style*="color:white"],[style*="color: white"]{
+  color:var(--n-text)!important;
+}
+.btn-primary[style*="color"],.primary[style*="color"],
+button.primary[style*="color"],.cta-primary[style*="color"]{
+  color:#fff!important;
+}
+
+/* FOOTER */
+footer,.footer{
+  background:#fff!important;
+  color:var(--n-muted)!important;
+  border-top:1px solid var(--n-border)!important;
+}
+
+/* MOBILE */
+@media(max-width:900px){
+  aside,.sidebar,.app-sidebar,.admin-sidebar,.nos-sidebar{
+    background:#fff!important;
+  }
+}

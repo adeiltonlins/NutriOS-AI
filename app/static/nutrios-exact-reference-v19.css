@@ -346,9 +346,9 @@ body.patient-page,.patient-page,.patient-shell,.patient-dashboard,.portal-shell,
 }
 
 /* Inline blue/purple colors */
-[style*="#2563eb"],[style*="#3b82f6"],[style*="#4f46e5"],[style*="#6366f1"],
-[style*="#7c3aed"],[style*="#8b5cf6"],[style*="#60a5fa"],[style*="#818cf8"],
-[style*="rgb(37, 99, 235)"],[style*="rgb(59, 130, 246)"],[style*="rgb(79, 70, 229)"]{
+[style*="#168f43"],[style*="#21ad55"],[style*="#168f43"],[style*="#21ad55"],
+[style*="#168f43"],[style*="#21ad55"],[style*="#6bd58e"],[style*="#64cf86"],
+[style*="rgb(22,143,67)"],[style*="rgb(22,143,67)"],[style*="rgb(22,143,67)"]{
   background:var(--n-surface)!important;
   background-color:var(--n-surface)!important;
   color:var(--n-text)!important;

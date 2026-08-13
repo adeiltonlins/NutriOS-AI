@@ -3,57 +3,58 @@
 <style id="nutrios-landing-v21">
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--u-bg);color:var(--u-text);font:15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+body{margin:0;background:var(--os-bg);color:var(--os-text);font:15px Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
 .wrap{width:min(1160px,92%);margin:auto}
-.nav{height:76px;display:flex;align-items:center;justify-content:space-between;background:var(--u-surface)}
-header.wrap.nav{width:100%;max-width:none;padding:0 max(4%,calc((100% - 1160px)/2));border-bottom:1px solid var(--u-line)}
+.nav{height:76px;display:flex;align-items:center;justify-content:space-between;background:var(--os-surface)}
+header.wrap.nav{width:100%;max-width:none;padding:0 max(4%,calc((100% - 1160px)/2));border-bottom:1px solid var(--os-border)}
 .brand{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:900}
-.mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,var(--u-green2),var(--u-green3));color:white}
-.public-brand-name{color:var(--u-greenDark)!important}
+.mark{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(135deg,var(--os-green2),var(--os-green3));color:white}
+.public-brand-name{color:var(--os-green-dark)!important}
 .navlinks{display:flex;align-items:center;gap:24px}
-.nav a{color:var(--u-muted)!important;text-decoration:none;font-weight:700}
-.nav a:hover{color:var(--u-green)!important}
-.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:13px;text-decoration:none!important;color:#fff!important;font-weight:850;background:linear-gradient(135deg,var(--u-green),var(--u-green2));border:1px solid var(--u-green);cursor:pointer}
-.button.secondary{background:var(--u-surface)!important;color:var(--u-greenDark)!important;border:1px solid var(--u-line2)!important}
+.nav a{color:var(--os-muted)!important;text-decoration:none;font-weight:700}
+.nav a:hover{color:var(--os-green)!important}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:13px;text-decoration:none!important;color:#fff!important;font-weight:850;background:linear-gradient(135deg,var(--os-green),var(--os-green2));border:1px solid var(--os-green);cursor:pointer}
+.button.secondary{background:var(--os-surface)!important;color:var(--os-green-dark)!important;border:1px solid var(--os-border2)!important}
 .hero{min-height:680px;display:grid;grid-template-columns:1.08fr .92fr;align-items:center;gap:58px;padding:70px 0 90px;background:transparent!important}
-.tag{display:inline-flex;padding:8px 12px;border:1px solid var(--u-line2);border-radius:999px;background:var(--u-mint);color:var(--u-green);font-size:11px;font-weight:900;letter-spacing:.08em}
-.hero h1{font-size:clamp(43px,5.4vw,72px);line-height:1.02;letter-spacing:-.055em;margin:22px 0;color:var(--u-text)!important}
-.gradient{background:linear-gradient(90deg,var(--u-green),var(--u-green3));-webkit-background-clip:text;background-clip:text;color:transparent!important}
-.lead{font-size:19px;color:var(--u-muted)!important;line-height:1.7;max-width:650px}
+.tag{display:inline-flex;padding:8px 12px;border:1px solid var(--os-border2);border-radius:999px;background:var(--os-mint);color:var(--os-green);font-size:11px;font-weight:900;letter-spacing:.08em}
+.hero h1{font-size:clamp(43px,5.4vw,72px);line-height:1.02;letter-spacing:-.055em;margin:22px 0;color:var(--os-text)!important}
+.gradient{background:linear-gradient(90deg,var(--os-green),var(--os-green3));-webkit-background-clip:text;background-clip:text;color:transparent!important}
+.lead{font-size:19px;color:var(--os-muted)!important;line-height:1.7;max-width:650px}
 .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
-.proof{display:flex;gap:22px;flex-wrap:wrap;margin-top:34px;color:var(--u-muted)}
-.proof b{color:var(--u-green)!important}
-.demo{border:1px solid var(--u-line);background:var(--u-surface);border-radius:28px;box-shadow:var(--u-shadow);overflow:hidden}
-.demohead{padding:16px 19px;border-bottom:1px solid var(--u-line);display:flex;justify-content:space-between;color:var(--u-muted)}
-.demohead b{color:var(--u-greenDark)!important}.demohead span:last-child{color:var(--u-green)!important}
-.screen{min-height:410px;padding:26px;display:flex;flex-direction:column;gap:14px;background:var(--u-surface)}
+.proof{display:flex;gap:22px;flex-wrap:wrap;margin-top:34px;color:var(--os-muted)}
+.proof b{color:var(--os-green)!important}
+.demo{border:1px solid var(--os-border);background:var(--os-surface);border-radius:28px;box-shadow:var(--os-shadow);overflow:hidden}
+.demohead{padding:16px 19px;border-bottom:1px solid var(--os-border);display:flex;justify-content:space-between;color:var(--os-muted)}
+.demohead b{color:var(--os-green-dark)!important}.demohead span:last-child{color:var(--os-green)!important}
+.screen{min-height:410px;padding:26px;display:flex;flex-direction:column;gap:14px;background:var(--os-surface)}
 .bubble{padding:13px 15px;border-radius:16px;line-height:1.5;max-width:84%}
-.bot{background:var(--u-soft)!important;border:1px solid var(--u-line)!important;align-self:flex-start;color:var(--u-text)!important}
-.user{background:var(--u-mint)!important;border:1px solid var(--u-line2)!important;color:var(--u-greenDark)!important;align-self:flex-end}
+.bot{background:var(--os-soft)!important;border:1px solid var(--os-border)!important;align-self:flex-start;color:var(--os-text)!important}
+.user{background:var(--os-mint)!important;border:1px solid var(--os-border2)!important;color:var(--os-green-dark)!important;align-self:flex-end}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:auto}
-.choice{padding:12px;border-radius:12px;border:1px solid var(--u-line2)!important;background:var(--u-surface)!important;color:var(--u-greenDark)!important;font-weight:750;cursor:pointer}
-.choice:hover{background:var(--u-mint)!important;color:var(--u-green)!important}
-#demoComposer input{flex:1;padding:13px 14px;border-radius:12px;border:1px solid var(--u-line2)!important;background:var(--u-surface)!important;color:var(--u-text)!important;outline:none}
-.section{padding:95px 0}.section h2{font-size:clamp(32px,4vw,50px);letter-spacing:-.04em;margin:0 0 16px;color:var(--u-text)!important}
-.sub{color:var(--u-muted)!important;font-size:17px;line-height:1.65;max-width:700px}
+.choice{padding:12px;border-radius:12px;border:1px solid var(--os-border2)!important;background:var(--os-surface)!important;color:var(--os-green-dark)!important;font-weight:750;cursor:pointer}
+.choice:hover{background:var(--os-mint)!important;color:var(--os-green)!important}
+#demoComposer input{flex:1;padding:13px 14px;border-radius:12px;border:1px solid var(--os-border2)!important;background:var(--os-surface)!important;color:var(--os-text)!important;outline:none}
+.section{padding:95px 0}.section h2{font-size:clamp(32px,4vw,50px);letter-spacing:-.04em;margin:0 0 16px;color:var(--os-text)!important}
+.sub{color:var(--os-muted)!important;font-size:17px;line-height:1.65;max-width:700px}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:38px}
-.card{padding:26px;border-radius:21px;background:var(--u-surface)!important;border:1px solid var(--u-line)!important;box-shadow:var(--u-shadow)!important}
-.icon{font-size:23px;color:var(--u-green)!important}.card h3{font-size:19px;margin:17px 0 8px;color:var(--u-text)!important}.card p{color:var(--u-muted)!important;line-height:1.6}
-.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:38px}.step{padding:22px;background:var(--u-surface)!important;border:1px solid var(--u-line)!important;border-radius:18px}.num{color:var(--u-green)!important;font-weight:900}
-.cta{margin:60px auto 90px;padding:54px;border:1px solid var(--u-line2);border-radius:30px;background:linear-gradient(135deg,var(--u-mint),var(--u-surface));text-align:center}.cta h2{font-size:40px;margin:0 0 12px;color:var(--u-text)!important}
-.footer{border-top:1px solid var(--u-line);padding:28px 0 45px;color:var(--u-muted);display:flex;justify-content:space-between}.footer b{color:var(--u-greenDark)!important}
+.card{padding:26px;border-radius:21px;background:var(--os-surface)!important;border:1px solid var(--os-border)!important;box-shadow:var(--os-shadow)!important}
+.icon{font-size:23px;color:var(--os-green)!important}.card h3{font-size:19px;margin:17px 0 8px;color:var(--os-text)!important}.card p{color:var(--os-muted)!important;line-height:1.6}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:38px}.step{padding:22px;background:var(--os-surface)!important;border:1px solid var(--os-border)!important;border-radius:18px}.num{color:var(--os-green)!important;font-weight:900}
+.cta{margin:60px auto 90px;padding:54px;border:1px solid var(--os-border2);border-radius:30px;background:linear-gradient(135deg,var(--os-mint),var(--os-surface));text-align:center}.cta h2{font-size:40px;margin:0 0 12px;color:var(--os-text)!important}
+.footer{border-top:1px solid var(--os-border);padding:28px 0 45px;color:var(--os-muted);display:flex;justify-content:space-between}.footer b{color:var(--os-green-dark)!important}
 @media(max-width:850px){.navlinks>a:not(.button){display:none}.hero{grid-template-columns:1fr;padding-top:45px}.grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr 1fr}.hero h1{font-size:48px}}
 @media(max-width:520px){.hero h1{font-size:39px}.lead{font-size:16px}.choices{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.nav .button{padding:10px 12px}.cta{padding:35px 20px}.footer{display:block}.footer span{display:block;margin-top:8px}}
 </style>
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
 </head><body class="landing-page public-page"><header class="wrap nav"><div class="brand public-brand"><span class="mark" aria-hidden="true">✦</span><span class="public-brand-name">NutriOS</span></div><nav class="navlinks"><a href="#recursos">Recursos</a><a href="#como-funciona">Como funciona</a><a href="#demonstracao">Demonstração</a><a class="button secondary" href="/login">Área do profissional</a></nav></header>
 <main><section class="wrap hero"><div><span class="tag">PLATAFORMA PARA NUTRICIONISTAS</span><h1>Sua operação clínica em <span class="gradient">um único sistema.</span></h1><p class="lead">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica em uma única experiência, com você no controle.</p><div class="actions"><a class="button" href="#contato">Conhecer o NutriOS</a><a class="button secondary" href="#demonstracao">Explorar a plataforma</a></div><div class="proof"><span><b>✓</b> Gestão clínica</span><span><b>✓</b> Portal do paciente</span><span><b>✓</b> IA integrada</span></div></div><div id="demonstracao" class="demo"><div class="demohead"><b><span class="nutrios-intelligence-title">NutriOS Intelligence</span></b><span>● online</span></div><div id="demoScreen" class="screen"><div class="bubble bot">Olá! Esta é a camada de inteligência do NutriOS. Posso apoiar atendimento, organização e acompanhamento sem substituir a decisão profissional.</div><div id="demoChoices" class="choices"><button class="choice" data-answer="Como a IA pode atender dúvidas repetitivas dos meus pacientes?">Dúvidas repetitivas</button><button class="choice" data-answer="Como o NutriOS organiza meus leads e interessados?">Organizar leads</button><button class="choice" data-answer="Como funciona o acompanhamento dos pacientes?">Acompanhar pacientes</button><button class="choice" data-answer="Quais recursos a plataforma oferece para nutricionistas?">Conhecer recursos</button></div></div><form id="demoComposer" style="display:flex;gap:9px;padding:0 20px 20px"><input id="demoInput" maxlength="500" placeholder="Escreva sua pergunta…" ><button class="button" type="submit" style="padding:12px 16px">Enviar</button></form></div></section>
 <section id="recursos" class="wrap section"><span class="tag">UMA PLATAFORMA COMPLETA</span><h2>Do consultório à evolução do paciente.</h2><p class="sub">Uma central completa para administrar a rotina profissional, acompanhar pacientes e transformar dados clínicos em uma experiência mais organizada.</p><div class="grid"><article class="card"><div class="icon">◈</div><h3>Central clínica</h3><p>Pacientes, prontuário, check-ins, planos, evolução, documentos e análise corporal no mesmo fluxo.</p></article><article class="card"><div class="icon">▦</div><h3>Gestão e performance</h3><p>Agenda, serviços, financeiro, oportunidades, pagamentos e indicadores para acompanhar a operação.</p></article><article class="card"><div class="icon">◇</div><h3>Experiência do paciente</h3><p>Portal privado, check-ins, acompanhamento, documentos, orientações e acesso controlado pelo profissional.</p></article></div></section>
 <section id="como-funciona" class="wrap section"><span class="tag">SIMPLES E CONTROLADO</span><h2>Um fluxo claro para cada pessoa.</h2><div class="flow"><article class="step"><span class="num">01</span><h3>Você contrata</h3><p class="sub">Recebe acesso ao painel profissional.</p></article><article class="step"><span class="num">02</span><h3>Personaliza</h3><p class="sub">Configura foto, cores, serviços e IA.</p></article><article class="step"><span class="num">03</span><h3>Divulga</h3><p class="sub">Compartilha seu link com o público.</p></article><article class="step"><span class="num">04</span><h3>Acompanha</h3><p class="sub">Libera pacientes ativos com prazo.</p></article></div></section>
 <section id="contato" class="wrap cta"><h2>Conheça uma nova experiência de gestão nutricional.</h2><p class="sub" style="margin:0 auto 25px">Veja como o NutriOS conecta gestão, acompanhamento e inteligência artificial sem tirar o nutricionista do centro das decisões.</p><div class="actions" style="justify-content:center"><a class="button" href="https://wa.me/5581988762300?text=Ol%C3%A1%2C%20quero%20conhecer%20o%20NutriOS%20AI" target="_blank" rel="noopener">Solicitar apresentação</a><a class="button secondary" href="/login">Já sou profissional</a></div></section></main>
 <footer class="wrap footer"><b>NutriOS</b><span>Plataforma inteligente de gestão nutricional • <a href="/privacidade" style="color:inherit">Privacidade</a></span></footer><script>
-const demoHistory=[];const demoSession=crypto.randomUUID();function demoBubble(text,who){const b=document.createElement('div');b.className='bubble '+who;b.textContent=text;demoScreen.insertBefore(b,demoChoices);demoScreen.scrollTop=demoScreen.scrollHeight;return b}async function askDemo(question){if(!question.trim())return;demoBubble(question,'user');const wait=demoBubble('Pensando…','bot');document.querySelectorAll('.choice').forEach(x=>x.disabled=true);try{const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pergunta:question,historico:demoHistory,session_id:demoSession,client_id:'master',lead_source:'vitrine_saas'})});const x=await r.json().catch(()=>({}));wait.textContent=r.ok?x.resposta:(x.detail||'Não consegui responder agora. Tente novamente.');if(r.ok){demoHistory.push({autor:'user',texto:question},{autor:'bot',texto:x.resposta});if(x.requires_contact){const go=document.createElement('a');go.className='button';go.href='/assistente';go.textContent='Continuar atendimento completo';go.style.alignSelf='flex-start';demoScreen.insertBefore(go,demoChoices)}}}catch{wait.textContent='Não consegui conectar agora. Tente novamente em instantes.'}finally{document.querySelectorAll('.choice').forEach(x=>x.disabled=false);demoInput.focus()}}document.querySelectorAll('.choice').forEach(btn=>btn.onclick=()=>askDemo(btn.dataset.answer));demoComposer.onsubmit=e=>{e.preventDefault();const q=demoInput.value.trim();demoInput.value='';askDemo(q)};
+const demoHistory=[];const demoSession=(()=>{try{return crypto.randomUUID()}catch(e){return 'demo-'+Date.now()+'-'+Math.random().toString(36).slice(2,10)}})();function demoBubble(text,who){const b=document.createElement('div');b.className='bubble '+who;b.textContent=text;demoScreen.insertBefore(b,demoChoices);demoScreen.scrollTop=demoScreen.scrollHeight;return b}async function askDemo(question){if(!question.trim())return;demoBubble(question,'user');const wait=demoBubble('Pensando…','bot');document.querySelectorAll('.choice').forEach(x=>x.disabled=true);try{const r=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pergunta:question,historico:demoHistory,session_id:demoSession,client_id:'master',lead_source:'vitrine_saas'})});const x=await r.json().catch(()=>({}));wait.textContent=r.ok?x.resposta:(x.detail||'Não consegui responder agora. Tente novamente.');if(r.ok){demoHistory.push({autor:'user',texto:question},{autor:'bot',texto:x.resposta});if(x.requires_contact){const go=document.createElement('a');go.className='button';go.href='/assistente';go.textContent='Continuar atendimento completo';go.style.alignSelf='flex-start';demoScreen.insertBefore(go,demoChoices)}}}catch{wait.textContent='Não consegui conectar agora. Tente novamente em instantes.'}finally{document.querySelectorAll('.choice').forEach(x=>x.disabled=false);demoInput.focus()}}document.querySelectorAll('.choice').forEach(btn=>btn.onclick=()=>askDemo(btn.dataset.answer));demoComposer.onsubmit=e=>{e.preventDefault();const q=demoInput.value.trim();demoInput.value='';askDemo(q)};
 </script>
-<script src="/static/nutrios-v22-theme.js?v=22"></script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
 </body></html>
