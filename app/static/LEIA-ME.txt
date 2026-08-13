@@ -1,18 +1,21 @@
-NUTRIOS PREMIUM V5 — UPLOAD FÁCIL PELO GITHUB
+NUTRIOS V6 — UPLOAD FÁCIL PELO GITHUB
 
-Você só precisa substituir 2 arquivos.
+CORREÇÕES DESTA VERSÃO
+- Dashboard principal redesenhado no padrão premium aprovado.
+- Marca exibida apenas como NutriOS no painel novo.
+- Frase sem travessão: "..., com você no controle."
+- Removida a injeção antiga que criava Dashboard clínico/Treinos como links sublinhados com símbolos.
+- Layout com sidebar, topbar, métricas, acesso rápido e atividades recentes.
 
+COMO SUBIR
 1. Extraia este ZIP.
-2. Abra seu repositório nutri-chatbot no GitHub.
-3. Entre na pasta: app > static
-4. Clique em: Add file > Upload files
-5. Arraste:
+2. Abra no GitHub: nutri-chatbot > app > static
+3. Clique em Add file > Upload files.
+4. Arraste os 4 arquivos (não precisa enviar este LEIA-ME.txt):
    - app.html
-   - nutrios-dashboard-v5.css
-6. Commit message sugerido:
-   NutriOS Premium v5 - novo dashboard
-7. Clique em Commit changes.
-8. Aguarde o Render fazer o deploy.
-
-O app.html já aponta para /static/nutrios-dashboard-v5.css.
-Não envie o LEIA-ME.txt para app/static; ele é apenas instrução.
+   - nutrios-dashboard-v6.css
+   - nutribot-ux.js
+   - saas-landing.html
+5. Commit: NutriOS Premium v6 - dashboard premium
+6. Aguarde o deploy do Render.
+7. Depois do deploy, atualize o navegador com Ctrl+F5.

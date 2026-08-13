@@ -67,11 +67,8 @@
   document.documentElement.classList.add('nutri-loading');
   document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(tip); enrichActions(); new MutationObserver(enrichActions).observe(document.body,{childList:true,subtree:true});
-    const patientNav=document.querySelector('.side a[href="/app/pacientes"]');
-    if(patientNav&&!document.querySelector('.side a[href="/app/clinica"]')){const link=document.createElement('a');link.className='nav';link.href='/app/clinica';link.textContent='✦ Dashboard clínico';patientNav.insertAdjacentElement('afterend',link)}
-    if(patientNav&&!document.querySelector('.side a[href="/app/treinos"]')){const link=document.createElement('a');link.className='nav';link.href='/app/treinos';link.textContent='↟ Treinos (opcional)';patientNav.insertAdjacentElement('afterend',link)}
-    const grid=document.querySelector('.grid');
-    if(grid&&!grid.querySelector('a[href="/app/treinos"]')) grid.insertAdjacentHTML('beforeend','<a class="card" href="/app/clinica"><div class="icon">⌁</div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></a><a class="card" href="/app/treinos"><div class="icon">↟</div><h3>Treinos <small>opcional</small></h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></a>');
+    // NutriOS v6: módulos clínicos são renderizados pelas próprias telas.
+    // Não injetar cards/links legados no DOM.
   }, { once:true });
   document.addEventListener('submit', event => setBusy(event.submitter || event.target.querySelector('[type="submit"]'), true, event.submitter?.dataset.loadingLabel || 'Processando...'), true);
   const nativeFetch = window.fetch.bind(window);

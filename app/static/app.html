@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NutriOS — Painel profissional</title>
-<link rel="stylesheet" href="/static/nutrios-dashboard-v5.css?v=20260813">
+<link rel="stylesheet" href="/static/nutrios-dashboard-v6.css?v=20260813">
 </head>
 <body>
 <div class="os-shell">
@@ -24,8 +24,8 @@
       <a class="os-nav-item" href="/app/clinica#assessment"><span class="os-nav-icon">♧</span><span>Análise corporal</span></a>
       <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">$</span><span>Financeiro</span></a>
       <a class="os-nav-item" href="/app/conversas"><span class="os-nav-icon">○</span><span>Conversas</span><span class="os-badge">Novo</span></a>
-      <a class="os-nav-item" href="/app/leads"><span class="os-nav-icon">◎</span><span>Oportunidades</span></a>
-      <a class="os-nav-item" href="/app/treinos"><span class="os-nav-icon">↔</span><span>Treinos</span></a>
+      <a class="os-nav-item" href="/app/leads"><span class="os-nav-icon">◎</span><span>Indicações</span></a>
+      <a class="os-nav-item" href="/app/treinos"><span class="os-nav-icon">↔</span><span>Treinos</span><span class="os-badge">Novo</span></a>
       <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">▥</span><span>Relatórios</span></a>
       <a class="os-nav-item" href="/app/configuracoes"><span class="os-nav-icon">⚙</span><span>Configurações</span></a>
     </nav>
@@ -56,9 +56,9 @@
     <main class="os-main">
       <section class="os-heading-row">
         <div>
-          <p class="os-kicker">VISÃO GERAL</p>
           <h1 id="hello">Bem-vindo de volta!</h1>
           <p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p>
+          <p class="os-platform-line">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência, com você no controle.</p>
         </div>
         <div class="os-date-card"><span>□</span><strong id="todayDate">—</strong></div>
       </section>
@@ -83,7 +83,7 @@
       </section>
 
       <section class="os-section">
-        <div class="os-section-head"><div><p class="os-kicker">ATALHOS</p><h2>Acesso rápido</h2></div></div>
+        <div class="os-section-head"><div><h2>Acesso rápido</h2></div></div>
         <div class="os-quick-grid" id="quickGrid">
           <a class="os-quick-card" data-search="dashboard clinico prioridades consultas check-ins evolucao" href="/app/clinica">
             <span class="os-quick-icon blue">▥</span><div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></div><span class="os-arrow">›</span>
@@ -107,7 +107,7 @@
       </section>
 
       <section class="os-section os-activity-section">
-        <div class="os-section-head"><div><p class="os-kicker">ACOMPANHAMENTO</p><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div>
+        <div class="os-section-head"><div><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div>
         <div id="activityList" class="os-activity-list"><div class="os-empty">Carregando atividades...</div></div>
       </section>
     </main>
