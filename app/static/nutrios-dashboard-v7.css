@@ -1,0 +1,97 @@
+
+/* NutriOS Premium v7 — iconography + brand polish */
+:root{
+  --nos-line: rgba(143,174,220,.18);
+  --nos-muted:#9fb0c9;
+  --nos-text:#f5f8ff;
+}
+
+/* Single brand: one symbol + NutriOS. Hide legacy isolated N and OS suffix. */
+.nos-brand .brand-n,
+.nos-brand .brand-letter,
+.nos-brand .brand-suffix,
+.nos-brand .brand-os,
+.brand .brand-n,
+.brand .brand-letter,
+.brand .brand-suffix,
+.brand .brand-os,
+.logo .brand-n,
+.logo .brand-suffix,
+.logo small,
+.nos-brand small { display:none !important; }
+
+.nos-brand, .brand, .logo{
+  display:flex !important;
+  align-items:center !important;
+  gap:14px !important;
+}
+.nos-brand strong, .brand strong, .logo strong{
+  letter-spacing:-.035em !important;
+}
+
+/* Sidebar: remove broken/emoji-looking glyphs and use consistent minimal markers. */
+.nos-sidebar a,
+.sidebar a,
+.app-sidebar a{
+  text-decoration:none !important;
+}
+.nos-sidebar a > span:first-child,
+.sidebar a > span:first-child,
+.app-sidebar a > span:first-child{
+  font-family:Arial, sans-serif !important;
+  width:20px !important;
+  height:20px !important;
+  min-width:20px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:0 !important;
+  color:transparent !important;
+  border:1.5px solid #aebed6 !important;
+  border-radius:6px !important;
+  opacity:.9;
+  box-sizing:border-box;
+}
+.nos-sidebar a:hover > span:first-child,
+.sidebar a:hover > span:first-child,
+.app-sidebar a:hover > span:first-child,
+.nos-sidebar a.active > span:first-child,
+.sidebar a.active > span:first-child,
+.app-sidebar a.active > span:first-child{
+  border-color:#73a8ff !important;
+  box-shadow:0 0 0 3px rgba(65,112,255,.10);
+}
+
+/* Date control: no mystery square/glyph. */
+.nos-date-card .nos-date-icon,
+.nos-date-card .date-icon,
+.date-chip .date-icon,
+.dashboard-date .date-icon{
+  display:none !important;
+}
+.nos-date-card,
+.date-chip,
+.dashboard-date{
+  gap:8px !important;
+  padding-left:18px !important;
+}
+.nos-date-card::before,
+.date-chip::before,
+.dashboard-date::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border:2px solid #86a7d8;
+  border-radius:50%;
+  display:block;
+  flex:0 0 auto;
+}
+
+/* No underlined module titles anywhere in dashboard. */
+.nos-dashboard a,
+.nos-quick-card,
+.nos-quick-card *,
+.quick-card,
+.quick-card *{
+  text-decoration:none !important;
+}
