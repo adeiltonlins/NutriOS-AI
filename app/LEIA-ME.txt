@@ -1,0 +1,28 @@
+NUTRIOS V12 — LOGIN NO DOMÍNIO CORRIGIDO
+
+CAUSA:
+O middleware aceitava apenas ALLOWED_ORIGINS/URL_BASE.
+Depois da troca para usenutrios.com.br, o POST /auth/login podia ser bloqueado
+antes de validar a credencial.
+
+UPLOAD PELO GITHUB:
+1. Abra o repositório nutri-chatbot
+2. Entre na pasta: app
+3. Add file > Upload files
+4. Envie APENAS main.py deste pacote
+5. Substitua o main.py existente
+6. Commit:
+   NutriOS v12 - corrige login no dominio proprio
+7. Aguarde o Render concluir o deploy
+8. Abra https://usenutrios.com.br/login
+9. Use Ctrl+F5 antes de testar
+
+IMPORTANTE SOBRE ADMIN MESTRE:
+O Admin Mestre não entra pela aba "Já tenho senha".
+Ele entra pela aba "Primeiro acesso/Código de acesso" usando o ADMIN_TOKEN
+configurado no Render.
+
+RECOMENDADO NO RENDER > Environment:
+URL_BASE=https://usenutrios.com.br
+ALLOWED_ORIGINS=https://usenutrios.com.br,https://www.usenutrios.com.br,https://nutri-chatbot-8h6k.onrender.com
+COOKIE_SECURE=true

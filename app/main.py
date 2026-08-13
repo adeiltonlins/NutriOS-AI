@@ -93,8 +93,16 @@ async def security_middleware(request: Request, call_next):
         return Response("Corpo da requisição excede o limite", status_code=413)
     if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path != "/pagamento/webhook":
         origin = request.headers.get("origin")
-        if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
-            return Response("Origem não autorizada", status_code=403)
+        if origin:
+            # Sempre aceite requisições same-origin do próprio host atual.
+            # Isso mantém a proteção contra CSRF/origens externas e permite
+            # domínios personalizados (ex.: usenutrios.com.br) sem depender
+            # exclusivamente de URL_BASE/ALLOWED_ORIGINS.
+            current_origin = f"{request.url.scheme}://{request.url.netloc}".rstrip("/")
+            configured_origins = {x.rstrip("/") for x in ALLOWED_ORIGINS}
+            allowed_origins = configured_origins | {current_origin}
+            if origin.rstrip("/") not in allowed_origins:
+                return Response("Origem não autorizada", status_code=403)
         multipart_allowed = request.url.path == "/app/api/logo" or is_patient_pdf or is_clinical_image
         # Requisições sem corpo (por exemplo, ações PATCH idempotentes) não
         # possuem mídia para validar. Quando houver corpo, JSON continua
