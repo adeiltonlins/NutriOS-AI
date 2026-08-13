@@ -31,7 +31,7 @@ from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
 from app import pagamento
-from app import auth, business_store, emailer, patient_auth, saas_store
+from app import auth, business_store, emailer, patient_auth, saas_store, clinical_extensions
 import os
 
 
@@ -55,6 +55,7 @@ app = FastAPI(
     description="Chatbot nutricional com RAG sobre dados TACO e diretrizes de saúde",
     version="0.1.0",
 )
+app.include_router(clinical_extensions.router)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 limiter = Limiter(key_func=get_remote_address)
@@ -85,14 +86,15 @@ MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", "1048576"))
 async def security_middleware(request: Request, call_next):
     length = request.headers.get("content-length")
     is_patient_pdf = request.method == "POST" and request.url.path.endswith("/documentos") and request.url.path.startswith("/app/api/pacientes/")
-    body_limit = 10_500_000 if is_patient_pdf else MAX_BODY_BYTES
+    is_clinical_image = request.method == "POST" and (request.url.path.endswith("/fotos-evolucao") or request.url.path == "/paciente/api/diario/foto")
+    body_limit = 10_500_000 if is_patient_pdf else (8_500_000 if is_clinical_image else MAX_BODY_BYTES)
     if length and int(length) > body_limit:
         return Response("Corpo da requisição excede o limite", status_code=413)
     if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.url.path != "/pagamento/webhook":
         origin = request.headers.get("origin")
         if origin and ALLOWED_ORIGINS and origin.rstrip("/") not in {x.rstrip("/") for x in ALLOWED_ORIGINS}:
             return Response("Origem não autorizada", status_code=403)
-        multipart_allowed = request.url.path == "/app/api/logo" or is_patient_pdf
+        multipart_allowed = request.url.path == "/app/api/logo" or is_patient_pdf or is_clinical_image
         if request.method in {"POST", "PUT", "PATCH"} and request.url.path != "/auth/logout" and not multipart_allowed and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
@@ -845,22 +847,26 @@ _TACO_ROWS = json.loads((Path(__file__).resolve().parents[1] / "data" / "aliment
 _TACO_BY_ID = {int(row["id"]): row for row in _TACO_ROWS}
 
 
-def _meal_plan_content(content: list[dict]) -> tuple[list[dict], dict]:
+def _meal_plan_content(content: list[dict], custom_foods: dict[str, dict] | None = None) -> tuple[list[dict], dict]:
     clean: list[dict] = []
     totals = {"kcal": 0.0, "proteina_g": 0.0, "carboidrato_g": 0.0, "lipideos_g": 0.0, "fibra_g": 0.0, "sodio_mg": 0.0}
     for meal in content[:30]:
         meal_name = str(meal.get("name") or "Refeição")[:80]
         items = []
         for raw in list(meal.get("items") or [])[:40]:
-            food = _TACO_BY_ID.get(int(raw.get("food_id") or 0))
+            food_id = raw.get("food_id")
+            try:
+                food = _TACO_BY_ID.get(int(food_id or 0))
+            except (TypeError, ValueError):
+                food = (custom_foods or {}).get(str(food_id).replace("custom:", ""))
             grams = max(1.0, min(2000.0, float(raw.get("grams") or 0)))
             if not food:
                 continue
             factor = grams / 100.0
-            snapshot = {"food_id": food["id"], "name": food["nome"], "grams": grams, "substitutions": [str(x)[:120] for x in list(raw.get("substitutions") or [])[:8]]}
+            snapshot = {"food_id": food["id"], "name": food.get("nome") or food.get("name"), "grams": grams, "source": food.get("source") or "taco", "substitutions": [str(x)[:120] for x in list(raw.get("substitutions") or [])[:8]]}
             for key in totals:
                 source = key if key != "kcal" else "kcal"
-                value = round(float(food.get(source) or 0) * factor, 2)
+                value = round(float(food.get(source) or (food.get("nutrients") or {}).get(source) or 0) * factor, 2)
                 snapshot[key] = value
                 totals[key] += value
             items.append(snapshot)
@@ -1026,7 +1032,10 @@ def patient_followup_data(patient_id: str, user: dict = Depends(auth.current_use
     transactions = business_store.list_rows("clinic_transactions", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"})
     reminders = business_store.list_rows("clinic_reminders", user["id"], order="reminder_at.asc", extra={"patient_id": f"eq.{patient_id}"})
     alerts = _refresh_clinical_alerts(patient, checkins, anthropometry, user["id"])
-    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents, "anthropometry": anthropometry, "meal_plans": meal_plans, "diary": diary, "appointments": appointments, "transactions": transactions, "reminders": reminders, "alerts": alerts}
+    questionnaires = business_store.list_rows("patient_questionnaires", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"})
+    maternal_child = business_store.list_rows("maternal_child_records", user["id"], order="reference_date.desc", extra={"patient_id": f"eq.{patient_id}"})
+    progress_photos = business_store.list_rows("patient_progress_photos", user["id"], order="captured_at.desc", extra={"patient_id": f"eq.{patient_id}"})
+    return {"patient": patient, "records": records, "checkins": checkins, "documents": documents, "anthropometry": anthropometry, "meal_plans": meal_plans, "diary": diary, "appointments": appointments, "transactions": transactions, "reminders": reminders, "alerts": alerts, "questionnaires": questionnaires, "maternal_child": maternal_child, "progress_photos": progress_photos}
 
 
 @app.post("/app/api/pacientes/{patient_id}/calculo-energetico")
@@ -1057,7 +1066,10 @@ def search_foods(q: str = Query(default="", max_length=80), user: dict = Depends
         name = unicodedata.normalize("NFKD", food["nome"].lower()).encode("ascii", "ignore").decode()
         if needle in name: found.append(food)
         if len(found) >= 25: break
-    return found
+    custom = business_store.list_rows("custom_foods", user["id"], order="name.asc", extra={"active": "eq.true", "name": f"ilike.*{q.strip()}*", "limit": "25"})
+    for food in custom:
+        found.append({"id": f"custom:{food['id']}", "nome": food["name"], "source": food.get("source"), **(food.get("nutrients") or {})})
+    return found[:40]
 
 
 @app.post("/app/api/pacientes/{patient_id}/avaliacoes")
@@ -1073,7 +1085,12 @@ def create_anthropometry(patient_id: str, payload: AnthropometryRequest, user: d
 @app.post("/app/api/pacientes/{patient_id}/planos")
 def create_meal_plan(patient_id: str, payload: MealPlanRequest, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
-    content, totals = _meal_plan_content(payload.content)
+    custom_ids = {str(item.get("food_id") or "").replace("custom:", "") for meal in payload.content for item in list(meal.get("items") or []) if str(item.get("food_id") or "").startswith("custom:")}
+    custom_foods = {}
+    for food_id in custom_ids:
+        row = business_store.get_row("custom_foods", food_id, user["id"])
+        if row and row.get("active"): custom_foods[food_id] = row
+    content, totals = _meal_plan_content(payload.content, custom_foods)
     if not content: raise HTTPException(400, "Adicione ao menos um alimento válido ao plano")
     return business_store.create_row("meal_plans", user["id"], {"patient_id": patient_id, **payload.model_dump(exclude={"content"}), "content": content, "totals": totals})
 
@@ -1678,6 +1695,12 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
         clinical_plan_rows = saas_store._request("GET", "meal_plans", params={"select": "id,client_id,patient_id,status,created_at", "order": "created_at.desc", "limit": "500"}) or []
     except Exception:
         clinical_plan_rows = []
+    try:
+        questionnaire_rows = saas_store._request("GET", "patient_questionnaires", params={"select": "id,client_id,status", "limit": "1000"}) or []
+        progress_photo_rows = saas_store._request("GET", "patient_progress_photos", params={"select": "id,client_id", "limit": "1000"}) or []
+        maternal_rows = saas_store._request("GET", "maternal_child_records", params={"select": "id,client_id", "limit": "1000"}) or []
+    except Exception:
+        questionnaire_rows, progress_photo_rows, maternal_rows = [], [], []
     patient_counts: dict[str, int] = {}
     for patient in patient_rows:
         if patient.get("hidden_at") or patient.get("archived_at"):
@@ -1754,6 +1777,10 @@ def admin_dashboard(user: dict = Depends(auth.require_admin)):
             "alerts_high": sum(row.get("severity") == "high" for row in clinical_alert_rows),
             "plans_total": len(clinical_plan_rows),
             "plans_published": sum(row.get("status") == "approved" for row in clinical_plan_rows),
+            "questionnaires": len(questionnaire_rows),
+            "questionnaires_pending": sum(row.get("status") == "assigned" for row in questionnaire_rows),
+            "progress_photos": len(progress_photo_rows),
+            "maternal_records": len(maternal_rows),
             "by_nutritionist": [{"id": client["id"], "name": client["name"], "patients": patient_counts.get(client["id"], 0), "alerts": sum(a.get("client_id") == client["id"] for a in clinical_alert_rows), "plans": sum(p.get("client_id") == client["id"] for p in clinical_plan_rows)} for client in clients]
         },
         "series": series,

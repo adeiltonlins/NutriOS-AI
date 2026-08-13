@@ -1,4 +1,5 @@
 const patientId=location.pathname.split('/').pop(),$=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,''),fmt=s=>s?new Date(s).toLocaleString('pt-BR'):'—';
+document.addEventListener('DOMContentLoaded',()=>{const target=document.querySelector('.record-actions')||document.querySelector('.clinical-header');if(target&&!document.querySelector('#advancedModules')){const a=document.createElement('a');a.id='advancedModules';a.className='button';a.href=`/app/pacientes/${patientId}/recursos`;a.textContent='Módulos avançados';target.appendChild(a)}});
 let data,meals=[{name:'Café da manhã',time:'07:00',items:[]}],activeMeal=0;
 async function api(url,opt={}){const r=await fetch(url,opt),x=await r.json().catch(()=>({}));if(!r.ok)throw Error(x.detail||'Erro na operação');return x}
 const json=body=>({headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),empty=()=>'<div class="empty">Nenhum registro ainda.</div>';
