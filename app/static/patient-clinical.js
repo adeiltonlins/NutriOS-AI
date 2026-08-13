@@ -52,3 +52,33 @@
   };
   loadClinical();
 })();
+
+(() => {
+  const tabs = document.querySelector(".tabs");
+  const checkinView = document.querySelector("#checkinView");
+  if (!tabs || !checkinView) return;
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, "");
+  async function loadWorkout() {
+    const response = await fetch("/paciente/api/treino");
+    if (!response.ok) return;
+    const data = await response.json();
+    if (!data.enabled || !data.plan) return;
+    const tab = document.createElement("button");
+    tab.className = "tab"; tab.dataset.view = "workoutView"; tab.textContent = "Meu treino";
+    tabs.insertBefore(tab, tabs.querySelector('[data-view="checkinView"]'));
+    checkinView.insertAdjacentHTML("beforebegin", `<section id="workoutView" class="view panel"><h2>${esc(data.plan.title)}</h2><p class="muted">${esc(data.plan.goal || "Ficha de exercícios")}</p><div id="workoutExercises">${(data.plan.exercises || []).map((exercise, index) => `<article class="document"><div><b>${index + 1}. ${esc(exercise.name)}</b><div class="muted">${exercise.sets} séries • ${esc(exercise.reps || "livre")} repetições • carga ${esc(exercise.load || "orientada")} • descanso ${exercise.rest_seconds || 0}s</div><small>${esc(exercise.instructions || "")}</small></div></article>`).join("")}</div><form id="workoutForm" class="check-grid"><h3 class="full">Como você está antes de concluir?</h3><label>Sono (1–5)<input name="sleep" type="number" min="1" max="5" required></label><label>Energia (1–5)<input name="energy" type="number" min="1" max="5" required></label><label>Dor (0–5)<input name="pain" type="number" min="0" max="5" required></label><label>Esforço percebido (1–10)<input name="perceived_exertion" type="number" min="1" max="10" required></label><label class="full">Observações<textarea name="notes"></textarea></label><button class="save">Concluir treino</button></form><p id="workoutStatus"></p></section>`);
+    document.querySelectorAll(".tab").forEach((item) => item.onclick = () => {
+      document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x === item));
+      document.querySelectorAll(".view").forEach((x) => x.classList.toggle("on", x.id === item.dataset.view));
+    });
+    workoutForm.onsubmit = async (event) => {
+      event.preventDefault(); const values = Object.fromEntries(new FormData(workoutForm));
+      const payload = {sleep:Number(values.sleep), energy:Number(values.energy), pain:Number(values.pain), perceived_exertion:Number(values.perceived_exertion), notes:values.notes, exercise_results:[]};
+      workoutStatus.textContent = "Registrando...";
+      const result = await fetch(`/paciente/api/treino/${data.plan.id}/concluir`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+      workoutStatus.textContent = result.ok ? "Treino concluído e enviado ao nutricionista." : "Não foi possível registrar agora.";
+      if (result.ok) workoutForm.reset();
+    };
+  }
+  loadWorkout();
+})();

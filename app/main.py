@@ -379,12 +379,35 @@ class TransactionRequest(BaseModel):
     due_date: str | None = None
 
 
+class PatientAppointmentRequest(BaseModel):
+    starts_at: datetime
+    end_at: datetime | None = None
+    notes: str | None = Field(default=None, max_length=2000)
+
+
 class ReminderRequest(BaseModel):
     patient_id: str | None = Field(default=None, max_length=64)
     title: str = Field(..., min_length=2, max_length=200)
     reminder_at: datetime
     type: str = Field(default="followup", max_length=60)
     notes: str | None = Field(default=None, max_length=1000)
+
+
+class WorkoutPlanRequest(BaseModel):
+    title: str = Field(..., min_length=2, max_length=160)
+    goal: str | None = Field(default=None, max_length=500)
+    exercises: list[dict] = Field(default_factory=list, max_length=40)
+    professional_notes: str | None = Field(default=None, max_length=3000)
+    patient_notes: str | None = Field(default=None, max_length=3000)
+
+
+class WorkoutLogRequest(BaseModel):
+    sleep: int = Field(..., ge=1, le=5)
+    energy: int = Field(..., ge=1, le=5)
+    pain: int = Field(..., ge=0, le=5)
+    perceived_exertion: int = Field(..., ge=1, le=10)
+    exercise_results: list[dict] = Field(default_factory=list, max_length=40)
+    notes: str | None = Field(default=None, max_length=2000)
 
 
 def qualificar_lead(historico: list[dict], quis_agendar: bool, pago: bool = False) -> dict:
@@ -910,8 +933,15 @@ def _energy_targets(payload: EnergyCalculationRequest) -> dict:
 
 
 def _refresh_clinical_alerts(patient: dict, checkins: list[dict], assessments: list[dict], client_id: str) -> list[dict]:
-    existing = business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"patient_id": f"eq.{patient['id']}", "resolved_at": "is.null"})
+    all_alerts = business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"patient_id": f"eq.{patient['id']}"})
+    existing = [row for row in all_alerts if not row.get("resolved_at")]
     active_types = {x.get("alert_type") for x in existing}
+    cooldown = datetime.now(timezone.utc) - timedelta(days=7)
+    recently_resolved = {
+        row.get("alert_type") for row in all_alerts
+        if row.get("resolved_at") and _parse_data_lead(row.get("resolved_at"))
+        and _parse_data_lead(row.get("resolved_at")) >= cooldown
+    }
     candidates = []
     latest = checkins[0] if checkins else {}
     if latest and (int(latest.get("energy") or 10) <= 3 or int(latest.get("sleep") or 10) <= 3): candidates.append(("low_wellbeing", "high", "Check-in com energia ou sono muito baixos"))
@@ -922,7 +952,7 @@ def _refresh_clinical_alerts(patient: dict, checkins: list[dict], assessments: l
         if delta >= max(3, float(assessments[1]["weight_kg"]) * .05): candidates.append(("weight_change", "medium", "Variação relevante de peso entre avaliações"))
     if not checkins: candidates.append(("missing_checkin", "low", "Paciente ainda não realizou check-in"))
     for alert_type, severity, title in candidates:
-        if alert_type not in active_types:
+        if alert_type not in active_types and alert_type not in recently_resolved:
             business_store.create_row("clinical_alerts", client_id, {"patient_id": patient["id"], "alert_type": alert_type, "severity": severity, "title": title})
     return business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"patient_id": f"eq.{patient['id']}", "resolved_at": "is.null"})
 
@@ -937,6 +967,56 @@ def clinical_dashboard_page(user: dict = Depends(auth.current_user)):
     return FileResponse(STATIC_DIR / "clinical-dashboard.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/app/treinos")
+def training_module_page(user: dict = Depends(auth.current_user)):
+    return FileResponse(STATIC_DIR / "training-module.html", headers={"Cache-Control": "no-store"})
+
+
+def _clean_exercises(exercises: list[dict]) -> list[dict]:
+    clean = []
+    for raw in exercises[:40]:
+        name = str(raw.get("name") or "").strip()[:120]
+        if not name: continue
+        clean.append({"name": name, "sets": max(1, min(20, int(raw.get("sets") or 1))), "reps": str(raw.get("reps") or "")[:30], "load": str(raw.get("load") or "")[:40], "rest_seconds": max(0, min(900, int(raw.get("rest_seconds") or 0))), "instructions": str(raw.get("instructions") or "")[:500]})
+    if not clean: raise HTTPException(400, "Adicione pelo menos um exercício")
+    return clean
+
+
+@app.get("/app/api/treinos/config")
+def training_config(user: dict = Depends(auth.current_user)):
+    return {"enabled": bool((user.get("ai_config") or {}).get("training_enabled"))}
+
+
+@app.patch("/app/api/treinos/config")
+def update_training_config(payload: dict, user: dict = Depends(auth.current_user)):
+    config = dict(user.get("ai_config") or {}); config["training_enabled"] = bool(payload.get("enabled"))
+    saas_store.update_user(user["id"], {"ai_config": config})
+    business_store.audit(user["id"], user["id"], "training.config.updated", "training", metadata={"enabled": config["training_enabled"]})
+    return {"ok": True, "enabled": config["training_enabled"]}
+
+
+@app.get("/app/api/treinos")
+def list_workout_plans(patient_id: str | None = None, user: dict = Depends(auth.current_user)):
+    return business_store.list_rows("workout_plans", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"} if patient_id else None)
+
+
+@app.post("/app/api/pacientes/{patient_id}/treinos")
+def create_workout_plan(patient_id: str, payload: WorkoutPlanRequest, user: dict = Depends(auth.current_user)):
+    _owned_patient(patient_id, user["id"])
+    if not (user.get("ai_config") or {}).get("training_enabled"): raise HTTPException(409, "Ative o módulo de treinos antes de criar uma ficha")
+    data = payload.model_dump(exclude_none=True); data["patient_id"] = patient_id; data["exercises"] = _clean_exercises(payload.exercises)
+    return business_store.create_row("workout_plans", user["id"], data)
+
+
+@app.patch("/app/api/treinos/{plan_id}/publicar")
+def publish_workout_plan(plan_id: str, user: dict = Depends(auth.current_user)):
+    plan = business_store.get_row("workout_plans", plan_id, user["id"])
+    if not plan: raise HTTPException(404, "Treino não encontrado")
+    now = datetime.now(timezone.utc).isoformat()
+    saas_store._request("PATCH", "workout_plans", params={"client_id": f"eq.{user['id']}", "patient_id": f"eq.{plan['patient_id']}", "status": "eq.published"}, payload={"status": "archived", "updated_at": now}, prefer="return=minimal")
+    return business_store.update_row("workout_plans", plan_id, user["id"], {"status": "published", "published_at": now, "updated_at": now})
+
+
 @app.get("/app/api/dashboard-clinico")
 def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
     client_id = user["id"]
@@ -948,6 +1028,13 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
             return []
 
     patients = optional_rows(lambda: saas_store._request("GET", "patient_accounts", params={"select": "id,name,active,access_expires_at,last_seen_at,created_at,macro_targets", "client_id": f"eq.{client_id}", "hidden_at": "is.null", "order": "created_at.desc"}))
+    for patient in patients:
+        patient_checkins = optional_rows(lambda p=patient: business_store.list_rows("patient_checkins", client_id, order="created_at.desc", extra={"patient_id": f"eq.{p['id']}", "limit": "50"}))
+        patient_assessments = optional_rows(lambda p=patient: business_store.list_rows("anthropometric_assessments", client_id, order="assessed_at.desc", extra={"patient_id": f"eq.{p['id']}", "limit": "10"}))
+        try:
+            _refresh_clinical_alerts(patient, patient_checkins, patient_assessments, client_id)
+        except Exception as exc:
+            print(f"[dashboard-clinico] Alertas indisponiveis: {type(exc).__name__}")
     alerts = optional_rows(lambda: business_store.list_rows("clinical_alerts", client_id, order="created_at.desc", extra={"resolved_at": "is.null"}))
     appointments = optional_rows(lambda: business_store.list_rows("appointments", client_id, order="starts_at.asc", extra={"starts_at": f"gte.{datetime.now(timezone.utc).isoformat()}", "limit": "12"}))
     plans = optional_rows(lambda: business_store.list_rows("meal_plans", client_id, order="created_at.desc"))
@@ -955,9 +1042,11 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
     checkins = optional_rows(lambda: business_store.list_rows("patient_checkins", client_id, order="created_at.desc"))
     leads = optional_rows(lambda: leads_store.listar_leads(limite=500, client_id=client_id))
     patient_names = {p["id"]: p["name"] for p in patients}
-    for collection in (alerts, appointments, plans, checkins):
+    for collection in (alerts, plans, checkins):
         for row in collection:
             row["patient_name"] = patient_names.get(row.get("patient_id"), "Paciente")
+    for row in appointments:
+        row["patient_name"] = patient_names.get(row.get("patient_id")) or row.get("patient_name") or "Paciente"
     today = datetime.now(timezone.utc).date()
     paid = [r for r in transactions if r.get("status") == "paid" and r.get("kind") == "income"]
     monthly_income = sum(float(r.get("amount") or 0) for r in paid if str(r.get("paid_at") or r.get("created_at") or "")[:7] == today.isoformat()[:7])
@@ -1335,6 +1424,19 @@ def create_patient_transaction(patient_id: str, payload: TransactionRequest, use
     return business_store.create_row("clinic_transactions", user["id"], data)
 
 
+@app.post("/app/api/pacientes/{patient_id}/consultas")
+def create_patient_appointment(patient_id: str, payload: PatientAppointmentRequest, user: dict = Depends(auth.current_user)):
+    patient = _owned_patient(patient_id, user["id"])
+    if payload.end_at and payload.end_at <= payload.starts_at:
+        raise HTTPException(400, "O horário final deve ser posterior ao início")
+    data = {"patient_id": patient_id, "session_id": f"manual-{secrets.token_hex(12)}", "patient_name": patient.get("name") or "Paciente", "patient_phone": patient.get("phone") or "não informado", "starts_at": payload.starts_at.isoformat(), "status": "scheduled", "notes": payload.notes}
+    if payload.end_at:
+        data["end_at"] = payload.end_at.isoformat()
+    row = business_store.create_row("appointments", user["id"], data)
+    business_store.audit(user["id"], user["id"], "appointment.created", "appointment", row.get("id", ""), {"patient_id": patient_id})
+    return row
+
+
 @app.get("/app/api/financeiro")
 def clinic_finance(user: dict = Depends(auth.current_user)):
     rows = business_store.list_rows("clinic_transactions", user["id"], order="created_at.desc")
@@ -1465,6 +1567,24 @@ def patient_meal_plan(patient: dict = Depends(patient_auth.current_patient)):
     return rows[0] if rows else None
 
 
+@app.get("/paciente/api/treino")
+def patient_workout(patient: dict = Depends(patient_auth.current_patient)):
+    owner = saas_store.get_user(patient["client_id"])
+    if not ((owner or {}).get("ai_config") or {}).get("training_enabled"):
+        return {"enabled": False, "plan": None, "logs": []}
+    rows = saas_store._request("GET", "workout_plans", params={"select": "*", "patient_id": f"eq.{patient['id']}", "client_id": f"eq.{patient['client_id']}", "status": "eq.published", "order": "published_at.desc", "limit": "1"}) or []
+    logs = saas_store._request("GET", "workout_logs", params={"select": "id,completed_at,perceived_exertion,readiness,notes", "patient_id": f"eq.{patient['id']}", "order": "completed_at.desc", "limit": "10"}) or []
+    return {"enabled": True, "plan": rows[0] if rows else None, "logs": logs}
+
+
+@app.post("/paciente/api/treino/{plan_id}/concluir")
+def complete_patient_workout(plan_id: str, payload: WorkoutLogRequest, patient: dict = Depends(patient_auth.current_patient)):
+    rows = saas_store._request("GET", "workout_plans", params={"select": "id", "id": f"eq.{plan_id}", "patient_id": f"eq.{patient['id']}", "client_id": f"eq.{patient['client_id']}", "status": "eq.published", "limit": "1"}) or []
+    if not rows: raise HTTPException(404, "Treino não encontrado")
+    data = {"patient_id": patient["id"], "workout_plan_id": plan_id, "readiness": {"sleep": payload.sleep, "energy": payload.energy, "pain": payload.pain}, "exercise_results": payload.exercise_results, "perceived_exertion": payload.perceived_exertion, "notes": payload.notes}
+    return business_store.create_row("workout_logs", patient["client_id"], data)
+
+
 @app.get("/paciente/api/diario")
 def patient_food_diary(patient: dict = Depends(patient_auth.current_patient)):
     return saas_store._request("GET", "food_diary_entries", params={"select": "*", "patient_id": f"eq.{patient['id']}", "order": "consumed_at.desc", "limit": "100"}) or []
@@ -1507,7 +1627,7 @@ def own_config_data(request: Request, user: dict = Depends(auth.current_user)):
 @app.patch("/app/api/configuracoes")
 def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
     current = user.get("ai_config") or {}
-    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "anamnesis_url", "whatsapp_message_template", "payment_wait_message", "notification_email"}}
+    allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "anamnesis_url", "whatsapp_message_template", "payment_wait_message", "notification_email", "training_enabled"}}
     if "free_message_limit" in allowed:
         allowed["free_message_limit"] = max(1, min(50, int(allowed["free_message_limit"] or 8)))
     current.update(allowed)
