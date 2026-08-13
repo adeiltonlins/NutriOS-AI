@@ -37,3 +37,13 @@ Execute `migrations/016_advanced_clinical_features.sql` no SQL Editor do Supabas
 - Busca instantânea de nutricionistas, avatares, status legíveis e indicador de capacidade por plano.
 - Ações administrativas agrupadas sem remover geração de código, mensalidade, limites, senha, renovação, bloqueio, arquivamento e exclusão.
 - Feedback visual moderno nas operações e painel de pagamentos preservado.
+
+## Correção final — clínica e receitas
+
+- Monitor clínico global e dashboard do nutricionista reconstruídos com a mesma identidade visual premium do produto.
+- Layout fluido e responsivo, sem recortes horizontais, fontes serifadas acidentais ou botões cinza sem hierarquia.
+- Prontuário, avaliação antropométrica e plano alimentar ajustados para respeitar a largura disponível.
+- Status técnicos traduzidos: rascunho, publicado, pago, pendente, agendada e prioridades clínicas.
+- Receita recorrente SaaS separada da receita gerada pelos chatbots.
+- Uma mensalidade entra na Receita recorrente SaaS somente quando o nutricionista está ativo, possui valor mensal e está marcado como Em dia.
+- Pagamentos feitos por pacientes continuam contabilizados separadamente em Receita dos chatbots.

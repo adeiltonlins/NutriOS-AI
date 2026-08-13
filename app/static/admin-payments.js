@@ -1,4 +1,28 @@
 (() => {
+  const mrrCard = document.getElementById('mrr')?.closest('.stat');
+  if (mrrCard) {
+    mrrCard.title = 'Soma das mensalidades dos nutricionistas com assinatura Em dia';
+    const label = mrrCard.querySelector('.muted');
+    const note = mrrCard.querySelector('small');
+    if (label) label.textContent = 'Receita recorrente SaaS';
+    if (note) note.textContent = 'Mensalidades de nutricionistas em dia';
+  }
+  const chatbotRevenueCard = document.getElementById('revenue')?.closest('.stat');
+  if (chatbotRevenueCard) {
+    chatbotRevenueCard.title = 'Pagamentos feitos pelos pacientes nos chatbots';
+    const label = chatbotRevenueCard.querySelector('.muted');
+    const note = chatbotRevenueCard.querySelector('small');
+    if (label) label.textContent = 'Receita dos chatbots';
+    if (note) note.textContent = 'Pagamentos feitos por pacientes';
+  }
+  const billingTitle = document.querySelector('#billingDialog h2');
+  if (billingTitle) {
+    billingTitle.textContent = 'Assinatura do nutricionista';
+    const help = document.createElement('p');
+    help.className = 'billing-help';
+    help.innerHTML = 'Ao marcar <b>Em dia</b>, o valor mensal passa a compor a <b>Receita recorrente SaaS</b>. Pagamentos dos pacientes são contabilizados separadamente.';
+    billingTitle.insertAdjacentElement('afterend', help);
+  }
   const adminNav = document.querySelector('.side');
   if (adminNav && !adminNav.querySelector('[href="/admin/clinica"]')) {
     const link = document.createElement('a');
