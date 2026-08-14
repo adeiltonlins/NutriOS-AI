@@ -29,6 +29,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
+import requests
 
 from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
@@ -1032,17 +1033,50 @@ def update_training_config(payload: dict, user: dict = Depends(auth.current_user
     return {"ok": True, "enabled": config["training_enabled"]}
 
 
+def _training_storage_error(exc: Exception) -> HTTPException:
+    """Converte falhas do PostgREST em erro acionável sem expor segredo."""
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    body = str(getattr(getattr(exc, "response", None), "text", "") or "").lower()
+    missing_table = status in {404, 400} and ("workout_plans" in body or "pgrst205" in body or "schema cache" in body)
+    if missing_table:
+        logger.error("Tabela workout_plans ausente no Supabase. Execute migration 019_optional_training_module.sql")
+        return HTTPException(503, "O módulo de treinos precisa ser ativado no banco. Execute a migration 019_optional_training_module.sql no Supabase.")
+    logger.exception("Falha de persistência do módulo de treinos: %s", type(exc).__name__)
+    return HTTPException(503, "Não foi possível salvar a ficha agora. Verifique a conexão com o banco e tente novamente.")
+
+
+@app.get("/app/api/treinos/health")
+def training_storage_health(user: dict = Depends(auth.current_user)):
+    try:
+        saas_store._request("GET", "workout_plans", params={"select": "id", "client_id": f"eq.{user['id']}", "limit": "1"})
+        return {"ok": True, "storage": "ready"}
+    except Exception as exc:
+        raise _training_storage_error(exc) from exc
+
+
 @app.get("/app/api/treinos")
-def list_workout_plans(patient_id: str | None = None, user: dict = Depends(auth.current_user)):
-    return business_store.list_rows("workout_plans", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"} if patient_id else None)
+def list_workout_plans(response: Response, patient_id: str | None = None, user: dict = Depends(auth.current_user)):
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    try:
+        return business_store.list_rows("workout_plans", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"} if patient_id else None)
+    except Exception as exc:
+        raise _training_storage_error(exc) from exc
 
 
 @app.post("/app/api/pacientes/{patient_id}/treinos")
 def create_workout_plan(patient_id: str, payload: WorkoutPlanRequest, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
-    if not (user.get("ai_config") or {}).get("training_enabled"): raise HTTPException(409, "Ative o módulo de treinos antes de criar uma ficha")
-    data = payload.model_dump(exclude_none=True); data["patient_id"] = patient_id; data["exercises"] = _clean_exercises(payload.exercises)
-    return business_store.create_row("workout_plans", user["id"], data)
+    if not (user.get("ai_config") or {}).get("training_enabled"):
+        raise HTTPException(409, "Ative o módulo de treinos antes de criar uma ficha")
+    data = payload.model_dump(exclude_none=True)
+    data["patient_id"] = patient_id
+    data["exercises"] = _clean_exercises(payload.exercises)
+    try:
+        saved = business_store.create_row("workout_plans", user["id"], data)
+    except Exception as exc:
+        raise _training_storage_error(exc) from exc
+    business_store.audit(user["id"], user["id"], "training.plan.created", "workout_plan", saved.get("id", ""), {"patient_id": patient_id})
+    return saved
 
 
 @app.patch("/app/api/treinos/{plan_id}/publicar")
@@ -1510,7 +1544,7 @@ def _meal_plan_pdf(plan: dict, patient: dict, owner: dict) -> bytes:
     pdfmetrics.registerFontFamily("Vera", normal="Vera", bold="Vera-Bold", italic="Vera-Italic", boldItalic="Vera-Bold")
     buffer = io.BytesIO(); cfg = owner.get("ai_config") or {}; styles = getSampleStyleSheet()
     for style in styles.byName.values(): style.fontName = "Vera"
-    brand = colors.HexColor(str(cfg.get("cor_principal") or "#2563eb"))
+    brand = colors.HexColor(str(cfg.get("cor_principal") or "#168f43"))
     title_style = ParagraphStyle("Title", parent=styles["Title"], fontName="Vera-Bold", textColor=brand, alignment=TA_CENTER, spaceAfter=8)
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=18*mm, leftMargin=18*mm, topMargin=18*mm, bottomMargin=16*mm)
     story = [Paragraph(html.escape(str(cfg.get("nome") or owner.get("name") or "Nutricionista")), title_style), Paragraph(html.escape(str(cfg.get("especialidade") or "Nutrição")), ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER)), Spacer(1, 8), Paragraph(f"<b>Plano alimentar:</b> {html.escape(plan['title'])}", styles["Heading2"]), Paragraph(f"<b>Paciente:</b> {html.escape(patient['name'])}", styles["Normal"]), Paragraph(f"<b>Objetivo:</b> {html.escape(str(plan.get('objective') or 'Acompanhamento nutricional'))}", styles["Normal"]), Spacer(1, 12)]
@@ -1692,7 +1726,7 @@ def patient_portal(patient: dict = Depends(patient_auth.current_patient)):
 @app.get("/paciente/api/me")
 def patient_me(patient: dict = Depends(patient_auth.current_patient)):
     client = saas_store.get_user(patient["client_id"]); config = (client or {}).get("ai_config") or {}
-    return {"name": patient["name"], "plan_name": patient.get("plan_name"), "expires_at": patient["access_expires_at"], "messages_used": patient.get("messages_used") or 0, "message_limit": patient.get("message_limit") or 200, "professional_name": config.get("nome") or (client or {}).get("name"), "assistant_name": config.get("identidade_ia") or "NutriOS", "logo_url": config.get("logo_url"), "color": config.get("cor_principal") or "#4f7cff"}
+    return {"name": patient["name"], "plan_name": patient.get("plan_name"), "expires_at": patient["access_expires_at"], "messages_used": patient.get("messages_used") or 0, "message_limit": patient.get("message_limit") or 200, "professional_name": config.get("nome") or (client or {}).get("name"), "assistant_name": config.get("identidade_ia") or "NutriOS", "logo_url": config.get("logo_url"), "color": config.get("cor_principal") or "#168f43"}
 
 
 @app.get("/paciente/api/documentos")

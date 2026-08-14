@@ -52,6 +52,9 @@ class EquivalenceIn(BaseModel):
  source_food_ref:str; target_food_ref:str; source_grams:float=Field(gt=0,le=5000); target_grams:float=Field(gt=0,le=5000); notes:str|None=None
 class AssignQuestionnaire(BaseModel): template_key:str; due_at:datetime|None=None
 class QuestionnaireAnswers(BaseModel): answers:dict[str,Any]
+class PatientFreeReport(BaseModel):
+ text:str=Field(min_length=2,max_length=5000)
+ mood:str|None=Field(default=None,max_length=80)
 class MaternalIn(BaseModel):
  record_type:str; reference_date:str|None=None; gestational_week:float|None=None; pre_pregnancy_weight:float|None=None; current_weight:float|None=None; birth_date:str|None=None; sex:str|None=None; height_cm:float|None=None; head_circumference_cm:float|None=None; metrics:dict=Field(default_factory=dict); notes:str|None=None
 class FinanceUpdate(BaseModel): status:str; payment_method:str|None=None; notes:str|None=None
@@ -101,6 +104,16 @@ def review_questionnaire(patient_id:str,row_id:str,user:dict=Depends(auth.curren
  owned_patient(patient_id,user["id"]); row=business_store.get_row("patient_questionnaires",row_id,user["id"])
  if not row or row.get("patient_id")!=patient_id: raise HTTPException(404,"Questionário não encontrado")
  return business_store.update_row("patient_questionnaires",row_id,user["id"],{"status":"reviewed","reviewed_at":datetime.now(timezone.utc).isoformat()})
+@router.post("/paciente/api/relatos")
+def create_patient_free_report(payload:PatientFreeReport,patient:dict=Depends(patient_auth.current_patient)):
+ now=datetime.now(timezone.utc).isoformat()
+ return business_store.create_row("patient_questionnaires",patient["client_id"],{
+  "patient_id":patient["id"],"template_key":"patient_report","title":"Relato do paciente",
+  "category":"patient_report","schema_snapshot":[["text","Relato","text"],["mood","Como está se sentindo","text"]],
+  "answers":{"text":payload.text.strip(),"mood":(payload.mood or "").strip()},
+  "status":"completed","completed_at":now,"updated_at":now
+ })
+
 @router.get("/paciente/api/questionarios")
 def own_questionnaires(patient:dict=Depends(patient_auth.current_patient)): return saas_store._request("GET","patient_questionnaires",params={"select":"*","patient_id":f"eq.{patient['id']}","order":"created_at.desc"}) or []
 @router.patch("/paciente/api/questionarios/{row_id}")
