@@ -981,7 +981,7 @@ def app_planos_alias(user: dict = Depends(auth.current_user)):
 
 @app.get("/app/evolucao")
 def app_evolucao_alias(user: dict = Depends(auth.current_user)):
-    return RedirectResponse("/app/pacientes?abrir=assessment", status_code=307)
+    return RedirectResponse("/app/pacientes?abrir=overview&context=evolucao", status_code=307)
 
 @app.get("/app/analise-corporal")
 def app_analise_corporal_alias(user: dict = Depends(auth.current_user)):
