@@ -1,23 +1,25 @@
-NUTRIOS V23 — ACABAMENTO PREMIUM
+NUTRIOS V33 — CACHE FIX DO DIÁRIO
 
-Esta versão é frontend e deve ser aplicada SOBRE a V22.
+Problema confirmado:
+O patient-record.html carregava /static/clinical-suite.js sem versão.
+O arquivo novo já tinha modal profissional, porém navegador/CDN podia continuar
+executando uma cópia antiga que ainda usava prompt("Retorno ao paciente").
 
-Corrige:
-- cards e botões ainda azulados no Admin e Nutricionista
-- Assistente virtual/chat em verde/mint + Dark Green
-- tabs do prontuário
-- Evolução fotográfica
-- Plano alimentar: labels/inputs e botões
-- Financeiro: overflow, KPIs e histórico
-- responsividade e conteúdo cortado à direita
-- consistência visual de Admin, paciente e profissional
+Correção:
+- novo arquivo: clinical-suite-v33.js
+- patient-record.html aponta explicitamente para /static/clinical-suite-v33.js
+- não depende de Ctrl+F5 para trocar a implementação
+- confirmado: não existe prompt de "Retorno ao paciente" nesse arquivo
+- modal NutriOS "Retorno profissional" permanece ativo
 
 UPLOAD:
-GitHub > nutri-chatbot > app > static > Add file > Upload files
+GitHub > nutri-chatbot > app > static
 
-Envie TODOS os arquivos deste pacote, menos LEIA-ME.txt.
+Suba:
+- patient-record.html
+- clinical-suite-v33.js
+
 Commit:
-NutriOS v23 - acabamento premium e responsividade
+NutriOS v33 - elimina cache antigo do diario
 
-A V23 NÃO substitui o main.py da V22.
-Mantenha o main.py da V22, pois ele contém as correções de rotas.
+Não apague clinical-suite.js ainda; outras telas podem continuar usando ele.
