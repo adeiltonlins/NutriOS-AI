@@ -977,15 +977,15 @@ def app_agenda_alias(user: dict = Depends(auth.current_user)):
 
 @app.get("/app/planos")
 def app_planos_alias(user: dict = Depends(auth.current_user)):
-    return RedirectResponse("/app/clinica#planos", status_code=307)
+    return RedirectResponse("/app/pacientes?abrir=mealplan", status_code=307)
 
 @app.get("/app/evolucao")
 def app_evolucao_alias(user: dict = Depends(auth.current_user)):
-    return RedirectResponse("/app/clinica#evolucao", status_code=307)
+    return RedirectResponse("/app/pacientes?abrir=assessment", status_code=307)
 
 @app.get("/app/analise-corporal")
 def app_analise_corporal_alias(user: dict = Depends(auth.current_user)):
-    return RedirectResponse("/app/clinica#assessment", status_code=307)
+    return RedirectResponse("/app/pacientes?abrir=assessment", status_code=307)
 
 @app.get("/app/financeiro")
 def app_financeiro_alias(user: dict = Depends(auth.current_user)):
