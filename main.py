@@ -11,6 +11,7 @@ import csv
 import html
 import io
 import json
+import logging
 import math
 import re
 import secrets
@@ -18,6 +19,7 @@ import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 from fastapi import BackgroundTasks, Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +29,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel, Field
+import requests
 
 from app.knowledge_base import base_conhecimento
 from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
@@ -35,6 +38,7 @@ from app import pagamento
 from app import auth, business_store, emailer, patient_auth, saas_store, clinical_extensions
 import os
 
+logger = logging.getLogger("nutrios")
 
 def token_valido(token: str) -> bool:
     """Compara o token do admin usando comparação de tempo constante
@@ -1029,17 +1033,49 @@ def update_training_config(payload: dict, user: dict = Depends(auth.current_user
     return {"ok": True, "enabled": config["training_enabled"]}
 
 
+def _training_storage_error(exc: Exception) -> HTTPException:
+    """Converte falhas do PostgREST em erro acionável sem expor segredo."""
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    body = str(getattr(getattr(exc, "response", None), "text", "") or "").lower()
+    missing_table = status in {404, 400} and ("workout_plans" in body or "pgrst205" in body or "schema cache" in body)
+    if missing_table:
+        logger.error("Tabela workout_plans ausente no Supabase. Execute migration 019_optional_training_module.sql")
+        return HTTPException(503, "O módulo de treinos precisa ser ativado no banco. Execute a migration 019_optional_training_module.sql no Supabase.")
+    logger.exception("Falha de persistência do módulo de treinos: %s", type(exc).__name__)
+    return HTTPException(503, "Não foi possível salvar a ficha agora. Verifique a conexão com o banco e tente novamente.")
+
+
+@app.get("/app/api/treinos/health")
+def training_storage_health(user: dict = Depends(auth.current_user)):
+    try:
+        saas_store._request("GET", "workout_plans", params={"select": "id", "client_id": f"eq.{user['id']}", "limit": "1"})
+        return {"ok": True, "storage": "ready"}
+    except Exception as exc:
+        raise _training_storage_error(exc) from exc
+
+
 @app.get("/app/api/treinos")
 def list_workout_plans(patient_id: str | None = None, user: dict = Depends(auth.current_user)):
-    return business_store.list_rows("workout_plans", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"} if patient_id else None)
+    try:
+        return business_store.list_rows("workout_plans", user["id"], order="created_at.desc", extra={"patient_id": f"eq.{patient_id}"} if patient_id else None)
+    except Exception as exc:
+        raise _training_storage_error(exc) from exc
 
 
 @app.post("/app/api/pacientes/{patient_id}/treinos")
 def create_workout_plan(patient_id: str, payload: WorkoutPlanRequest, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
-    if not (user.get("ai_config") or {}).get("training_enabled"): raise HTTPException(409, "Ative o módulo de treinos antes de criar uma ficha")
-    data = payload.model_dump(exclude_none=True); data["patient_id"] = patient_id; data["exercises"] = _clean_exercises(payload.exercises)
-    return business_store.create_row("workout_plans", user["id"], data)
+    if not (user.get("ai_config") or {}).get("training_enabled"):
+        raise HTTPException(409, "Ative o módulo de treinos antes de criar uma ficha")
+    data = payload.model_dump(exclude_none=True)
+    data["patient_id"] = patient_id
+    data["exercises"] = _clean_exercises(payload.exercises)
+    try:
+        saved = business_store.create_row("workout_plans", user["id"], data)
+    except Exception as exc:
+        raise _training_storage_error(exc) from exc
+    business_store.audit(user["id"], user["id"], "training.plan.created", "workout_plan", saved.get("id", ""), {"patient_id": patient_id})
+    return saved
 
 
 @app.patch("/app/api/treinos/{plan_id}/publicar")
@@ -1231,10 +1267,22 @@ def edit_patient(patient_id: str, payload: dict, user: dict = Depends(auth.curre
 
 
 @app.post("/app/api/pacientes/{patient_id}/codigo")
-def generate_patient_code(patient_id: str, payload: PatientCodeRequest, user: dict = Depends(auth.current_user)):
+def generate_patient_code(patient_id: str, payload: PatientCodeRequest, request: Request, user: dict = Depends(auth.current_user)):
     patient = _owned_patient(patient_id, user["id"])
-    if patient.get("archived_at") or not patient.get("active"): raise HTTPException(409, "Ative o paciente antes de gerar o código")
-    return {"code": patient_auth.issue_code(patient_id, payload.expires_in_hours), "expires_in_hours": payload.expires_in_hours, "show_once": True}
+    if patient.get("archived_at") or not patient.get("active"):
+        raise HTTPException(409, "Ative o paciente antes de gerar o código")
+    code = patient_auth.issue_code(patient_id, payload.expires_in_hours)
+    base = str(request.base_url).rstrip("/")
+    login_url = f"{base}/paciente/login"
+    invite_url = f"{login_url}?codigo={quote(code)}"
+    return {
+        "code": code,
+        "patient_name": patient.get("name"),
+        "expires_in_hours": payload.expires_in_hours,
+        "show_once": True,
+        "login_url": login_url,
+        "invite_url": invite_url,
+    }
 
 
 @app.post("/app/api/pacientes/{patient_id}/renovar")
@@ -1643,6 +1691,8 @@ def patient_login(request: Request, payload: PatientLoginRequest, response: Resp
         raise HTTPException(503, "Serviço de autenticação temporariamente indisponível")
     if not patient: raise HTTPException(401, "Acesso inválido, expirado ou indisponível")
     patient_auth.create_session(patient, response)
+    if method == "code" and patient.get("password_hash"):
+        patient_auth.consume_codes(patient["id"])
     redirect = "/paciente/primeiro-acesso" if method == "code" and not patient.get("password_hash") else "/paciente"
     return {"ok": True, "redirect": redirect}
 
@@ -2035,10 +2085,11 @@ def admin_master_chat_data(request: Request, admin: dict = Depends(auth.require_
     return {
         "id": "master", "name": admin.get("name"), "identifier": admin.get("identifier"),
         "ai_config": config, "public_url": f"{base}/assistente",
-        "test_chat_url": f"{base}/static/index.html?admin_test=mestre",
+        "test_chat_url": f"{base}/admin/testes/master/chat",
         "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
         "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
         "mercado_pago_api": bool(pagamento.PAGAMENTO_ATIVO),
+        "ai_ready": bool(os.getenv("GEMINI_API_KEY")) and os.getenv("IA_ATIVA", "true").lower() == "true",
         "visitors_today": len(today_sessions),
     }
 
@@ -2074,9 +2125,10 @@ def admin_test_client_data(request: Request, user_id: str, admin: dict = Depends
         "id": client["id"], "name": client["name"], "identifier": client["identifier"],
         "active": client.get("active"), "public_slug": slug, "ai_config": config,
         "public_url": f"{base}/n/{slug}" if slug else None,
-        "test_chat_url": f"{base}/static/index.html?admin_test={client['id']}",
+        "test_chat_url": f"{base}/admin/testes/{client['id']}/chat",
         "whatsapp_url": f"https://wa.me/{normalizar_whatsapp(str(config.get('whatsapp') or ''))}" if config.get("whatsapp") else None,
         "payment_url": config.get("link_consulta") if str(config.get("link_consulta") or "").startswith("https://") else None,
+        "ai_ready": bool(os.getenv("GEMINI_API_KEY")) and os.getenv("IA_ATIVA", "true").lower() == "true",
     }
 
 
@@ -2502,9 +2554,13 @@ def chat(request: Request, req: PerguntaRequest):
             resposta = gerar_resposta(req.pergunta, contexto, historico_dict, estado_convite, client_config)
             if not str(resposta or "").strip():
                 raise RuntimeError("Resposta vazia do provedor")
-        except Exception:
-            # Falha transitória do provedor não derruba a experiência nem
-            # expõe detalhes técnicos. O usuário pode tentar novamente.
+        except Exception as exc:
+            # Registra a causa real nos logs do Render sem expor segredo ou
+            # detalhe técnico ao usuário. A experiência recebe um fallback.
+            logger.exception(
+                "Falha ao gerar resposta da IA (test_mode=%s, client_id=%s, client_slug=%s): %s",
+                req.test_mode, req.client_id, req.client_slug, type(exc).__name__,
+            )
             resposta = "Tive uma instabilidade rápida ao preparar essa resposta. Pode repetir sua dúvida em uma frase? Se você deseja marcar uma consulta, escreva ‘quero agendar’."
 
     # O Bruce usa um marcador em vez de escrever o link — aqui a gente
