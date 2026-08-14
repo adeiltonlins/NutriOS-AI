@@ -179,12 +179,12 @@ function renderActivities(data){
   (data.checkins||[]).slice(0,3).forEach(x=>items.push({
     title:`${x.patient_name||'Paciente'} · Check-in respondido`,
     meta:`Adesão: ${x.adherence??'—'} · Energia: ${x.energy??'—'} · ${fmtDate(x.created_at)}`,
-    status:'Concluído',href:'/app/clinica'
+    status:'Concluído',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#diary`:'/app/pacientes'
   }));
   (data.appointments||[]).slice(0,2).forEach(x=>items.push({
     title:`${x.patient_name||'Paciente'} · Consulta agendada`,
     meta:`${fmtDate(x.starts_at)}`,
-    status:'Agendado',href:'/app/gestao'
+    status:'Agendado',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#schedule`:'/app/agenda'
   }));
   activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${x.href}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`;
 }
