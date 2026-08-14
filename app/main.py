@@ -1291,21 +1291,21 @@ def renew_patient(patient_id: str, payload: PatientRenewRequest, user: dict = De
     patient = _owned_patient(patient_id, user["id"]); now = datetime.now(timezone.utc)
     current = datetime.fromisoformat(patient["access_expires_at"].replace("Z", "+00:00")); base = current if current > now else now
     patient_auth.revoke(patient_id)
-    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"active": True, "access_expires_at": (base + timedelta(days=payload.duration_days)).isoformat(), "messages_used": 0, "usage_started_at": now.isoformat(), "updated_at": now.isoformat()}, prefer="return=representation") or []
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload={"active": True, "access_expires_at": (base + timedelta(days=payload.duration_days)).isoformat(), "messages_used": 0, "usage_started_at": now.isoformat(), "updated_at": now.isoformat()}, prefer="return=representation") or []
     return rows[0]
 
 
 @app.post("/app/api/pacientes/{patient_id}/arquivar")
 def archive_patient(patient_id: str, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"]); now = datetime.now(timezone.utc).isoformat(); patient_auth.revoke(patient_id)
-    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"active": False, "archived_at": now, "updated_at": now}, prefer="return=representation") or []
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload={"active": False, "archived_at": now, "updated_at": now}, prefer="return=representation") or []
     return rows[0]
 
 
 @app.post("/app/api/pacientes/{patient_id}/restaurar")
 def restore_patient(patient_id: str, user: dict = Depends(auth.current_user)):
     _owned_patient(patient_id, user["id"])
-    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}"}, payload={"archived_at": None, "active": False, "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=representation") or []
+    rows = saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient_id}", "client_id": f"eq.{user['id']}"}, payload={"archived_at": None, "active": False, "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=representation") or []
     return rows[0]
 
 
