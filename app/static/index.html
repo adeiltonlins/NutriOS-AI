@@ -76,6 +76,7 @@
 <link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
 <link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
 <link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
 </head>
 <body class="h-full bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-50 text-slate-900 dark:from-[#0b1a11] dark:via-[#12271a] dark:to-[#17301f] dark:text-slate-100 transition-colors public-page">
 
@@ -198,11 +199,11 @@
       err.auth = true;
       throw err;
     }
-    if (!resp.ok) throw new Error(data.detail || `Falha HTTP ${resp.status}`);
+    if (!resp.ok) { const msg = data.detail || (testMode ? `Falha no teste do assistente (HTTP ${resp.status})` : `Falha HTTP ${resp.status}`); throw new Error(msg); }
     return data;
   };
   const clientReady = testMode
-    ? fetchJson(adminTestTarget === 'mestre' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(x => { adminTestProfile = x; clientId = x.id; return x; })
+    ? fetchJson(adminTestTarget === 'master' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(x => { adminTestProfile = x; clientId = x.id; return x; })
     : window.location.pathname === '/app/chat'
       ? fetchJson('/api/me').then(u => { clientId = u.id; return u; })
       : masterPublic ? Promise.resolve().then(() => { clientId = 'master'; })

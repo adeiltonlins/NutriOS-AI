@@ -1,0 +1,40 @@
+/* NutriOS V27 — acabamento premium sem alterar identidade */
+:root{
+  --v27-radius-xl:22px;--v27-radius-lg:18px;--v27-radius-md:14px;
+  --v27-shadow-light:0 8px 24px rgba(25,85,46,.035);
+}
+/* Menos brilho no tema claro */
+html:not([data-theme="dark"]){--v-shadow:var(--v27-shadow-light)!important;--v-surface:#fbfdfb;--v-soft:#f3f8f4;--v-bg:#f7faf8}
+html:not([data-theme="dark"]) .card,html:not([data-theme="dark"]) .panel,html:not([data-theme="dark"]) .stat,
+html:not([data-theme="dark"]) .os-metric-card,html:not([data-theme="dark"]) .os-chart-card,html:not([data-theme="dark"]) .os-quick-card,
+html:not([data-theme="dark"]) .login-card,html:not([data-theme="dark"]) .auth-card{box-shadow:var(--v27-shadow-light)!important}
+/* Contornos mais suaves / menos quadrados */
+.card,.panel,.box,.stat,.metric-card,.quick-card,.module-card,.analytics-card,.chart-card,.table-card,.form-card,.patient-card,.portal-card,.conversation-card,.login-card,.auth-card,.glass-card,.os-metric-card,.os-chart-card,.os-quick-card,.os-activity,.frame-wrap{border-radius:var(--v27-radius-xl)!important}
+button,.btn,.button,.os-primary-action,.os-secondary-action,.os-date-card,input[type=submit]{border-radius:var(--v27-radius-md)!important}
+input,select,textarea,.os-search-wrap,.nutrios-picker,.composer{border-radius:var(--v27-radius-md)!important}
+/* Logo: marca limpa, sem losango girado / sem glow */
+.os-brand-mark{width:46px!important;height:46px!important;border-radius:14px!important;display:grid!important;place-items:center!important;filter:none!important;background:linear-gradient(145deg,var(--v-green2),var(--v-green3))!important;overflow:hidden!important}
+.os-brand-mark:before{content:"✦"!important;position:static!important;inset:auto!important;transform:none!important;width:auto!important;height:auto!important;background:none!important;color:#fff!important;font-size:21px!important;line-height:1!important;border-radius:0!important}
+.os-brand-mark:after{display:none!important}
+.admin-logo,.brand-icon,.brand-orb,.logo-mark{border-radius:14px!important;filter:none!important;box-shadow:none!important}
+/* Cabeçalho profissional: botões e data na mesma linha visual */
+.os-heading-row{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:start!important;gap:28px!important}
+.os-heading-actions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex-wrap:nowrap!important;max-width:none}
+.os-primary-action,.os-secondary-action,.os-date-card{height:48px!important;min-height:48px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;margin:0!important;padding:0 18px!important;line-height:1!important}
+.os-date-card{order:0;margin-left:0!important;font-variant-numeric:tabular-nums}
+/* Date/time: labels e seletor com eixo comum */
+.nutrios-picker{min-height:46px!important;align-items:center!important}
+.nutrios-picker>input{min-height:46px!important;margin:0!important;padding-top:0!important;padding-bottom:0!important;line-height:46px!important}
+.nutrios-picker-btn{top:50%!important;margin:0!important}
+label>.nutrios-picker{margin-top:7px!important}
+/* Treinos */
+.exercise{border-radius:18px!important;padding:14px!important;gap:10px!important}.exercise input{min-height:46px!important;border-radius:13px!important}
+.save-status{min-height:22px;margin:14px 0 0;font-weight:700}.save-status.success{color:var(--v-green)!important}.save-status.error{color:#d25b5b!important}
+#save:disabled{opacity:.62;cursor:wait}
+/* Laboratório */
+.frame-wrap{border:1px solid var(--v-line)!important;box-shadow:none!important}.frame{border-radius:18px!important;background:var(--v-surface)!important}
+/* Light assistant: branco mais macio, não neon */
+html:not([data-theme="dark"]) #chatShell,html:not([data-theme="dark"]) .chat-shell,html:not([data-theme="dark"]) .frame{background:#fbfdfb!important}
+html:not([data-theme="dark"]) .composer{box-shadow:0 3px 12px rgba(25,85,46,.04)!important}
+@media(max-width:1100px){.os-heading-row{grid-template-columns:1fr!important}.os-heading-actions{justify-content:flex-start!important;max-width:none;width:100%}.os-date-card{margin-left:0!important}}
+@media(max-width:640px){.os-heading-actions{display:grid!important;grid-template-columns:1fr!important}.os-primary-action,.os-secondary-action,.os-date-card{width:100%!important}.card,.panel,.os-metric-card,.os-chart-card{border-radius:18px!important}}
