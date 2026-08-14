@@ -1098,7 +1098,7 @@ def clinical_dashboard_data(user: dict = Depends(auth.current_user)):
             print(f"[dashboard-clinico] Modulo opcional indisponivel: {type(exc).__name__}")
             return []
 
-    patients = optional_rows(lambda: saas_store._request("GET", "patient_accounts", params={"select": "id,name,active,access_expires_at,last_seen_at,created_at,macro_targets", "client_id": f"eq.{client_id}", "hidden_at": "is.null", "order": "created_at.desc"}))
+    patients = optional_rows(lambda: saas_store._request("GET", "patient_accounts", params={"select": "id,name,active,access_expires_at,last_access_at,created_at,macro_targets", "client_id": f"eq.{client_id}", "hidden_at": "is.null", "order": "created_at.desc"}))
     for patient in patients:
         patient_checkins = optional_rows(lambda p=patient: business_store.list_rows("patient_checkins", client_id, order="created_at.desc", extra={"patient_id": f"eq.{p['id']}", "limit": "50"}))
         patient_assessments = optional_rows(lambda p=patient: business_store.list_rows("anthropometric_assessments", client_id, order="assessed_at.desc", extra={"patient_id": f"eq.{p['id']}", "limit": "10"}))
@@ -1251,7 +1251,7 @@ def create_patient(payload: PatientRequest, user: dict = Depends(auth.current_us
     if limit >= 0 and len(visible) >= limit:
         raise HTTPException(409, f"Limite do plano atingido ({limit} pacientes). Solicite um ajuste ao administrador.")
     expires = datetime.now(timezone.utc) + timedelta(days=payload.duration_days)
-    rows = saas_store._request("POST", "patient_accounts", payload={"client_id": user["id"], "name": payload.name.strip(), "identifier": (payload.identifier or "").strip() or None, "phone": normalizar_whatsapp(payload.phone) if payload.phone else None, "plan_name": payload.plan_name, "access_expires_at": expires.isoformat(), "diet_context": payload.diet_context, "message_limit": payload.message_limit}, prefer="return=representation")
+    rows = saas_store._request("POST", "patient_accounts", payload={"client_id": user["id"], "name": payload.name.strip(), "identifier": (payload.identifier or "").strip() or None, "phone": normalizar_whatsapp(payload.phone) if payload.phone else None, "plan_name": payload.plan_name, "active": True, "access_expires_at": expires.isoformat(), "diet_context": payload.diet_context, "message_limit": payload.message_limit}, prefer="return=representation")
     return rows[0]
 
 
