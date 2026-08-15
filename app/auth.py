@@ -76,8 +76,20 @@ def authenticate_master(raw_code: str) -> dict | None:
     expected = os.getenv("ADMIN_TOKEN", "")
     if not expected or not secrets.compare_digest(raw_code.strip(), expected):
         return None
-    user = saas_store.get_user_by_identifier(os.getenv("ADMIN_IDENTIFIER", "admin").lower())
-    return user if user and user.get("role") == "admin" and user.get("active") else None
+    identifier = os.getenv("ADMIN_IDENTIFIER", "admin").lower().strip() or "admin"
+    user = saas_store.get_user_by_identifier(identifier)
+    if user:
+        return user if user.get("role") == "admin" and user.get("active") else None
+
+    # Compatibilidade com instalações antigas: nelas o ADMIN_TOKEN existia
+    # antes da tabela saas_users. Como o segredo mestre já foi validado acima,
+    # criamos somente o registro administrativo ausente, sem armazenar o token.
+    return saas_store.create_user({
+        "name": os.getenv("ADMIN_NAME", "Administrador"),
+        "identifier": identifier,
+        "role": "admin",
+        "active": True,
+    })
 
 
 def authenticate_password(identifier: str, password: str) -> dict | None:
