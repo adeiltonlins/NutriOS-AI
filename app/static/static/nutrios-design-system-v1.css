@@ -1,0 +1,386 @@
+/* NutriOS design system v1 — incremental foundation for critical screens. */
+:root {
+  --ui-brand: #168f43;
+  --ui-brand-strong: #0f7134;
+  --ui-brand-soft: #eaf8ef;
+  --ui-success: #168f43;
+  --ui-danger: #c33f4a;
+  --ui-warning: #a85f09;
+  --ui-bg: #f5f8f6;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f0f5f2;
+  --ui-text: #15251b;
+  --ui-muted: #63756a;
+  --ui-line: #dce7df;
+  --ui-focus: #55b978;
+  --ui-radius-sm: 10px;
+  --ui-radius-md: 14px;
+  --ui-radius-lg: 22px;
+  --ui-shadow-sm: 0 8px 24px rgba(21, 55, 32, .07);
+  --ui-shadow-lg: 0 24px 70px rgba(21, 55, 32, .13);
+  --ui-speed: 160ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ui-bg: #09150e;
+    --ui-surface: #102219;
+    --ui-surface-soft: #162d20;
+    --ui-text: #edf8f0;
+    --ui-muted: #9bb1a2;
+    --ui-line: #294535;
+    --ui-brand-soft: rgba(45, 184, 91, .14);
+  }
+}
+
+/* The app theme is selected with data-theme and can differ from the operating
+   system preference. Keep design-system tokens in sync with that selection. */
+html[data-theme="dark"] {
+  --ui-bg: #09150e;
+  --ui-surface: #102219;
+  --ui-surface-soft: #162d20;
+  --ui-text: #edf8f0;
+  --ui-muted: #a9beb0;
+  --ui-line: #355641;
+  --ui-brand: #51d879;
+  --ui-brand-strong: #8be5a4;
+  --ui-brand-soft: rgba(81, 216, 121, .16);
+  --ui-focus: #70df91;
+}
+
+html[data-theme="light"] {
+  --ui-bg: #f5f8f6;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f0f5f2;
+  --ui-text: #15251b;
+  --ui-muted: #63756a;
+  --ui-line: #dce7df;
+  --ui-brand: #168f43;
+  --ui-brand-strong: #0f7134;
+  --ui-brand-soft: #eaf8ef;
+  --ui-focus: #55b978;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { accent-color: var(--ui-brand); }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ui-focus) 52%, transparent);
+  outline-offset: 2px;
+}
+button:disabled { cursor: wait; opacity: .68; }
+.ui-skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 9999; transform: translateY(-150%);
+  padding: 10px 14px; border-radius: var(--ui-radius-sm); background: var(--ui-text); color: var(--ui-surface);
+  font-weight: 800; text-decoration: none;
+}
+.ui-skip-link:focus { transform: translateY(0); }
+.ui-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* Professional login */
+.login-page {
+  margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px;
+  background:
+    radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--ui-brand) 16%, transparent), transparent 34%),
+    radial-gradient(circle at 88% 84%, color-mix(in srgb, var(--ui-brand) 10%, transparent), transparent 30%),
+    var(--ui-bg) !important;
+  color: var(--ui-text) !important; font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.login-page .card {
+  width: min(100%, 470px); padding: clamp(24px, 5vw, 38px); border: 1px solid var(--ui-line) !important;
+  border-radius: var(--ui-radius-lg) !important; background: color-mix(in srgb, var(--ui-surface) 96%, transparent) !important;
+  box-shadow: var(--ui-shadow-lg) !important;
+}
+.login-page .logo { display: flex; align-items: center; gap: 10px; color: var(--ui-brand) !important; font-size: 18px; font-weight: 900; }
+.login-page .logo::before { content: ""; width: 13px; height: 13px; border-radius: 5px 5px 5px 1px; background: linear-gradient(135deg, var(--ui-brand), #53ca78); box-shadow: 0 0 0 6px var(--ui-brand-soft); }
+.login-page h1 { margin: 22px 0 8px; color: var(--ui-text) !important; font-size: clamp(28px, 7vw, 36px); letter-spacing: -.035em; }
+.login-page p { color: var(--ui-muted) !important; line-height: 1.55; }
+.login-page .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 26px 0 20px; padding: 4px; border: 1px solid var(--ui-line) !important; border-radius: 13px; background: var(--ui-surface-soft) !important; }
+.login-page .tabs button { min-height: 44px; margin: 0; padding: 10px 12px !important; border: 0 !important; border-radius: 10px; background: transparent !important; color: var(--ui-muted) !important; font-weight: 750; cursor: pointer; transition: background var(--ui-speed), color var(--ui-speed), box-shadow var(--ui-speed); }
+.login-page .tabs button.on { background: var(--ui-surface) !important; color: var(--ui-brand) !important; box-shadow: 0 4px 14px rgba(20, 55, 31, .08); }
+.login-page label { display: block; margin: 16px 0 7px; color: var(--ui-text) !important; font-weight: 720; }
+.login-page input { width: 100%; min-height: 48px; padding: 12px 14px; border: 1px solid var(--ui-line) !important; border-radius: 12px; background: var(--ui-surface) !important; color: var(--ui-text) !important; }
+.login-page input:hover { border-color: color-mix(in srgb, var(--ui-brand) 48%, var(--ui-line)) !important; }
+.login-page form > button { width: 100%; min-height: 49px; margin-top: 20px; border: 0 !important; border-radius: 12px; background: linear-gradient(135deg, var(--ui-brand), #24aa58) !important; color: #fff !important; font-weight: 850; cursor: pointer; box-shadow: 0 10px 24px rgba(22, 143, 67, .2); transition: transform var(--ui-speed), box-shadow var(--ui-speed); }
+.login-page form > button:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(22, 143, 67, .26); }
+.login-page .msg { min-height: 22px; margin: 14px 0 0; color: var(--ui-danger) !important; font-size: 14px; }
+.login-page .hidden { display: none; }
+.login-page .back { display: block; margin-top: 18px; color: var(--ui-brand) !important; text-align: center; text-decoration: none; font-weight: 700; }
+
+/* Patients management: explicit light-theme contrast. Legacy UX styles use a
+   white text gradient for KPI values, making them invisible on light cards. */
+html[data-theme="light"] .patient-page .wrap > .stats .stat b {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  color: var(--ui-text) !important;
+  -webkit-text-fill-color: var(--ui-text) !important;
+}
+html[data-theme="light"] .patient-page .wrap > .stats .sub,
+html[data-theme="light"] .patient-page .wrap > .panel th,
+html[data-theme="light"] .patient-page .module-context p { color: #607268 !important; }
+html[data-theme="light"] .patient-page .module-context { background: #eaf6ee !important; border-color: #b9dcc5 !important; }
+html[data-theme="light"] .patient-page .module-context h2 { color: #13261a !important; }
+html[data-theme="light"] .patient-page .context-kicker { color: #087d35 !important; }
+html[data-theme="light"] .patient-page .wrap > .panel th { background: #e8f1eb !important; border-color: #cdded2 !important; }
+html[data-theme="light"] .patient-page .wrap > .panel td { color: var(--ui-text) !important; }
+html[data-theme="light"] .patient-page .usage { background: #dce8df !important; }
+html[data-theme="light"] .patient-page .module-context .ghost,
+html[data-theme="light"] .patient-page .wrap > .panel .ghost { background: #fff !important; border-color: #bfd8c7 !important; color: #185c31 !important; }
+html[data-theme="light"] .patient-page .wrap > .panel .tabs .on { background: #e5f5ea !important; color: #087d35 !important; }
+
+/* Professional dashboard refinements */
+.os-workspace { min-width: 0; }
+.os-topbar { backdrop-filter: blur(16px); }
+.os-nav-item, .os-metric-card, .os-quick-card, .os-primary-action, .os-secondary-action, .os-icon-btn {
+  transition: transform var(--ui-speed), border-color var(--ui-speed), background var(--ui-speed), box-shadow var(--ui-speed);
+}
+.os-nav-item:hover { transform: translateX(2px); }
+.os-metric-card:hover, .os-quick-card:hover { transform: translateY(-2px); box-shadow: var(--ui-shadow-sm); }
+.os-metric-card:focus-visible, .os-quick-card:focus-visible { border-color: var(--ui-focus) !important; }
+.os-empty { min-height: 96px; display: grid; place-items: center; padding: 24px; text-align: center; }
+.os-live-badge { white-space: nowrap; }
+
+/* Patient portal */
+.patient-page { margin: 0; min-height: 100vh; background: radial-gradient(circle at 10% 0, color-mix(in srgb, var(--brand, var(--ui-brand)) 24%, #09150e), #09150e 36%); color: #eaf7ee; font: 15px Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
+.patient-page .page { max-width: 1080px; margin: auto; padding: 22px; }
+.patient-page .top, .patient-page .identity, .patient-page .tabs, .patient-page .doc { display: flex; align-items: center; }
+.patient-page .top { justify-content: space-between; gap: 12px; padding: 8px 0 20px; }
+.patient-page .identity { gap: 13px; }
+.patient-page .logo { width: 50px; height: 50px; display: grid; place-items: center; overflow: hidden; border-radius: 15px; background: linear-gradient(135deg, var(--brand, var(--ui-brand)), #42c66c); font-weight: 900; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.patient-page .logo img { width: 100%; height: 100%; object-fit: cover; }
+.patient-page .muted { color: #91cfa5 !important; }
+.patient-page .logout, .patient-page .tab { min-height: 43px; padding: 10px 14px; border: 1px solid #315640; border-radius: 11px; background: #102219; color: #edf8f0; cursor: pointer; }
+.patient-page .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+.patient-page .mini, .patient-page .panel { border: 1px solid #254331; background: #102219; box-shadow: 0 12px 34px rgba(0,0,0,.12); }
+.patient-page .mini { padding: 15px; border-radius: 16px; }
+.patient-page .mini b { display: block; margin-top: 5px; font-size: 16px; }
+.patient-page .tabs { gap: 8px; margin: 18px 0; overflow-x: auto; scrollbar-width: thin; }
+.patient-page .tab { white-space: nowrap; font-weight: 750; }
+.patient-page .tab.on { border-color: var(--brand, var(--ui-brand)); background: var(--brand, var(--ui-brand)); color: #fff; }
+.patient-page .view { display: none; }
+.patient-page .view.on { display: block; }
+.patient-page .panel { padding: clamp(18px, 4vw, 24px); border-radius: 20px !important; }
+.patient-page .document { justify-content: space-between; gap: 14px; padding: 16px 0; border-top: 1px solid #254331; }
+.patient-page .download { padding: 10px 14px; border-radius: 11px; background: var(--brand, var(--ui-brand)); color: #fff; text-decoration: none; font-weight: 800; }
+.patient-page .check-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+.patient-page label { color: #eaf7ee; font-weight: 650; }
+.patient-page input, .patient-page select, .patient-page textarea { width: 100%; min-height: 46px; margin-top: 7px; padding: 12px; border: 1px solid #326044; border-radius: 11px; background: #162d20; color: #fff; }
+.patient-page textarea { min-height: 100px; resize: vertical; }
+.patient-page .full { grid-column: 1/-1; }
+.patient-page .save { grid-column: 1/-1; min-height: 48px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--brand, var(--ui-brand)), #42c66c); color: #fff; font-weight: 850; cursor: pointer; }
+.patient-page .chat { height: min(590px, calc(100vh - 230px)); min-height: 480px; display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; border: 1px solid #254331; border-radius: 22px; background: #102219; }
+.patient-page .chat-head { display: flex; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid #254331; }
+.patient-page .messages { overflow: auto; padding: 22px; display: flex; flex-direction: column; gap: 13px; }
+.patient-page .bubble { max-width: min(78%, 680px); padding: 13px 15px; border-radius: 16px; line-height: 1.55; white-space: pre-wrap; }
+.patient-page .bot { align-self: flex-start; border: 1px solid #294d37; background: #162d20; }
+.patient-page .user { align-self: flex-end; background: linear-gradient(135deg, var(--brand, var(--ui-brand)), #42c66c); }
+.patient-page .composer { display: flex; gap: 9px; padding: 14px; border-top: 1px solid #254331; }
+.patient-page .composer input { flex: 1; margin: 0; }
+.patient-page .send { width: 48px; min-width: 48px; border: 0; border-radius: 12px; background: var(--brand, var(--ui-brand)); color: #fff; font-size: 20px; cursor: pointer; }
+.patient-page .notice { padding: 16px 10px 4px; color: #91cfa5; text-align: center; font-size: 12px; }
+
+@media (max-width: 900px) {
+  .os-topbar kbd { display: none; }
+  .os-heading-row { align-items: flex-start !important; }
+}
+@media (max-width: 650px) {
+  .login-page { padding: 14px; }
+  .login-page .card { padding: 24px 20px; }
+  .patient-page .page { padding: 12px; }
+  .patient-page .summary { grid-template-columns: 1fr 1fr; }
+  .patient-page .mini:first-child { grid-column: 1/-1; }
+  .patient-page .check-grid { grid-template-columns: 1fr; }
+  .patient-page .full, .patient-page .save { grid-column: auto; }
+  .patient-page .document { align-items: flex-start; flex-direction: column; }
+  .patient-page .download { width: 100%; text-align: center; }
+  .patient-page .bubble { max-width: 92%; }
+  .patient-page .chat { min-height: 520px; height: calc(100vh - 190px); }
+  .patient-page .chat-head { align-items: flex-start; flex-direction: column; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* Shared application surfaces — loaded after legacy styles. */
+body:not(.login-page):not(.patient-page) {
+  background-color: var(--ui-bg);
+  color: var(--ui-text);
+  text-rendering: optimizeLegibility;
+}
+body:not(.login-page):not(.patient-page) :where(.panel, .card, .stat, .modal, .resource-panel, .clinical-card, .form-card, .table-card) {
+  border-color: var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+}
+body:not(.login-page):not(.patient-page) :where(.panel, .card, .stat, .resource-panel, .clinical-card, .form-card, .table-card):hover {
+  border-color: color-mix(in srgb, var(--ui-brand) 28%, var(--ui-line));
+}
+:where(.primary, .btn.primary, button.primary, .button.primary) {
+  min-height: 42px;
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: linear-gradient(135deg, var(--ui-brand), #29ae5d);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(22, 143, 67, .16);
+  transition: transform var(--ui-speed), box-shadow var(--ui-speed), filter var(--ui-speed);
+}
+:where(.primary, .btn.primary, button.primary, .button.primary):hover {
+  transform: translateY(-1px);
+  filter: saturate(1.05);
+  box-shadow: 0 12px 24px rgba(22, 143, 67, .22);
+}
+:where(.ghost, .secondary, .btn, .button):not(.primary):not(.danger) {
+  border-radius: var(--ui-radius-sm);
+  transition: border-color var(--ui-speed), background var(--ui-speed), color var(--ui-speed), transform var(--ui-speed);
+}
+:where(.ghost, .secondary, .btn, .button):not(.primary):not(.danger):hover {
+  border-color: color-mix(in srgb, var(--ui-brand) 42%, var(--ui-line));
+  transform: translateY(-1px);
+}
+:where(button, .btn, .button, a.primary, a.secondary, a.ghost) { touch-action: manipulation; }
+:where(input, select, textarea) {
+  border-radius: var(--ui-radius-sm);
+  transition: border-color var(--ui-speed), box-shadow var(--ui-speed), background var(--ui-speed);
+}
+:where(input, select, textarea):focus {
+  border-color: var(--ui-focus) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus) 18%, transparent);
+}
+:where(input, select, textarea)[aria-invalid="true"] { border-color: var(--ui-danger) !important; }
+:where(label, .field > label) { line-height: 1.35; }
+:where(.muted, .meta, .sub) { line-height: 1.5; }
+:where(.badge, .pill, .tag, .status-chip) { border-radius: 999px; font-weight: 750; }
+:where(.empty, .empty-state, .os-empty) {
+  min-height: 92px;
+  padding: 22px;
+  border: 1px dashed color-mix(in srgb, var(--ui-brand) 25%, var(--ui-line));
+  border-radius: var(--ui-radius-md);
+  background: color-mix(in srgb, var(--ui-brand-soft) 45%, transparent);
+  color: var(--ui-muted);
+  text-align: center;
+}
+:where(.msg, .status, [role="status"]) { line-height: 1.45; }
+:where(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+:where(th) { text-align: left; font-size: 12px; letter-spacing: .035em; text-transform: uppercase; }
+:where(th, td) { padding: 12px 14px; border-bottom: 1px solid var(--ui-line); }
+:where(tbody tr) { transition: background var(--ui-speed); }
+:where(tbody tr:hover) { background: color-mix(in srgb, var(--ui-brand-soft) 42%, transparent); }
+:where(dialog, .modal) { max-width: min(92vw, 760px); max-height: 88vh; overflow: auto; box-shadow: var(--ui-shadow-lg); }
+dialog::backdrop { background: rgba(5, 18, 10, .68); backdrop-filter: blur(4px); }
+:where(.modal-actions, .actions, .panel-head, .section-heading) { gap: 10px; }
+:where(.eyebrow) { color: var(--ui-brand); font-weight: 850; letter-spacing: .09em; }
+
+/* Keep dense product pages usable on smaller screens without rewriting their markup. */
+@media (max-width: 760px) {
+  body:not(.login-page):not(.patient-page) :where(.page, .wrap, .main, .os-main) { padding-left: 14px; padding-right: 14px; }
+  :where(.grid, .form-grid, .stats, .metrics-grid) { grid-template-columns: 1fr !important; }
+  :where(.top, .panel-head, .section-heading, .actions, .modal-actions) { flex-wrap: wrap; }
+  :where(.actions, .modal-actions) > :where(button, a, .btn, .button) { min-height: 42px; }
+  :where(.table-wrap, .table-shell, .overflow-auto) { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  dialog, .modal { width: calc(100vw - 24px); padding: 18px; }
+}
+
+/* Global contrast contract v2.
+   This final layer intentionally overrides legacy theme files on every screen. */
+html[data-theme="light"] body {
+  background-color: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+}
+html[data-theme="light"] :where(.side, .sidebar, .admin-side, .topbar, .header, .panel, .card, .stat, .box, .modal, dialog, .resource-panel, .clinical-card, .form-card, .table-card, .metric-card, .quick-card, .module-card, .analytics-card, .chart-card, .portal-card, .conversation-card, .os-metric-card, .os-chart-card, .os-quick-card, .os-activity) {
+  background-color: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
+}
+html[data-theme="light"] :where(h1, h2, h3, h4, h5, h6, strong, .title, .page-title, .section-title, .card-title, .metric-value, .stat-value, .kpi-value, .nos16-kpi-value, .stat b, .metric b, .card-value) {
+  background: none !important;
+  color: var(--ui-text) !important;
+  -webkit-text-fill-color: var(--ui-text) !important;
+  text-shadow: none !important;
+}
+html[data-theme="light"] :where(.money, .ok, .success, .text-brand) {
+  background: none !important;
+  color: #087d35 !important;
+  -webkit-text-fill-color: #087d35 !important;
+}
+html[data-theme="light"] :where(.muted, .sub, .meta, small, .description, .helper, .legend, .capacity-label) {
+  color: #596b61 !important;
+  -webkit-text-fill-color: #596b61 !important;
+}
+html[data-theme="light"] :where(.brand, .admin-brand, .sidebar-brand, .logo, .brand-name, .os-brand-name),
+html[data-theme="light"] :where(.brand, .admin-brand, .sidebar-brand, .logo) strong {
+  color: #174f2b !important;
+  -webkit-text-fill-color: #174f2b !important;
+}
+html[data-theme="light"] :where(.nav, .nav span, .admin-nav .nav) { color: #243c2d !important; }
+html[data-theme="light"] :where(.nav.active, .nav:hover, .admin-nav .nav.active, .admin-nav .nav:hover) {
+  background: #e4f3e9 !important;
+  color: #087d35 !important;
+}
+html[data-theme="light"] :where(input, select, textarea) {
+  background: #fff !important;
+  border-color: #bfd2c5 !important;
+  color: #15251b !important;
+  -webkit-text-fill-color: #15251b !important;
+}
+html[data-theme="light"] :where(input, textarea)::placeholder { color: #718077 !important; opacity: 1; }
+html[data-theme="light"] :where(label, th, td) { color: #263a2d !important; }
+html[data-theme="light"] th { background: #edf4ef !important; color: #4c6054 !important; }
+html[data-theme="light"] .side-footer {
+  background: #173c26 !important;
+  border-color: #285c3b !important;
+  color: #fff !important;
+}
+html[data-theme="light"] .side-footer :where(b, small) { color: #eef8f1 !important; -webkit-text-fill-color: #eef8f1 !important; }
+html[data-theme="light"] :where(.ghost, .secondary, .btn-secondary, button.secondary) {
+  background: #fff !important;
+  border-color: #bcd4c4 !important;
+  color: #185c31 !important;
+}
+html[data-theme="light"] :where(.admin-stats .stat, .stats .stat) > div > b:not(.money) {
+  background: none !important;
+  color: #15251b !important;
+  -webkit-text-fill-color: #15251b !important;
+}
+
+html[data-theme="dark"] body { background-color: var(--ui-bg) !important; color: var(--ui-text) !important; }
+html[data-theme="dark"] :where(.side, .sidebar, .admin-side, .topbar, .header, .panel, .card, .stat, .box, .modal, dialog, .resource-panel, .clinical-card, .form-card, .table-card, .metric-card, .quick-card, .module-card, .analytics-card, .chart-card, .portal-card, .conversation-card, .os-metric-card, .os-chart-card, .os-quick-card, .os-activity) {
+  background-color: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
+}
+html[data-theme="dark"] :where(h1, h2, h3, h4, h5, h6, strong, .title, .page-title, .section-title, .card-title, .metric-value, .stat-value, .kpi-value, .nos16-kpi-value, .stat b, .metric b, .card-value) {
+  color: var(--ui-text) !important;
+  -webkit-text-fill-color: var(--ui-text) !important;
+  text-shadow: none !important;
+}
+html[data-theme="dark"] :where(.money, .ok, .success, .text-brand) {
+  color: #70df91 !important;
+  -webkit-text-fill-color: #70df91 !important;
+}
+html[data-theme="dark"] :where(.muted, .sub, .meta, small, .description, .helper, .legend, .capacity-label) {
+  color: #a9beb0 !important;
+  -webkit-text-fill-color: #a9beb0 !important;
+}
+html[data-theme="dark"] :where(.brand, .admin-brand, .sidebar-brand, .logo, .brand-name, .os-brand-name),
+html[data-theme="dark"] :where(.brand, .admin-brand, .sidebar-brand, .logo) strong { color: #edf8f0 !important; -webkit-text-fill-color: #edf8f0 !important; }
+html[data-theme="dark"] :where(.nav, .nav span, .admin-nav .nav) { color: #c4d7c9 !important; }
+html[data-theme="dark"] :where(.nav.active, .nav:hover, .admin-nav .nav.active, .admin-nav .nav:hover) { color: #8be5a4 !important; }
+html[data-theme="dark"] :where(input, select, textarea) {
+  background: #0c1d13 !important;
+  border-color: #3a6047 !important;
+  color: #edf8f0 !important;
+  -webkit-text-fill-color: #edf8f0 !important;
+}
+html[data-theme="dark"] :where(input, textarea)::placeholder { color: #91a99a !important; opacity: 1; }
+html[data-theme="dark"] :where(label, th, td) { color: #dceae0 !important; }
+html[data-theme="dark"] th { background: #14291c !important; color: #a9beb0 !important; }
+html[data-theme="dark"] :where(.ghost, .secondary, .btn-secondary, button.secondary) {
+  background: #14291c !important;
+  border-color: #3a6047 !important;
+  color: #b7efc5 !important;
+}

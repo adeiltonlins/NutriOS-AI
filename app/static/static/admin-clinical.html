@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Monitor clínico global — NutriOS</title><link rel="stylesheet" href="/static/titanium.css"><link rel="stylesheet" href="/static/nutrios-premium.css"><link rel="stylesheet" href="/static/clinical-fixes.css">
+
+
+
+
+<link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
+<link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
+<link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
+<link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
+<link rel="stylesheet" href="/static/nutrios-v28-clinical-flow.css?v=28">
+<link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=3">
+</head>
+<body class="clinical-page"><main class="clinical-wrap">
+  <header class="clinical-header"><div><a class="back-link" href="/admin">← Admin mestre</a><span class="eyebrow">OPERAÇÃO CLÍNICA GLOBAL</span><h1>Monitor clínico</h1><p>Visão consolidada da operação de todos os nutricionistas, sem romper o isolamento entre contas.</p></div><button class="primary" id="refreshButton" type="button">↻ Atualizar dados</button></header>
+  <section class="clinical-metrics"><article><span class="metric-icon">◎</span><div><small>Pacientes cadastrados</small><strong id="patients">—</strong></div></article><article><span class="metric-icon green">✓</span><div><small>Pacientes ativos</small><strong id="active">—</strong></div></article><article><span class="metric-icon orange">!</span><div><small>Alertas abertos</small><strong id="alerts">—</strong></div></article><article><span class="metric-icon warning">↑</span><div><small>Alertas críticos</small><strong id="high">—</strong></div></article><article><span class="metric-icon violet">▤</span><div><small>Planos publicados</small><strong id="plans">—</strong></div></article><article><span class="metric-icon">?</span><div><small>Questionários</small><strong id="questionnaireCount">—</strong></div></article><article><span class="metric-icon">◫</span><div><small>Fotos de evolução</small><strong id="photoCount">—</strong></div></article></section>
+  <section class="panel clinical-operation"><div class="clinical-section-head"><div><span class="eyebrow">CARTEIRA CLÍNICA</span><h2>Operação por nutricionista</h2><p>Contagens rápidas para suporte, acompanhamento e identificação de contas que precisam de atenção.</p></div><label class="clinical-search">⌕<input id="search" type="search" placeholder="Buscar nutricionista"></label></div><div id="rows" class="clinical-list"><div class="clinical-empty">Carregando operação…</div></div></section>
+</main><div class="toast" id="toast"></div>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"']/g,''),state={items:[]};
+function notify(message,error=false){toast.textContent=message;toast.className='toast show'+(error?' error':'');setTimeout(()=>toast.className='toast',3200)}
+function render(){const q=search.value.trim().toLowerCase(),items=state.items.filter(x=>!q||x.name.toLowerCase().includes(q));rows.innerHTML=items.map(x=>{const initials=x.name.split(/\s+/).slice(0,2).map(p=>p[0]).join('').toUpperCase();return `<article class="clinical-account"><span class="clinical-avatar">${esc(initials)}</span><div class="clinical-account-name"><b>${esc(x.name)}</b><small>${x.patients} paciente(s) em acompanhamento</small></div><div class="clinical-account-stats"><span class="pill ${x.alerts?'attention':''}"><b>${x.alerts}</b> alertas</span><span class="pill"><b>${x.plans}</b> planos</span></div></article>`}).join('')||'<div class="clinical-empty">Nenhum nutricionista encontrado.</div>'}
+async function load(){refreshButton.disabled=true;refreshButton.textContent='Atualizando…';try{const r=await fetch('/admin/api/dashboard'),d=await r.json();if(!r.ok){location='/login';return}const c=d.clinical||{};patients.textContent=c.patients_total||0;active.textContent=c.patients_active||0;alerts.textContent=c.alerts_open||0;high.textContent=c.alerts_high||0;plans.textContent=c.plans_published||0;questionnaireCount.textContent=c.questionnaires||0;photoCount.textContent=c.progress_photos||0;state.items=c.by_nutritionist||[];render()}catch(e){notify('Não foi possível carregar o monitor.',true)}finally{refreshButton.disabled=false;refreshButton.textContent='↻ Atualizar dados'}}
+search.addEventListener('input',render);refreshButton.addEventListener('click',load);load();
+</script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
+<script src="/static/nutrios-datetime.js?v=26"></script>
+</body></html>

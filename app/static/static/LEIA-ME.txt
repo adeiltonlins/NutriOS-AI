@@ -1,0 +1,25 @@
+NUTRIOS V33 — CACHE FIX DO DIÁRIO
+
+Problema confirmado:
+O patient-record.html carregava /static/clinical-suite.js sem versão.
+O arquivo novo já tinha modal profissional, porém navegador/CDN podia continuar
+executando uma cópia antiga que ainda usava prompt("Retorno ao paciente").
+
+Correção:
+- novo arquivo: clinical-suite-v33.js
+- patient-record.html aponta explicitamente para /static/clinical-suite-v33.js
+- não depende de Ctrl+F5 para trocar a implementação
+- confirmado: não existe prompt de "Retorno ao paciente" nesse arquivo
+- modal NutriOS "Retorno profissional" permanece ativo
+
+UPLOAD:
+GitHub > nutri-chatbot > app > static
+
+Suba:
+- patient-record.html
+- clinical-suite-v33.js
+
+Commit:
+NutriOS v33 - elimina cache antigo do diario
+
+Não apague clinical-suite.js ainda; outras telas podem continuar usando ele.

@@ -1,0 +1,84 @@
+
+:root{
+  --u-bg:#f7faf8;--u-surface:#fff;--u-soft:#f2f8f4;--u-mint:#e7f6ec;
+  --u-line:#dfe9e2;--u-line2:#cfe0d4;--u-text:#101814;--u-muted:#6f7b73;
+  --u-green:#168f43;--u-green2:#21ad55;--u-green3:#6bd58e;--u-greenDark:#205f36;
+  --u-shadow:0 10px 30px rgba(22,80,43,.07);
+}
+html[data-theme="dark"]{
+  --u-bg:#0d1b12;--u-surface:#13261a;--u-soft:#173020;--u-mint:#1d3a27;
+  --u-line:#294936;--u-line2:#365b43;--u-text:#eef8f0;--u-muted:#a8b8ad;
+  --u-green:#50d779;--u-green2:#47c96e;--u-green3:#8be6a5;--u-greenDark:#b9efc6;
+  --u-shadow:0 14px 36px rgba(0,0,0,.24);
+}
+html,body{background:var(--u-bg)!important;color:var(--u-text)!important}
+body{color-scheme:light}
+html[data-theme="dark"] body{color-scheme:dark}
+h1,h2,h3,h4,h5,h6,strong{color:var(--u-text)!important}
+p,small,.muted,.subtitle,.description,.meta,.hint{color:var(--u-muted)!important}
+header,.header,.topbar,.app-topbar,.admin-topbar,.public-header,.patient-header,.nos16-topbar{
+  background:var(--u-surface)!important;border-color:var(--u-line)!important;color:var(--u-text)!important
+}
+aside,.sidebar,.app-sidebar,.admin-sidebar,.patient-sidebar,.portal-sidebar,.nos16-sidebar{
+  background:var(--u-surface)!important;border-color:var(--u-line)!important;color:var(--u-text)!important
+}
+main,.content,.app-content,.admin-content,.page,.app-shell,.admin-shell,.patient-shell,.portal-shell,.nos16-main,.nos16-content,.nos16-shell{
+  background:var(--u-bg)!important;color:var(--u-text)!important
+}
+.card,.panel,.box,.metric-card,.stat-card,.quick-card,.module-card,.admin-card,.analytics-card,.chart-card,
+.summary-card,.table-card,.form-card,.patient-card,.portal-card,.conversation-card,.login-card,.auth-card,
+.nos16-card,.nos16-kpi{
+  background:var(--u-surface)!important;color:var(--u-text)!important;border:1px solid var(--u-line)!important;
+  box-shadow:var(--u-shadow)!important
+}
+a{color:var(--u-green)!important}
+.sidebar a,.app-sidebar a,.admin-sidebar a,.patient-sidebar a,.portal-sidebar a,.nos16-nav a{
+  color:var(--u-text)!important;background:transparent!important
+}
+.sidebar a:hover,.app-sidebar a:hover,.admin-sidebar a:hover,.patient-sidebar a:hover,.portal-sidebar a:hover,.nos16-nav a:hover{
+  background:var(--u-soft)!important;color:var(--u-green)!important
+}
+.sidebar a.active,.app-sidebar a.active,.admin-sidebar a.active,.patient-sidebar a.active,.portal-sidebar a.active,.nos16-nav a.active{
+  background:var(--u-mint)!important;color:var(--u-green)!important;box-shadow:none!important
+}
+button,.btn,.button,input[type="submit"]{box-shadow:none!important}
+.btn-primary,.primary,button.primary,.cta-primary,.action-primary,input[type="submit"]{
+  background:linear-gradient(135deg,var(--u-green),var(--u-green2))!important;
+  color:#fff!important;border-color:var(--u-green)!important
+}
+.btn-secondary,.secondary,button.secondary,.ghost,.outline{
+  background:var(--u-surface)!important;color:var(--u-greenDark)!important;border-color:var(--u-line2)!important
+}
+input,select,textarea{
+  background:var(--u-surface)!important;color:var(--u-text)!important;border-color:var(--u-line2)!important
+}
+input:focus,select:focus,textarea:focus{border-color:var(--u-green)!important;box-shadow:0 0 0 3px rgba(35,174,86,.10)!important}
+
+/* logo / badges / icons */
+.brand,.admin-brand,.logo,.nos16-brand,.public-brand-name{color:var(--u-greenDark)!important}
+.logo-mark,.admin-logo,.brand-icon,.brand-symbol,.nos16-brand-mark,.mark{
+  background:linear-gradient(145deg,var(--u-green2),var(--u-green3))!important;color:#fff!important
+}
+.tag,.hero-badge,.platform-badge,.eyebrow,.badge-info,.status-info,.info{
+  background:var(--u-mint)!important;color:var(--u-green)!important;border-color:var(--u-line2)!important
+}
+.metric-icon,.stat-icon,.quick-icon,.module-icon,.icon-box,.analytics-icon,.nos16-kpi-icon{
+  background:var(--u-mint)!important;color:var(--u-green)!important
+}
+
+/* compact theme toggle, consistent everywhere */
+#nutrios-theme-toggle{
+  position:fixed!important;right:18px!important;bottom:18px!important;z-index:99999!important;
+  width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;
+  padding:0!important;margin:0!important;border-radius:50%!important;
+  display:grid!important;place-items:center!important;
+  background:var(--u-surface)!important;color:var(--u-green)!important;
+  border:1px solid var(--u-line2)!important;box-shadow:var(--u-shadow)!important;
+  font:700 18px/1 system-ui!important;cursor:pointer!important
+}
+#nutrios-theme-toggle:hover{transform:translateY(-1px)!important;border-color:var(--u-green)!important}
+
+/* hard neutralize known blue/purple legacy utility classes */
+.bg-blue,.blue,.text-blue,.bg-purple,.purple,.text-purple,.indigo,.violet,.btn-blue,.btn-purple{
+  background:var(--u-mint)!important;color:var(--u-green)!important;border-color:var(--u-line2)!important
+}

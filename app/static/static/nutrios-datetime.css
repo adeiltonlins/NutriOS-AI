@@ -1,0 +1,10 @@
+/* NutriOS V26 — seletor único de data/hora */
+.nutrios-picker{position:relative;display:flex;align-items:center;width:100%;min-width:0}
+.nutrios-picker>input[type=date],.nutrios-picker>input[type=time],.nutrios-picker>input[type=datetime-local],.nutrios-picker>input[type=month]{width:100%!important;min-width:0;padding-right:46px!important;font-variant-numeric:tabular-nums}
+.nutrios-picker-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:10px;border:1px solid var(--v-line2,#c8dccf);background:var(--v-mint,#e7f6ec);color:var(--v-green,#168f43);display:grid;place-items:center;cursor:pointer;font-size:16px;line-height:1;transition:.18s ease}
+.nutrios-picker-btn:hover{transform:translateY(-50%) scale(1.04);border-color:var(--v-green,#168f43)}
+.nutrios-picker-btn:focus-visible{outline:3px solid color-mix(in srgb,var(--v-green,#168f43) 25%,transparent);outline-offset:2px}
+.nutrios-picker input::-webkit-calendar-picker-indicator{opacity:0;position:absolute;right:0;width:42px;height:100%;cursor:pointer}
+.nutrios-picker-hint{display:block;margin-top:5px;color:var(--v-muted,#718077);font-size:11px;font-weight:600;letter-spacing:.01em}
+html[data-theme=dark] .nutrios-picker-btn{background:var(--v-mint,#1d3b27);border-color:var(--v-line2,#355c42);color:var(--v-green,#51d879)}
+@media(max-width:640px){.nutrios-picker-btn{width:38px;height:38px}.nutrios-picker>input[type=date],.nutrios-picker>input[type=time],.nutrios-picker>input[type=datetime-local],.nutrios-picker>input[type=month]{min-height:46px}}

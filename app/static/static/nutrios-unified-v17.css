@@ -1,0 +1,254 @@
+
+/* ============================================================
+   NutriOS V17 — Unified Premium Health Design System
+   Default: Light Health | Optional: Dark Green
+   ============================================================ */
+:root{
+  --nu-bg:#f7faf8;
+  --nu-white:#ffffff;
+  --nu-soft:#f2f8f4;
+  --nu-soft2:#eaf6ed;
+  --nu-line:#e1e9e3;
+  --nu-line2:#d3e1d7;
+  --nu-text:#111914;
+  --nu-muted:#6d7a72;
+  --nu-green:#169447;
+  --nu-green2:#24b65a;
+  --nu-green3:#70d893;
+  --nu-green-dark:#205f36;
+  --nu-amber:#f59e0b;
+  --nu-blue:#21ad55;
+  --nu-danger:#c94a4a;
+  --nu-shadow:0 10px 28px rgba(22,80,43,.06);
+  --nu-shadow-lg:0 18px 44px rgba(22,80,43,.09);
+  --nu-radius:16px;
+  --nu-surface:#ffffff;
+  --nu-topbar:#ffffff;
+  --nu-sidebar:#ffffff;
+  --nu-hover:#f4f8f5;
+  --nu-active:#eef5f0;
+  --nu-table:#ffffff;
+  --nu-table-head:#f7faf8;
+  --nu-input:#ffffff;
+  --nu-public-section:#ffffff;
+  --nu-public-alt:#f8fbf9;
+}
+
+html[data-theme="dark"]{
+  --nu-bg:#0f1a13;
+  --nu-white:#14231a;
+  --nu-soft:#17291e;
+  --nu-soft2:#193221;
+  --nu-line:#294333;
+  --nu-line2:#36523f;
+  --nu-text:#edf7ef;
+  --nu-muted:#a4b6aa;
+  --nu-green:#43c96f;
+  --nu-green2:#52d97c;
+  --nu-green3:#8ae5a6;
+  --nu-green-dark:#9eeab2;
+  --nu-amber:#f4b64b;
+  --nu-blue:#64cf86;
+  --nu-danger:#ff8686;
+  --nu-shadow:0 12px 34px rgba(0,0,0,.20);
+  --nu-shadow-lg:0 18px 48px rgba(0,0,0,.28);
+  --nu-surface:#14231a;
+  --nu-topbar:#122019;
+  --nu-sidebar:#112017;
+  --nu-hover:#1b3022;
+  --nu-active:#1d3625;
+  --nu-table:#14231a;
+  --nu-table-head:#17291e;
+  --nu-input:#16281d;
+  --nu-public-section:#102016;
+  --nu-public-alt:#14251b;
+}
+
+html,body{background:var(--nu-bg)!important;color:var(--nu-text)!important}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+body::before,body::after{display:none!important}
+*{box-sizing:border-box}
+a{text-decoration:none}
+
+/* GLOBAL */
+header,.header,.topbar,.app-topbar,.admin-topbar,.nos-topbar,.dashboard-topbar,
+.public-header,.landing-header,.portal-header,.patient-header{
+  background:var(--nu-topbar)!important;color:var(--nu-text)!important;
+  border-color:var(--nu-line)!important;box-shadow:none!important;
+}
+aside,.sidebar,.app-sidebar,.admin-sidebar,.nos-sidebar,.side-nav,.patient-sidebar,.portal-sidebar{
+  background:var(--nu-sidebar)!important;color:var(--nu-text)!important;border-color:var(--nu-line)!important;box-shadow:none!important;
+}
+main,.main,.content,.app-content,.admin-content,.dashboard-main,.page,.page-shell,
+.app-shell,.admin-shell,.patient-shell,.portal-shell,.layout,.app-layout,.admin-layout{
+  background:var(--nu-bg)!important;color:var(--nu-text)!important;
+}
+
+.card,.panel,.box,.metric-card,.stat-card,.quick-card,.module-card,.admin-card,.nos-card,
+.analytics-card,.chart-card,.summary-card,.table-card,.form-card,.record-section,.clinical-section,
+.assessment-section,.appointment-card,.finance-summary,.patient-card,.portal-card,.widget,.feature-card,
+.benefit-card,.pricing-card,.intelligence-card,.conversation-card,.login-card,.auth-card,.setup-card,
+.nos16-card,.nos16-kpi{
+  background:var(--nu-surface)!important;color:var(--nu-text)!important;border:1px solid var(--nu-line)!important;
+  box-shadow:var(--nu-shadow)!important;border-radius:var(--nu-radius)!important;
+}
+
+/* TYPOGRAPHY */
+h1,h2,h3,h4,h5,h6,.title,.page-title,.section-title,.hero-title,.card-title,.metric-value,.stat-value,.kpi-value,
+.nos16-kpi-value,.nos16-card h3,.nos16-head h1{
+  color:var(--nu-text)!important;text-shadow:none!important;
+}
+p,.muted,.subtitle,.description,.caption,.meta,.help,.hint,small,.nos16-card .sub,.nos16-head p{
+  color:var(--nu-muted)!important;
+}
+.eyebrow,.kicker,.section-kicker,.platform-badge,.hero-badge{
+  color:var(--nu-green)!important;background:var(--nu-soft)!important;border:1px solid var(--nu-line2)!important;
+}
+
+/* BRAND */
+.brand,.admin-brand,.nos-brand,.sidebar-brand,.logo,.nos16-brand{
+  color:var(--nu-green-dark)!important;background:transparent!important;
+}
+.brand::before,.brand::after,.admin-brand::before,.admin-brand::after,.nos-brand::before,.nos-brand::after,.logo::before,.logo::after{
+  content:none!important;display:none!important;
+}
+.brand small,.admin-brand small,.nos-brand small,.brand .brand-os,.admin-brand .brand-os,.nos-brand .brand-os,
+.brand .brand-n,.admin-brand .brand-n,.nos-brand .brand-n,.brand .brand-suffix,.admin-brand .brand-suffix,.nos-brand .brand-suffix{
+  display:none!important;
+}
+.brand strong,.admin-brand strong,.nos-brand strong,.brand-name,.logo-text,.nos16-brand strong{
+  color:var(--nu-green-dark)!important;font-weight:850!important;letter-spacing:-.045em!important;
+}
+.logo-mark,.admin-logo,.brand-icon,.brand-symbol,.nos16-brand-mark{
+  background:linear-gradient(145deg,var(--nu-green2),var(--nu-green3))!important;color:#fff!important;border:none!important;box-shadow:none!important;
+}
+
+/* NAV */
+.sidebar a,.app-sidebar a,.admin-sidebar a,.nos-sidebar a,.patient-sidebar a,.portal-sidebar a,.side-nav a,.nos16-nav a{
+  color:var(--nu-text)!important;background:transparent!important;border:none!important;border-radius:10px!important;text-decoration:none!important;
+}
+.sidebar a:hover,.app-sidebar a:hover,.admin-sidebar a:hover,.nos-sidebar a:hover,.patient-sidebar a:hover,.portal-sidebar a:hover,.nos16-nav a:hover{
+  background:var(--nu-hover)!important;color:var(--nu-green)!important;
+}
+.sidebar a.active,.app-sidebar a.active,.admin-sidebar a.active,.nos-sidebar a.active,.patient-sidebar a.active,.portal-sidebar a.active,.side-nav a.active,.nos16-nav a.active{
+  background:var(--nu-active)!important;color:var(--nu-green)!important;box-shadow:none!important;
+}
+
+/* BUTTONS */
+button,.btn,.button,input[type="submit"]{border-radius:10px!important;box-shadow:none!important}
+.btn-primary,.primary,button.primary,.cta-primary,.action-primary,input[type="submit"]{
+  background:var(--nu-green)!important;color:#fff!important;border:1px solid var(--nu-green)!important;
+}
+.btn-secondary,.secondary,button.secondary,.ghost,.outline{
+  background:var(--nu-surface)!important;color:var(--nu-text)!important;border:1px solid var(--nu-line2)!important;
+}
+
+/* FORMS */
+input,select,textarea{
+  background:var(--nu-input)!important;color:var(--nu-text)!important;border:1px solid var(--nu-line2)!important;box-shadow:none!important;border-radius:10px!important;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--nu-green)!important;box-shadow:0 0 0 3px rgba(38,171,82,.10)!important;outline:none!important}
+input::placeholder,textarea::placeholder{color:var(--nu-muted)!important}
+
+/* TABLES */
+table{background:var(--nu-table)!important;color:var(--nu-text)!important}
+thead,thead tr{background:var(--nu-table-head)!important}
+th{color:var(--nu-muted)!important;border-color:var(--nu-line)!important}
+td{color:var(--nu-text)!important;border-color:var(--nu-line)!important}
+tbody tr:hover td{background:var(--nu-hover)!important}
+
+/* STATUS */
+.success,.positive,.badge-success,.status-success,.pill-success{background:var(--nu-soft2)!important;color:var(--nu-green)!important}
+.warning,.badge-warning,.status-warning,.pill-warning{background:rgba(245,158,11,.14)!important;color:var(--nu-amber)!important}
+.danger,.badge-danger,.status-danger{background:rgba(201,74,74,.13)!important;color:var(--nu-danger)!important}
+.info,.badge-info,.status-info{background:rgba(22,143,67,.13)!important;color:var(--nu-blue)!important}
+
+/* KPI / ICONS */
+.metric-icon,.stat-icon,.quick-icon,.module-icon,.icon-box,.analytics-icon,.nos-metric-icon,.patient-icon,.portal-icon,.nos16-kpi-icon{
+  background:var(--nu-soft2)!important;color:var(--nu-green)!important;border:none!important;box-shadow:none!important;
+}
+
+/* ANALYTICS */
+.analytics-section,.analytics-wrap,.analytics-grid{background:transparent!important}
+.analytics-card,.chart-card{background:var(--nu-surface)!important;border:1px solid var(--nu-line)!important;box-shadow:var(--nu-shadow)!important}
+.analytics-card canvas,.chart-card canvas,.nos16-chart-wrap canvas,.nos16-donut-wrap canvas{background:transparent!important}
+.analytics-empty,.chart-empty,.nos16-empty{background:var(--nu-soft)!important;color:var(--nu-muted)!important;border:1px dashed var(--nu-line2)!important}
+
+/* PUBLIC LANDING */
+body.public-page,body.landing-page,.public-page,.landing-page{background:var(--nu-public-section)!important;color:var(--nu-text)!important}
+.public-page header,.landing-page header,.public-header,.landing-header{background:var(--nu-topbar)!important;border-bottom:1px solid var(--nu-line)!important}
+.hero,.landing-hero,.public-hero{
+  background:
+    radial-gradient(circle at 88% 12%,rgba(49,185,91,.12),transparent 28%),
+    linear-gradient(180deg,var(--nu-public-section) 0%,var(--nu-public-alt) 100%)!important;
+  border-color:var(--nu-line)!important;color:var(--nu-text)!important;
+}
+.hero h1,.landing-hero h1,.public-hero h1{color:var(--nu-text)!important}
+.hero-gradient,.gradient-text{
+  background:linear-gradient(90deg,var(--nu-green),var(--nu-green3))!important;
+  -webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;
+}
+.public-page section,.landing-page section{background:var(--nu-public-section)!important}
+.public-page section:nth-of-type(even),.landing-page section:nth-of-type(even){background:var(--nu-public-alt)!important}
+.intelligence-card,.public-card,.feature-card,.benefit-card,.pricing-card{background:var(--nu-surface)!important;color:var(--nu-text)!important;border:1px solid var(--nu-line)!important}
+.intelligence-card .message,.ai-message,.chat-bubble{background:var(--nu-soft)!important;color:var(--nu-text)!important;border:1px solid var(--nu-line)!important}
+
+/* LOGIN / FIRST ACCESS / PASSWORD */
+body.login-page,body.auth-page,.login-page,.auth-page,.login-shell,.auth-shell,.setup-page,.first-access-page{
+  background:radial-gradient(circle at 80% 10%,rgba(50,185,91,.10),transparent 30%),var(--nu-bg)!important;color:var(--nu-text)!important;
+}
+.login-card,.auth-card,.setup-card,.first-access-card{background:var(--nu-surface)!important;border:1px solid var(--nu-line)!important;box-shadow:var(--nu-shadow-lg)!important}
+.login-card h1,.auth-card h1,.setup-card h1,.first-access-card h1{color:var(--nu-text)!important}
+
+/* PATIENT */
+body.patient-page,.patient-page,.patient-shell,.patient-dashboard,.portal-shell,.portal-page{background:var(--nu-bg)!important;color:var(--nu-text)!important}
+.patient-header,.portal-header{background:var(--nu-topbar)!important;border-bottom:1px solid var(--nu-line)!important}
+.patient-card,.portal-card,.patient-widget,.portal-widget{background:var(--nu-surface)!important;border:1px solid var(--nu-line)!important}
+.patient-hero,.portal-hero{background:linear-gradient(135deg,var(--nu-soft2),var(--nu-surface))!important;color:var(--nu-text)!important;border:1px solid var(--nu-line)!important}
+
+/* CONVERSATIONS */
+.chat-shell,.conversation-panel,.conversation-card,.message-list{background:var(--nu-surface)!important;color:var(--nu-text)!important}
+.message.user,.chat-message.user{background:var(--nu-soft2)!important;color:var(--nu-text)!important}
+.message.assistant,.chat-message.assistant{background:var(--nu-soft)!important;color:var(--nu-text)!important}
+
+/* UPLOAD */
+.photo-slot,.upload-slot,.dropzone,.image-slot{background:var(--nu-soft)!important;border:1px dashed var(--nu-line2)!important;color:var(--nu-muted)!important}
+
+/* THEME TOGGLE */
+#nutrios-theme-toggle{
+  position:fixed;right:18px;bottom:18px;z-index:9999;
+  display:flex;align-items:center;gap:8px;
+  border:1px solid var(--nu-line2)!important;
+  background:var(--nu-surface)!important;
+  color:var(--nu-text)!important;
+  padding:10px 13px!important;border-radius:999px!important;
+  box-shadow:var(--nu-shadow-lg)!important;
+  font-size:13px!important;font-weight:700!important;cursor:pointer!important;
+}
+#nutrios-theme-toggle:hover{border-color:var(--nu-green)!important}
+#nutrios-theme-toggle .theme-dot{
+  width:10px;height:10px;border-radius:50%;background:var(--nu-green);display:inline-block;
+}
+
+/* FOOTER */
+footer,.footer{background:var(--nu-surface)!important;color:var(--nu-muted)!important;border-top:1px solid var(--nu-line)!important}
+
+/* V16 STRUCTURAL SHELL THEME */
+.nos16-shell,.nos16-main,.nos16-content{background:var(--nu-bg)!important}
+.nos16-sidebar{background:var(--nu-sidebar)!important;border-color:var(--nu-line)!important}
+.nos16-topbar{background:var(--nu-topbar)!important;border-color:var(--nu-line)!important}
+.nos16-search,.nos16-date{background:var(--nu-input)!important;color:var(--nu-muted)!important;border-color:var(--nu-line)!important}
+.nos16-user,.nos16-user strong{color:var(--nu-text)!important}
+.nos16-kpi-label,.nos16-kpi-foot{color:var(--nu-muted)!important}
+.nos16-list-item{border-color:var(--nu-line)!important}
+
+/* CRUSH LEGACY DARK INLINE COLORS */
+[style*="background:#0"],[style*="background: #0"],[style*="background-color:#0"],[style*="background-color: #0"],
+[style*="background:#1"],[style*="background: #1"]{background:var(--nu-surface)!important;background-color:var(--nu-surface)!important}
+[style*="color:#fff"],[style*="color: #fff"],[style*="color:white"],[style*="color: white"]{color:var(--nu-text)!important}
+.btn-primary[style*="color"],.primary[style*="color"],button.primary[style*="color"],.cta-primary[style*="color"],input[type="submit"][style*="color"]{color:#fff!important}
+
+@media(max-width:900px){
+  aside,.sidebar,.app-sidebar,.admin-sidebar,.nos-sidebar,.patient-sidebar,.portal-sidebar{background:var(--nu-sidebar)!important}
+  #nutrios-theme-toggle{right:12px;bottom:12px}
+}

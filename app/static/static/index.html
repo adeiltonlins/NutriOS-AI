@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriOS — seu nutricionista com IA</title>
+<link rel="stylesheet" href="/static/titanium.css"><link rel="stylesheet" href="/static/nutrios-premium.css">
+<link rel="stylesheet" href="/static/nutribot-ux.css">
+<script src="/static/nutribot-ux.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        colors: {
+          brand: { DEFAULT: '#168f43', dark: '#205f36', soft: '#e5f6ea' },
+        },
+        keyframes: {
+          riseIn: { '0%': { opacity: 0, transform: 'translateY(10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+          fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+          blink: { '0%,49%': { opacity: 1 }, '50%,100%': { opacity: 0 } },
+          bounceDot: { '0%,60%,100%': { transform: 'translateY(0)', opacity: .35 }, '30%': { transform: 'translateY(-4px)', opacity: 1 } },
+        },
+        animation: {
+          riseIn: 'riseIn .35s ease-out',
+          fadeIn: 'fadeIn .4s ease-out',
+          blink: 'blink 1s step-start infinite',
+          bounceDot: 'bounceDot 1.1s ease-in-out infinite',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: 'Inter', sans-serif; position:relative; overflow:hidden; }
+  body::before,body::after{content:"";position:fixed;border-radius:999px;filter:blur(90px);pointer-events:none;opacity:.2;z-index:0}
+  body::before{width:460px;height:460px;background:#168f43;top:-220px;left:-120px}
+  body::after{width:420px;height:420px;background:#10b981;right:-180px;bottom:-240px}
+  .app-shell{position:relative;z-index:1}
+  .glass-card{background:rgba(255,255,255,.82);backdrop-filter:blur(22px);box-shadow:0 30px 90px rgba(11,26,17,.14)}
+  .dark .glass-card{background:rgba(11,26,17,.76);box-shadow:0 32px 90px rgba(0,0,0,.42)}
+  .brand-orb{box-shadow:0 10px 35px rgba(22,143,67,.20)}
+  .hero-icon{box-shadow:0 14px 40px rgba(22,143,67,.15)}
+  .hero-gradient{background:linear-gradient(100deg,#e5f6ea 10%,#64cf86 55%,#64cf86);-webkit-background-clip:text;background-clip:text;color:transparent}
+  html:not(.dark) .hero-gradient{background:linear-gradient(100deg,#0b1a11,#168f43 62%,#059669);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .quick-action{position:relative;overflow:hidden;min-height:68px;padding-left:52px!important}
+  .quick-action::before{content:attr(data-icon);position:absolute;left:15px;top:50%;transform:translateY(-50%);width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:rgba(22,143,67,.10);font-size:14px}
+  .quick-action::after{content:"→";position:absolute;right:13px;top:50%;transform:translateY(-50%);opacity:.35;transition:.2s}
+  .quick-action:hover::after{transform:translate(3px,-50%);opacity:1}
+  .trust-pill{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:rgba(100,207,134,.09);border:1px solid rgba(100,207,134,.13)}
+  .landing-layout{display:grid;grid-template-columns:minmax(210px,.72fr) minmax(0,1.35fr);gap:34px;align-items:center;width:100%;max-width:820px;text-align:left}
+  .profile-card{padding:22px;border-radius:24px;background:linear-gradient(145deg,rgba(22,143,67,.10),rgba(16,185,129,.08));border:1px solid rgba(100,207,134,.20);text-align:center}
+  .profile-photo{width:112px;height:112px;margin:0 auto 15px;border-radius:32px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#168f43,#10b981);color:white;font-size:30px;font-weight:800;box-shadow:0 18px 45px rgba(22,143,67,.18)}
+  .profile-photo img{width:100%;height:100%;object-fit:cover}
+  @media(max-width:720px){.landing-layout{grid-template-columns:1fr;text-align:center;gap:18px}.profile-card{display:flex;align-items:center;gap:14px;text-align:left;padding:14px}.profile-photo{width:68px;height:68px;border-radius:20px;margin:0}.profile-copy{flex:1}}
+  #conversation::-webkit-scrollbar { width: 7px; }
+  #conversation::-webkit-scrollbar-thumb { background: theme('colors.slate.300'); border-radius: 8px; }
+  .dark #conversation::-webkit-scrollbar-thumb { background: theme('colors.slate.700'); }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+
+
+
+<link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
+<link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
+<link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
+<link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
+<link rel="stylesheet" href="/static/nutrios-v28-clinical-flow.css?v=28">
+<link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=3">
+</head>
+<body class="h-full bg-gradient-to-br from-slate-50 via-emerald-50 to-emerald-50 text-slate-900 dark:from-[#0b1a11] dark:via-[#12271a] dark:to-[#17301f] dark:text-slate-100 transition-colors public-page">
+
+<div class="app-shell h-full max-w-5xl mx-auto flex flex-col p-3 sm:p-5 lg:p-7">
+
+  <!-- Top bar -->
+  <header class="flex items-center justify-between mb-3 sm:mb-4 shrink-0">
+    <div class="flex items-center gap-3">
+      <div id="brandLogo" class="brand-orb w-11 h-11 rounded-2xl bg-gradient-to-br from-brand to-emerald-500 flex items-center justify-center shrink-0 overflow-hidden">
+        <svg viewBox="0 0 24 24" class="w-5 h-5 text-white" fill="none">
+          <path d="M12 3C8 3 5 6.5 5 10.8C5 15.6 8.5 19.5 12 21C15.5 19.5 19 15.6 19 10.8C19 6.5 16 3 12 3Z" fill="white" fill-opacity=".95"/>
+          <path d="M12 7.5V14.5M9 10.5C9 10.5 9.8 12 12 12C14.2 12 15 10.5 15 10.5" stroke="#168f43" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 id="brandName" class="font-extrabold text-[15px] sm:text-base tracking-tight leading-tight">NutriOS</h1>
+        <p id="brandSpecialty" class="hidden sm:block text-xs text-slate-500 dark:text-slate-400">Assistente virtual de nutrição</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="newChatBtn" title="Nova conversa" aria-label="Nova conversa"
+        class="w-9 h-9 rounded-lg border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-brand-soft hover:text-brand dark:hover:bg-emerald-900/40 hover:border-brand-soft transition-colors">
+        <svg viewBox="0 0 24 24" class="w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button id="themeToggle" title="Alternar tema" aria-label="Alternar tema"
+        class="w-9 h-9 rounded-lg border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-brand-soft hover:text-brand dark:hover:bg-emerald-900/40 hover:border-brand-soft transition-colors">
+        <svg viewBox="0 0 24 24" class="w-[17px] h-[17px]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Card -->
+  <main class="glass-card flex-1 flex flex-col border border-white/60 dark:border-white/10 rounded-[28px] overflow-hidden min-h-0">
+
+    <div class="px-5 sm:px-7 py-3.5 border-b border-slate-200/70 dark:border-white/10 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-50 dark:ring-emerald-500/10"></span>
+      <span class="text-xs font-semibold text-slate-500 dark:text-slate-300">Online agora</span></div><span class="hidden sm:block text-[11px] text-slate-400">Atendimento inteligente e seguro</span>
+    </div>
+
+    <!-- Landing / empty state -->
+    <div id="landing" class="flex-1 flex items-center justify-center px-5 py-7 sm:py-10 animate-fadeIn">
+      <div class="landing-layout"><aside class="profile-card"><div id="profilePhotoLarge" class="profile-photo">NB</div><div class="profile-copy"><div class="text-[10px] font-bold tracking-[.14em] text-emerald-600 mb-2">ATENDIMENTO DIGITAL</div><h3 id="profileNameLarge" class="text-lg font-extrabold mb-1">NutriOS</h3><p id="profileSpecialty" class="text-xs text-slate-500 dark:text-slate-400 mb-2">Nutrição inteligente e segura</p><div id="professionalLinks" class="flex justify-center sm:justify-start lg:justify-center gap-3 text-xs"></div><div class="mt-4 text-[11px] text-emerald-600 dark:text-emerald-400">● Assistente disponível agora</div></div></aside><section>
+      <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200/70 dark:border-emerald-400/20 bg-emerald-50/80 dark:bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold tracking-wide text-emerald-700 dark:text-emerald-300"><span>✦</span> ACOLHIMENTO INTELIGENTE 24H</div>
+      <h2 id="heroTitle" class="hero-gradient text-3xl sm:text-[38px] leading-tight font-extrabold tracking-[-.035em] mb-3">Converse antes de agendar</h2>
+      <p id="welcomeText" class="text-sm sm:text-[15px] leading-relaxed text-slate-500 dark:text-slate-300 max-w-lg mb-5">Tire suas primeiras dúvidas e descubra o próximo passo para cuidar da sua alimentação.</p>
+      <div id="quickActions" class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-2">
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
+          data-icon="🥗" data-q="Pode me ajudar a montar uma dieta?">
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Montar dieta</span>
+        </button>
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
+          data-icon="⚡" data-q="Como calculo minhas calorias diárias?">
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Calcular calorias</span>
+        </button>
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
+          data-icon="💪" data-q="O que preciso saber para ganhar massa muscular?">
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Ganhar massa</span>
+        </button>
+        <button class="quick-action group text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 hover:border-brand hover:bg-brand-soft dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
+          data-icon="🎯" data-q="Como posso perder gordura de forma saudável?">
+          <span class="block text-[13px] font-semibold text-slate-800 dark:text-slate-100 group-hover:text-brand dark:group-hover:text-emerald-400">Perder gordura</span>
+        </button>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-2 text-[10px] text-slate-500 dark:text-slate-400"><span class="trust-pill">✓ Acolhimento inicial</span><span class="trust-pill">🔒 Dados protegidos</span><span class="trust-pill">● Disponível 24 horas</span></div></section></div>
+    </div>
+
+    <!-- Conversation -->
+    <div id="conversation" class="flex-1 hidden flex-col gap-4 overflow-y-auto px-4 sm:px-5 py-5"></div>
+
+    <!-- Composer -->
+    <div class="border-t border-slate-200/70 dark:border-white/10 p-3 sm:p-4 bg-white/40 dark:bg-black/10 shrink-0">
+      <form id="composer" class="flex items-end gap-2 bg-white/90 dark:bg-emerald-950/30/80 border border-slate-200 dark:border-emerald-800/60 rounded-2xl px-3 py-2 shadow-sm focus-within:border-brand focus-within:ring-4 focus-within:ring-brand-soft dark:focus-within:ring-emerald-500/10 transition-shadow">
+        <textarea id="pergunta" rows="1" maxlength="500"
+          placeholder="Pergunte algo sobre sua dieta..."
+          aria-label="Sua pergunta sobre nutrição"
+          class="flex-1 resize-none bg-transparent outline-none text-[14.5px] py-2.5 max-h-28 placeholder:text-slate-400 dark:placeholder:text-slate-500"></textarea>
+        <button type="submit" id="enviarBtn" aria-label="Enviar pergunta"
+          class="w-10 h-10 shrink-0 rounded-xl bg-brand text-white flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:bg-brand-dark active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed transition-all">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </button>
+      </form>
+      <p id="legalText" class="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-2">Informações educativas. A IA não substitui avaliação de nutricionista ou médico.</p>
+    </div>
+  </main>
+</div>
+
+<dialog id="contactDialog" class="rounded-2xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-0 shadow-2xl backdrop:bg-slate-950/70 w-[min(92vw,460px)]">
+  <form id="contactForm" class="p-6 space-y-4">
+    <div><h2 class="text-xl font-bold">Dados para atendimento</h2><p class="text-sm text-slate-500 mt-1">A clínica usará estes dados somente para conferir o pagamento e falar com você.</p></div>
+    <label class="block text-sm font-semibold">Nome completo<input id="leadName" required minlength="2" maxlength="120" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-emerald-800/60 bg-transparent px-3 py-3 font-normal" autocomplete="name"></label>
+    <label class="block text-sm font-semibold">WhatsApp com DDD<input id="leadPhone" required minlength="10" maxlength="30" class="mt-1 w-full rounded-xl border border-slate-300 dark:border-emerald-800/60 bg-transparent px-3 py-3 font-normal" autocomplete="tel" placeholder="Ex.: 55 11 99999-9999"></label>
+    <label class="flex gap-2 text-xs text-slate-500"><input id="leadConsent" required type="checkbox" class="mt-0.5"><span>Autorizo a clínica a entrar em contato comigo pelo WhatsApp sobre este atendimento.</span></label>
+    <p id="contactError" class="hidden text-sm text-red-500"></p>
+    <div class="flex gap-2"><button type="button" id="cancelContact" class="flex-1 rounded-xl border border-slate-300 px-4 py-3">Agora não</button><button type="submit" id="submitContact" class="flex-1 rounded-xl bg-emerald-600 text-white font-bold px-4 py-3">Continuar</button></div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  const API_URL = window.location.origin + '/chat';
+  let clientId = null;
+  const slugMatch = window.location.pathname.match(/^\/n\/([^/]+)$/);
+  const clientSlug = slugMatch ? decodeURIComponent(slugMatch[1]) : null;
+  const testMatch = window.location.pathname.match(/^\/admin\/testes\/([^/]+)\/chat$/);
+  const adminTestTarget = testMatch ? testMatch[1] : new URLSearchParams(window.location.search).get('admin_test');
+  const testMode = Boolean(adminTestTarget);
+  const masterPublic = window.location.pathname === '/assistente';
+  const sourceParams = new URLSearchParams(window.location.search);
+  const detectedSource = (sourceParams.get('origem') || sourceParams.get('utm_source') || sessionStorage.getItem('nutribot-source') || (() => { try { return document.referrer ? new URL(document.referrer).hostname.replace(/^www\./,'') : 'direto'; } catch { return 'direto'; } })()).slice(0,80);
+  sessionStorage.setItem('nutribot-source', detectedSource);
+  let tenantColor = '#168f43';
+  let assistantDisplayName = 'NutriOS';
+  let adminTestProfile = null;
+  const fetchJson = async (url, options={}) => {
+    const resp = await fetch(url, { credentials: 'same-origin', ...options });
+    const data = await resp.json().catch(() => ({}));
+    if (resp.status === 401 || resp.status === 403) {
+      const err = new Error(data.detail || 'Sua sessão de administrador expirou. Entre novamente.');
+      err.auth = true;
+      throw err;
+    }
+    if (!resp.ok) { const msg = data.detail || (testMode ? `Falha no teste do assistente (HTTP ${resp.status})` : `Falha HTTP ${resp.status}`); throw new Error(msg); }
+    return data;
+  };
+  const clientReady = testMode
+    ? fetchJson(adminTestTarget === 'master' ? '/admin/api/chatbot-mestre/teste' : '/admin/api/clientes/' + encodeURIComponent(adminTestTarget) + '/teste').then(x => { adminTestProfile = x; clientId = x.id; return x; })
+    : window.location.pathname === '/app/chat'
+      ? fetchJson('/api/me').then(u => { clientId = u.id; return u; })
+      : masterPublic ? Promise.resolve().then(() => { clientId = 'master'; })
+      : Promise.resolve();
+  const CONTATO_URL = window.location.origin + '/contato';
+  let historicoConversa = [];
+  const makeSessionId=()=>{try{return crypto.randomUUID()}catch(e){return 'sess-'+Date.now()+'-'+Math.random().toString(36).slice(2,12)}};
+  let sessionId = makeSessionId();
+  let pollInterval = null;
+  let pollAttempts = 0;
+
+  const landing = document.getElementById('landing');
+  const conversation = document.getElementById('conversation');
+  const composer = document.getElementById('composer');
+  const input = document.getElementById('pergunta');
+  const enviarBtn = document.getElementById('enviarBtn');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const themeToggle = document.getElementById('themeToggle');
+  const contactDialog = document.getElementById('contactDialog');
+  const contactForm = document.getElementById('contactForm');
+
+  async function carregarIdentidadePublica() {
+    if (!clientSlug && !testMode && !masterPublic) return;
+    await clientReady;
+    const identityUrl = testMode ? null : masterPublic ? '/public/chatbot-mestre' : '/public/clientes/' + encodeURIComponent(clientSlug);
+    const raw = testMode ? adminTestProfile : await fetchJson(identityUrl);
+    const cfg = testMode ? {...(raw.ai_config || {}), nome:(raw.ai_config || {}).nome || raw.name} : raw;
+    tenantColor = cfg.cor_principal || tenantColor;
+    assistantDisplayName = cfg.identidade_ia || `Assistente de ${cfg.nome}`;
+    document.title = `${assistantDisplayName} — ${cfg.nome}`;
+    document.getElementById('brandName').textContent = assistantDisplayName;
+    document.getElementById('brandSpecialty').textContent = [cfg.nome, cfg.especialidade].filter(Boolean).join(' • ');
+    document.getElementById('heroTitle').textContent = cfg.identidade_ia || `Atendimento da ${cfg.nome}`;
+    document.getElementById('welcomeText').textContent = cfg.mensagem_inicial || `Olá! Sou a assistente virtual de ${cfg.nome}. Como posso ajudar você hoje?`;
+    document.getElementById('enviarBtn').style.backgroundColor = tenantColor;
+    const logo = document.getElementById('brandLogo'); logo.style.background = tenantColor;
+    document.getElementById('profileNameLarge').textContent = cfg.nome;
+    document.getElementById('profileSpecialty').textContent = cfg.especialidade || 'Atendimento nutricional personalizado';
+    const profile = document.getElementById('profilePhotoLarge'); profile.style.background = tenantColor;
+    if (cfg.logo_url) { const img = `<img src="${cfg.logo_url.replace(/"/g, '&quot;')}" alt="Foto de ${cfg.nome.replace(/"/g, '&quot;')}">`; logo.innerHTML = img; profile.innerHTML = img; }
+    const links = document.getElementById('professionalLinks');
+    if (cfg.crn) links.insertAdjacentHTML('beforeend', `<span>CRN ${String(cfg.crn).replace(/[<>&]/g,'')}</span>`);
+    if (cfg.instagram) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="${String(cfg.instagram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener">Instagram</a>`);
+    if (clientSlug) links.insertAdjacentHTML('beforeend', `<a class="font-semibold" style="color:${tenantColor}" href="/paciente/login?nutri=${encodeURIComponent(clientSlug)}">Já sou paciente</a>`);
+    const actions = Array.isArray(cfg.acoes_rapidas) ? cfg.acoes_rapidas : String(cfg.acoes_rapidas || '').split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+    if (actions.length) document.getElementById('quickActions').innerHTML = actions.slice(0,4).map(label => `<button class="quick-action text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-emerald-800/60 bg-white dark:bg-emerald-950/30 transition-colors shadow-sm" data-icon="✦" data-q="${label.replace(/"/g,'&quot;')}"><span class="block text-[13px] font-semibold">${label.replace(/[<>&]/g,'')}</span></button>`).join('');
+    document.getElementById('legalText').textContent = `Atendimento virtual de ${cfg.nome}. Informações educativas; a IA não substitui avaliação profissional.`;
+    const intro = cfg.mensagem_inicial || `Olá! Sou a assistente virtual de ${cfg.nome}. Como posso ajudar você hoje?`;
+    mostrarChat();
+    digitarResposta(intro);
+    historicoConversa.push({autor:'bot', texto:intro});
+  }
+  carregarIdentidadePublica().catch((e) => {
+    mostrarChat();
+    mostrarErro(e.message || 'Não foi possível carregar este assistente.');
+    if (e.auth) setTimeout(() => { window.top.location.href = '/login'; }, 1200);
+  });
+
+  /* ---- Tema unificado NutriOS ---- */
+  const aplicarTema = (tema) => window.NutriOSTheme ? window.NutriOSTheme.apply(tema) : document.documentElement.classList.toggle('dark', tema === 'dark');
+  if (window.NutriOSTheme) aplicarTema(window.NutriOSTheme.get());
+  themeToggle.addEventListener('click', () => window.NutriOSTheme ? window.NutriOSTheme.toggle() : aplicarTema(document.documentElement.classList.contains('dark') ? 'light' : 'dark'));
+
+  /* ---- Textarea auto-resize ---- */
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 112) + 'px';
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); composer.requestSubmit(); }
+  });
+
+  /* ---- Nova conversa ---- */
+  function novaConversa() {
+    historicoConversa = [];
+    sessionId = makeSessionId();
+    pararPolling();
+    conversation.innerHTML = '';
+    conversation.classList.add('hidden');
+    conversation.classList.remove('flex');
+    landing.classList.remove('hidden');
+  }
+  newChatBtn.addEventListener('click', novaConversa);
+
+  function mostrarChat() {
+    if (!landing.classList.contains('hidden')) {
+      landing.classList.add('hidden');
+      conversation.classList.remove('hidden');
+      conversation.classList.add('flex');
+    }
+  }
+
+  const horaAgora = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  function linkify(texto) {
+    const escapado = texto.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return escapado.replace(/(https?:\/\/[^\s]+)/g, url =>
+      `<a href="${url}" target="_blank" rel="noopener" class="underline font-semibold">${url}</a>`);
+  }
+
+  function criarLinha(autor) {
+    const isUser = autor === 'user';
+    const row = document.createElement('div');
+    row.className = `flex gap-2.5 max-w-[90%] animate-riseIn ${isUser ? 'self-end flex-row-reverse' : 'self-start'}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[11px] font-bold text-white mt-0.5 ${isUser ? 'bg-slate-400 dark:bg-slate-600' : 'bg-gradient-to-br from-brand to-emerald-500'}`;
+    avatar.textContent = isUser ? 'Eu' : 'NB';
+    avatar.title = isUser ? 'Você' : assistantDisplayName;
+    if (!isUser) avatar.style.background = tenantColor;
+    row.appendChild(avatar);
+
+    const col = document.createElement('div');
+    col.className = `flex flex-col min-w-0 ${isUser ? 'items-end' : 'items-start'}`;
+    if (!isUser) { const who=document.createElement('span'); who.className='text-[10px] font-bold text-slate-400 dark:text-slate-500 mb-1 px-1'; who.textContent=assistantDisplayName; col.appendChild(who); }
+    row.appendChild(col);
+
+    conversation.appendChild(row);
+    conversation.scrollTop = conversation.scrollHeight;
+    return col;
+  }
+  function bolhaBase(isUser) {
+    const bubble = document.createElement('div');
+    bubble.className = isUser
+      ? 'px-4 py-2.5 text-[14.5px] leading-relaxed shadow-sm bg-brand text-white rounded-2xl rounded-tr-sm break-words whitespace-pre-wrap'
+      : 'px-4 py-2.5 text-[14.5px] leading-relaxed shadow-sm bg-slate-50 dark:bg-emerald-950/30 border border-slate-100 dark:border-emerald-800/60 rounded-2xl rounded-tl-sm break-words whitespace-pre-wrap';
+    return bubble;
+  }
+
+  function adicionarTimestamp(col) {
+    const ts = document.createElement('span');
+    ts.className = 'text-[10px] text-slate-400 dark:text-slate-500 mt-1 px-1';
+    ts.textContent = horaAgora();
+    col.appendChild(ts);
+  }
+
+  function adicionarMensagemUsuario(texto) {
+    const col = criarLinha('user');
+    const bubble = bolhaBase(true);
+    bubble.textContent = texto;
+    col.appendChild(bubble);
+    adicionarTimestamp(col);
+  }
+
+  /* ---- Efeito de digitação da resposta ---- */
+  function digitarResposta(texto, onDone) {
+    const col = criarLinha('bot');
+    const bubble = bolhaBase(false);
+    const cursor = document.createElement('span');
+    cursor.className = 'inline-block w-[2px] h-[14px] bg-brand align-middle ml-0.5 animate-blink';
+    bubble.appendChild(cursor);
+    col.appendChild(bubble);
+
+    let i = 0;
+    const passo = Math.max(1, Math.floor(texto.length / 120));
+    const intervalo = setInterval(() => {
+      i = Math.min(texto.length, i + passo);
+      bubble.innerHTML = linkify(texto.slice(0, i));
+      bubble.appendChild(cursor);
+      conversation.scrollTop = conversation.scrollHeight;
+      if (i >= texto.length) {
+        clearInterval(intervalo);
+        cursor.remove();
+        bubble.innerHTML = linkify(texto);
+        adicionarTimestamp(col);
+        onDone && onDone(col);
+      }
+    }, 12);
+  }
+
+  function mostrarPensando() {
+    const col = criarLinha('bot');
+    col.id = 'thinkingCol';
+    const bubble = document.createElement('div');
+    bubble.className = 'flex items-center gap-1.5 px-4 py-3 bg-slate-50 dark:bg-emerald-950/30 border border-slate-100 dark:border-emerald-800/60 rounded-2xl rounded-tl-sm shadow-sm';
+    bubble.innerHTML = `
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounceDot" style="animation-delay:0ms"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounceDot" style="animation-delay:150ms"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounceDot" style="animation-delay:300ms"></span>`;
+    col.appendChild(bubble);
+  }
+
+  function removerPensando() {
+    const el = document.getElementById('thinkingCol');
+    if (el) el.remove();
+  }
+
+  function mostrarErro(texto) {
+    const div = document.createElement('div');
+    div.className = 'self-center text-[13px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-3 py-2 max-w-[90%] animate-fadeIn';
+    div.textContent = texto;
+    conversation.appendChild(div);
+    conversation.scrollTop = conversation.scrollHeight;
+  }
+
+  function mostrarPagamento(dados) {
+    const col = criarLinha('bot');
+    const bubble = bolhaBase(false);
+    const texto = document.createElement('p'); texto.textContent = dados.message; bubble.appendChild(texto);
+    const pay = document.createElement('a'); pay.href = dados.payment_url; pay.target = '_blank'; pay.rel = 'noopener'; pay.textContent = 'Abrir pagamento'; pay.className = 'inline-block mt-3 rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; bubble.appendChild(pay);
+    const claim = document.createElement('button'); claim.type = 'button'; claim.textContent = 'Já realizei o pagamento'; claim.className = 'block mt-2 rounded-lg border border-emerald-500 text-emerald-600 dark:text-emerald-300 font-bold px-4 py-2';
+    claim.addEventListener('click', async () => {
+      claim.disabled = true; claim.textContent = 'Enviando...';
+      const r = await fetch('/leads/claim-paid', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sessionId, client_id:clientId, client_slug:clientSlug})});
+      const x = await r.json().catch(()=>({}));
+      if (!r.ok) { claim.disabled=false; claim.textContent='Já realizei o pagamento'; mostrarErro(x.detail || 'Não foi possível enviar o aviso.'); return; }
+      if (x.liberado) { col.remove(); mostrarContatoLiberado(x); return; }
+      claim.textContent = 'Aviso enviado ✓'; texto.textContent = x.message;
+      iniciarPollingContato();
+    });
+    bubble.appendChild(claim); col.appendChild(bubble); adicionarTimestamp(col);
+  }
+
+  document.getElementById('cancelContact').addEventListener('click', () => contactDialog.close());
+  contactForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const btn = document.getElementById('submitContact'); const error = document.getElementById('contactError');
+    btn.disabled=true; error.classList.add('hidden');
+    const resp = await fetch('/leads/contact', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sessionId, client_id:clientId, client_slug:clientSlug, name:document.getElementById('leadName').value, phone:document.getElementById('leadPhone').value, consent:document.getElementById('leadConsent').checked, lead_source:detectedSource})});
+    const data = await resp.json().catch(()=>({})); btn.disabled=false;
+    if (!resp.ok) { error.textContent=data.detail || 'Não foi possível continuar.'; error.classList.remove('hidden'); return; }
+    contactDialog.close(); mostrarPagamento(data);
+  });
+
+  function mostrarContatoLiberado(dados) {
+    pararPolling();
+    const col = criarLinha('bot');
+    const bubble = document.createElement('div');
+    bubble.className = 'px-4 py-3 text-[14.5px] leading-relaxed shadow-sm bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl rounded-tl-sm';
+    const title = document.createElement('div');
+    title.className = 'font-semibold text-emerald-700 dark:text-emerald-400';
+    title.textContent = '✅ Pagamento confirmado!';
+    const message = document.createElement('p');
+    message.className = 'mt-1 text-slate-700 dark:text-slate-200';
+    message.textContent = dados.message || 'Seu atendimento foi liberado. O profissional poderá responder em até 24 horas.';
+    bubble.append(title, message);
+    const actions = document.createElement('div');
+    actions.className = 'flex flex-wrap gap-2 mt-3';
+    if (dados.anamnesis_url) {
+      const anamnesis = document.createElement('a'); anamnesis.href=dados.anamnesis_url; anamnesis.target='_blank'; anamnesis.rel='noopener'; anamnesis.textContent='Preencher anamnese'; anamnesis.className='rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; actions.appendChild(anamnesis);
+    }
+    if (dados.whatsapp_url || dados.contato) {
+      const whatsapp = document.createElement('a'); whatsapp.href=dados.whatsapp_url || dados.contato; whatsapp.target='_blank'; whatsapp.rel='noopener'; whatsapp.textContent='Falar no WhatsApp'; whatsapp.className='rounded-lg bg-emerald-600 text-white font-bold px-4 py-2'; actions.appendChild(whatsapp);
+    }
+    bubble.appendChild(actions);
+    col.appendChild(bubble);
+    adicionarTimestamp(col);
+    conversation.scrollTop = conversation.scrollHeight;
+  }
+
+  /* ---- Polling de liberação de contato pós-pagamento ---- */
+  function detectarLinkPagamento(texto) {
+    return /mercadopago\.com/i.test(texto);
+  }
+
+  function pararPolling() {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    pollAttempts = 0;
+  }
+
+  function iniciarPollingContato() {
+    if (pollInterval) return;
+    pollAttempts = 0;
+    pollInterval = setInterval(async () => {
+      pollAttempts++;
+      if (pollAttempts > 100) { pararPolling(); return; } // ~10min de tentativas
+      try {
+        const resp = await fetch(`${CONTATO_URL}?session_id=${sessionId}`);
+        if (!resp.ok) return;
+        const dados = await resp.json();
+        if (dados.liberado) mostrarContatoLiberado(dados);
+      } catch (e) { /* silencioso, tenta de novo no próximo ciclo */ }
+    }, 6000);
+  }
+
+  /* ---- Envio ---- */
+  async function enviarPergunta(pergunta) {
+    mostrarChat();
+    adicionarMensagemUsuario(pergunta);
+    input.value = '';
+    input.style.height = 'auto';
+    enviarBtn.disabled = true;
+    mostrarPensando();
+
+    try {
+      await clientReady;
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pergunta, historico: historicoConversa, session_id: sessionId, client_id: clientId, client_slug: clientSlug, lead_source: detectedSource, test_mode: testMode })
+      });
+
+      removerPensando();
+
+      if (!resp.ok) {
+        const erro = await resp.json().catch(() => ({}));
+        mostrarErro('Não consegui responder agora. ' + (erro.detail ? erro.detail.slice(0, 140) : 'Tenta de novo em instantes.'));
+        return;
+      }
+
+      const dados = await resp.json();
+      digitarResposta(dados.resposta, (col) => {
+        if (detectarLinkPagamento(dados.resposta)) iniciarPollingContato();
+        if (dados.requires_contact && (clientSlug || masterPublic)) contactDialog.showModal();
+      });
+
+      historicoConversa.push({ autor: 'user', texto: pergunta });
+      historicoConversa.push({ autor: 'bot', texto: dados.resposta });
+
+    } catch (e) {
+      removerPensando();
+      mostrarErro(e?.message || 'O assistente não conseguiu concluir esta resposta agora. Tente novamente em instantes.');
+    } finally {
+      enviarBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  composer.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pergunta = input.value.trim();
+    if (!pergunta) return;
+    enviarPergunta(pergunta);
+  });
+
+  document.getElementById('quickActions').addEventListener('click', (e) => {
+    const btn = e.target.closest('.quick-action');
+    if (btn) enviarPergunta(btn.dataset.q);
+  });
+
+})();
+</script>
+
+<a href="/privacidade" style="position:fixed;left:14px;bottom:8px;color:#718077;font:12px system-ui;text-decoration:none;z-index:30">Privacidade</a>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
+<script src="/static/nutrios-datetime.js?v=26"></script>
+</body>
+</html>

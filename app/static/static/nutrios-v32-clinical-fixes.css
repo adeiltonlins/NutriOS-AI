@@ -1,0 +1,38 @@
+/* NutriOS V32 — correções de fluxo clínico e avaliação visual */
+#diary .diary-entry{padding:20px!important;border-radius:20px!important;display:grid!important;gap:14px!important}
+#diary .diary-entry-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+#diary .diary-entry-head>div{display:grid;gap:5px}
+#diary .diary-description{margin:0;line-height:1.65;color:var(--clinic-text,#e9f6ec)}
+#diary .diary-actions{display:flex;justify-content:flex-end;border-top:1px solid var(--clinic-line,#294a35);padding-top:14px}
+#diary .professional-reply{padding:15px 16px;border:1px solid rgba(34,173,85,.25);border-radius:15px;background:rgba(34,173,85,.07)}
+#diary .professional-reply small{display:block;color:#64cf86;font-weight:900;letter-spacing:.08em;margin-bottom:7px}
+#diary .professional-reply p{margin:0 0 12px;line-height:1.6}
+.clinical-dialog{width:min(94vw,680px);padding:0;border:1px solid rgba(100,207,134,.28);border-radius:24px;background:#12271a;color:#f2f8f4;box-shadow:0 26px 90px rgba(0,0,0,.42)}
+.clinical-dialog::backdrop{background:rgba(4,18,10,.72);backdrop-filter:blur(4px)}
+.clinical-dialog-card{padding:24px;display:grid;gap:18px}
+.clinical-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.clinical-dialog-head h3{margin:5px 0 4px;font-size:25px}.clinical-dialog-head p{margin:0;color:#a9baaf}
+.dialog-close{width:40px;height:40px;border-radius:50%;padding:0;font-size:24px;background:#17301f}
+.feedback-patient-context{padding:15px 16px;border:1px solid #294a35;border-radius:16px;background:#0b1a11}
+.feedback-patient-context p{margin:7px 0;color:#d6e8da;line-height:1.55}.feedback-patient-context small{color:#a9baaf}
+.clinical-dialog-card label{display:grid;gap:8px;font-weight:800}.clinical-dialog-card textarea{width:100%;min-height:140px;resize:vertical}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+
+/* Avaliação corporal: grade alinhada e checkbox sem virar bloco gigante */
+#assessment .content-split{align-items:start!important}
+#assessment .assessment-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;align-items:start!important}
+#assessment .assessment-grid>label{min-width:0!important;display:grid!important;grid-template-rows:auto 52px!important;gap:8px!important;align-content:start!important}
+#assessment .assessment-grid input:not([type="checkbox"]),#assessment .assessment-grid select{height:52px!important;width:100%!important;margin:0!important}
+#assessment .assessment-grid .nutrios-picker{width:100%!important;min-width:0!important}
+#assessment .assessment-grid .nutrios-picker input{padding-right:48px!important}
+#assessment .assessment-grid .nutrios-picker-hint{display:none!important}
+#assessment .assessment-grid .full{grid-column:1/-1!important;grid-template-rows:auto auto!important}
+#assessment .assessment-grid textarea{min-height:110px!important;width:100%!important}
+#assessment .assessment-grid .consent{display:flex!important;align-items:flex-start!important;gap:12px!important;min-height:auto!important;padding:15px 16px!important;border:1px solid rgba(100,207,134,.25)!important;border-radius:16px!important;background:rgba(34,173,85,.055)!important;overflow:hidden!important}
+#assessment .assessment-grid .consent input[type="checkbox"]{appearance:auto!important;-webkit-appearance:auto!important;width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;flex:0 0 20px!important;margin:2px 0 0!important;padding:0!important;accent-color:#22ad55!important;box-shadow:none!important}
+#assessment .assessment-grid .consent span{display:grid!important;gap:3px!important;min-width:0!important;line-height:1.45!important}
+#assessment .assessment-grid .consent small{white-space:normal!important;color:#a9baaf!important}
+#assessment .visual-photo-preview:empty{min-height:0!important;background:transparent!important;border:0!important;padding:0!important}
+
+@media(max-width:1100px){#assessment .assessment-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:650px){#assessment .assessment-grid{grid-template-columns:1fr!important}.clinical-dialog-card{padding:18px}.dialog-actions>*{flex:1}}

@@ -1,0 +1,20 @@
+/* Ajustes finais do prontuario: controles, avaliacao corporal e contraste. */
+.consent{display:flex!important;align-items:center!important;gap:12px!important;min-height:64px!important;padding:14px 16px!important;border:1px solid var(--border,#2b5a3b)!important;border-radius:14px!important;background:rgba(255,255,255,.025)!important;cursor:pointer}
+.consent>input[type="checkbox"]{appearance:none!important;-webkit-appearance:none!important;flex:0 0 20px!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;margin:0!important;padding:0!important;border:2px solid #55d982!important;border-radius:6px!important;background:transparent!important;display:grid!important;place-content:center!important}
+.consent>input[type="checkbox"]:checked{background:#45d47a!important;border-color:#45d47a!important}
+.consent>input[type="checkbox"]:checked:after{content:"✓";color:#071a0e;font-size:14px;font-weight:900;line-height:1}
+.consent>span{display:grid;gap:3px}.consent small{opacity:.72;font-weight:500}
+
+#assessment .content-split{grid-template-columns:minmax(0,1.65fr) minmax(300px,.75fr)!important;align-items:start}
+#assessment .assessment-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px 20px!important}
+#assessment .assessment-grid label{gap:8px!important}
+#assessment .assessment-grid input,#assessment .assessment-grid select{min-height:48px!important}
+#assessment .assessment-grid label:nth-of-type(1),#assessment .assessment-grid label:nth-of-type(2){padding-bottom:16px;border-bottom:1px solid rgba(112,210,139,.16)}
+#assessment .assessment-grid label:nth-of-type(n+3):nth-of-type(-n+9){background:rgba(255,255,255,.025);border:1px solid rgba(112,210,139,.13);border-radius:14px;padding:14px}
+#assessment .assessment-grid label:nth-of-type(10),#assessment .assessment-grid label:nth-of-type(11){margin-top:4px}
+#assessment .visual-photo-preview:empty{display:none}
+
+input[type="date"],input[type="datetime-local"],input[type="time"]{color-scheme:dark}
+html[data-theme="light"] input[type="date"],html[data-theme="light"] input[type="datetime-local"],html[data-theme="light"] input[type="time"],body.light input[type="date"],body.light input[type="datetime-local"],body.light input[type="time"]{color-scheme:light}
+@media(max-width:900px){#assessment .content-split{grid-template-columns:1fr!important}}
+@media(max-width:620px){#assessment .assessment-grid{grid-template-columns:1fr!important}}

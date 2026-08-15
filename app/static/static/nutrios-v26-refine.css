@@ -1,0 +1,16 @@
+/* NutriOS V26 — refinamento sem alterar identidade */
+.os-heading-row{gap:24px!important;align-items:flex-start!important}
+.os-heading-actions{display:grid!important;grid-template-columns:auto auto;grid-template-areas:"new share" "date date";justify-content:end!important;align-items:center!important;gap:10px!important;min-width:max-content}
+.os-primary-action{grid-area:new}.os-secondary-action{grid-area:share}.os-date-card{grid-area:date;justify-self:end;min-height:44px;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px;padding:0 16px!important;white-space:nowrap;margin:0!important}
+.os-primary-action,.os-secondary-action,.os-date-card{height:44px!important;border-radius:12px!important}
+.os-topbar,.os-main{min-width:0}
+.os-metric-card,.os-chart-card,.os-quick-card{transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.os-metric-card:hover,.os-quick-card:hover{transform:translateY(-2px)}
+.os-chart-card{padding:24px!important}.os-chart-head{gap:16px!important}.os-chart-stage{margin-top:14px!important}
+.admin-shell .panel,.admin-shell .stat,.patient-page .panel,.record-content .panel{border-radius:18px!important}
+/* laboratório: preview e painel com mesma altura e respiro */
+.frame-wrap,.frame{min-height:620px}.frame-wrap{overflow:hidden}.open-frame{z-index:3}
+/* padronização de linhas/tabelas */
+table th,table td{vertical-align:middle}.row,.actions,.modal-actions{align-items:center}
+@media(max-width:1100px){.os-heading-actions{grid-template-columns:1fr 1fr;min-width:0;width:100%;justify-content:start!important}.os-date-card{justify-self:stretch}.os-heading-row{display:grid!important;grid-template-columns:1fr!important}.os-primary-action,.os-secondary-action{width:100%}}
+@media(max-width:640px){.os-heading-actions{grid-template-columns:1fr;grid-template-areas:"new" "share" "date"}.os-date-card{justify-self:stretch}.os-chart-card{padding:18px!important}.frame-wrap,.frame{min-height:560px}}

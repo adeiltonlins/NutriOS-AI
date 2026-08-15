@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Anamnese nutricional</title>
+  <style>
+    body{margin:0;background:linear-gradient(145deg,#0b1a11,#0b1a11);color:#e5f6ea;font:15px system-ui}.wrap{max-width:720px;margin:35px auto;padding:20px}.card{background:#0b1a11;border:1px solid #205f36;border-radius:22px;padding:28px}label{display:block;margin:17px 0;color:#e5f6ea}input,textarea,select{width:100%;box-sizing:border-box;margin-top:7px;padding:13px;background:#0b1a11;color:#fff;border:1px solid #355c42;border-radius:11px}textarea{min-height:90px}button{width:100%;padding:14px;border:0;border-radius:11px;background:linear-gradient(90deg,#168f43,#64cf86);color:#fff;font-weight:800}.muted{color:#64cf86}.ok{color:#65e5b6}
+  </style>
+<link rel="stylesheet" href="/static/nutrios-premium.css">
+
+
+
+
+<link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
+<link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
+<link rel="stylesheet" href="/static/nutrios-v24-final.css?v=24">
+<link rel="stylesheet" href="/static/nutrios-v25-final.css?v=25">
+<link rel="stylesheet" href="/static/nutrios-datetime.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
+<link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
+<link rel="stylesheet" href="/static/nutrios-v28-clinical-flow.css?v=28">
+<link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=3">
+</head>
+<body class="patient-page">
+<main class="wrap"><section class="card">
+  <h1>Anamnese nutricional</h1>
+  <p class="muted">Suas respostas serão enviadas com segurança somente para o profissional responsável pelo seu atendimento.</p>
+  <form id="form">
+    <label>Objetivo principal<textarea name="objetivo" required></textarea></label>
+    <label>Idade<input name="idade" type="number" min="1" max="120" required></label>
+    <label>Peso e altura<input name="peso_altura" placeholder="Ex.: 75 kg e 1,70 m" required></label>
+    <label>Possui alguma doença, alergia ou restrição alimentar?<textarea name="restricoes"></textarea></label>
+    <label>Utiliza medicamentos ou suplementos?<textarea name="medicamentos"></textarea></label>
+    <label>Como é sua rotina e alimentação atualmente?<textarea name="rotina"></textarea></label>
+    <label>Já realizou acompanhamento nutricional?<select name="acompanhamento"><option>Não</option><option>Sim</option></select></label>
+    <button>Enviar anamnese</button><p id="msg"></p>
+  </form>
+</section></main>
+<script>
+const isMaster=location.pathname.startsWith('/assistente/');
+const slug=location.pathname.split('/')[2];
+const sessionId=new URLSearchParams(location.search).get('session_id');
+form.onsubmit=async e=>{
+  e.preventDefault();
+  if(!sessionId){msg.textContent='Link inválido. Solicite um novo link à clínica.';return}
+  const answers=Object.fromEntries(new FormData(e.target));
+  const endpoint=isMaster?'/public/master/anamnese':`/public/clientes/${encodeURIComponent(slug)}/anamnese`;
+  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,answers})});
+  const x=await r.json().catch(()=>({}));
+  msg.textContent=r.ok?'Anamnese enviada com sucesso! A clínica já pode visualizar suas respostas.':x.detail||'Não foi possível enviar.';
+  msg.className=r.ok?'ok':'';
+  if(r.ok)e.target.querySelectorAll('input,textarea,select,button').forEach(i=>i.disabled=true)
+}
+</script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script>
+<script src="/static/nutrios-datetime.js?v=26"></script>
+</body></html>
