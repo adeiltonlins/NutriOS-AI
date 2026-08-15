@@ -33,6 +33,34 @@
   }
 }
 
+/* The app theme is selected with data-theme and can differ from the operating
+   system preference. Keep design-system tokens in sync with that selection. */
+html[data-theme="dark"] {
+  --ui-bg: #09150e;
+  --ui-surface: #102219;
+  --ui-surface-soft: #162d20;
+  --ui-text: #edf8f0;
+  --ui-muted: #a9beb0;
+  --ui-line: #355641;
+  --ui-brand: #51d879;
+  --ui-brand-strong: #8be5a4;
+  --ui-brand-soft: rgba(81, 216, 121, .16);
+  --ui-focus: #70df91;
+}
+
+html[data-theme="light"] {
+  --ui-bg: #f5f8f6;
+  --ui-surface: #ffffff;
+  --ui-surface-soft: #f0f5f2;
+  --ui-text: #15251b;
+  --ui-muted: #63756a;
+  --ui-line: #dce7df;
+  --ui-brand: #168f43;
+  --ui-brand-strong: #0f7134;
+  --ui-brand-soft: #eaf8ef;
+  --ui-focus: #55b978;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { accent-color: var(--ui-brand); }
@@ -257,4 +285,102 @@ dialog::backdrop { background: rgba(5, 18, 10, .68); backdrop-filter: blur(4px);
   :where(.table-wrap, .table-shell, .overflow-auto) { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   dialog, .modal { width: calc(100vw - 24px); padding: 18px; }
+}
+
+/* Global contrast contract v2.
+   This final layer intentionally overrides legacy theme files on every screen. */
+html[data-theme="light"] body {
+  background-color: var(--ui-bg) !important;
+  color: var(--ui-text) !important;
+}
+html[data-theme="light"] :where(.side, .sidebar, .admin-side, .topbar, .header, .panel, .card, .stat, .box, .modal, dialog, .resource-panel, .clinical-card, .form-card, .table-card, .metric-card, .quick-card, .module-card, .analytics-card, .chart-card, .portal-card, .conversation-card, .os-metric-card, .os-chart-card, .os-quick-card, .os-activity) {
+  background-color: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
+}
+html[data-theme="light"] :where(h1, h2, h3, h4, h5, h6, strong, .title, .page-title, .section-title, .card-title, .metric-value, .stat-value, .kpi-value, .nos16-kpi-value, .stat b, .metric b, .card-value) {
+  background: none !important;
+  color: var(--ui-text) !important;
+  -webkit-text-fill-color: var(--ui-text) !important;
+  text-shadow: none !important;
+}
+html[data-theme="light"] :where(.money, .ok, .success, .text-brand) {
+  background: none !important;
+  color: #087d35 !important;
+  -webkit-text-fill-color: #087d35 !important;
+}
+html[data-theme="light"] :where(.muted, .sub, .meta, small, .description, .helper, .legend, .capacity-label) {
+  color: #596b61 !important;
+  -webkit-text-fill-color: #596b61 !important;
+}
+html[data-theme="light"] :where(.brand, .admin-brand, .sidebar-brand, .logo, .brand-name, .os-brand-name),
+html[data-theme="light"] :where(.brand, .admin-brand, .sidebar-brand, .logo) strong {
+  color: #174f2b !important;
+  -webkit-text-fill-color: #174f2b !important;
+}
+html[data-theme="light"] :where(.nav, .nav span, .admin-nav .nav) { color: #243c2d !important; }
+html[data-theme="light"] :where(.nav.active, .nav:hover, .admin-nav .nav.active, .admin-nav .nav:hover) {
+  background: #e4f3e9 !important;
+  color: #087d35 !important;
+}
+html[data-theme="light"] :where(input, select, textarea) {
+  background: #fff !important;
+  border-color: #bfd2c5 !important;
+  color: #15251b !important;
+  -webkit-text-fill-color: #15251b !important;
+}
+html[data-theme="light"] :where(input, textarea)::placeholder { color: #718077 !important; opacity: 1; }
+html[data-theme="light"] :where(label, th, td) { color: #263a2d !important; }
+html[data-theme="light"] th { background: #edf4ef !important; color: #4c6054 !important; }
+html[data-theme="light"] .side-footer {
+  background: #173c26 !important;
+  border-color: #285c3b !important;
+  color: #fff !important;
+}
+html[data-theme="light"] .side-footer :where(b, small) { color: #eef8f1 !important; -webkit-text-fill-color: #eef8f1 !important; }
+html[data-theme="light"] :where(.ghost, .secondary, .btn-secondary, button.secondary) {
+  background: #fff !important;
+  border-color: #bcd4c4 !important;
+  color: #185c31 !important;
+}
+html[data-theme="light"] :where(.admin-stats .stat, .stats .stat) > div > b:not(.money) {
+  background: none !important;
+  color: #15251b !important;
+  -webkit-text-fill-color: #15251b !important;
+}
+
+html[data-theme="dark"] body { background-color: var(--ui-bg) !important; color: var(--ui-text) !important; }
+html[data-theme="dark"] :where(.side, .sidebar, .admin-side, .topbar, .header, .panel, .card, .stat, .box, .modal, dialog, .resource-panel, .clinical-card, .form-card, .table-card, .metric-card, .quick-card, .module-card, .analytics-card, .chart-card, .portal-card, .conversation-card, .os-metric-card, .os-chart-card, .os-quick-card, .os-activity) {
+  background-color: var(--ui-surface) !important;
+  color: var(--ui-text) !important;
+}
+html[data-theme="dark"] :where(h1, h2, h3, h4, h5, h6, strong, .title, .page-title, .section-title, .card-title, .metric-value, .stat-value, .kpi-value, .nos16-kpi-value, .stat b, .metric b, .card-value) {
+  color: var(--ui-text) !important;
+  -webkit-text-fill-color: var(--ui-text) !important;
+  text-shadow: none !important;
+}
+html[data-theme="dark"] :where(.money, .ok, .success, .text-brand) {
+  color: #70df91 !important;
+  -webkit-text-fill-color: #70df91 !important;
+}
+html[data-theme="dark"] :where(.muted, .sub, .meta, small, .description, .helper, .legend, .capacity-label) {
+  color: #a9beb0 !important;
+  -webkit-text-fill-color: #a9beb0 !important;
+}
+html[data-theme="dark"] :where(.brand, .admin-brand, .sidebar-brand, .logo, .brand-name, .os-brand-name),
+html[data-theme="dark"] :where(.brand, .admin-brand, .sidebar-brand, .logo) strong { color: #edf8f0 !important; -webkit-text-fill-color: #edf8f0 !important; }
+html[data-theme="dark"] :where(.nav, .nav span, .admin-nav .nav) { color: #c4d7c9 !important; }
+html[data-theme="dark"] :where(.nav.active, .nav:hover, .admin-nav .nav.active, .admin-nav .nav:hover) { color: #8be5a4 !important; }
+html[data-theme="dark"] :where(input, select, textarea) {
+  background: #0c1d13 !important;
+  border-color: #3a6047 !important;
+  color: #edf8f0 !important;
+  -webkit-text-fill-color: #edf8f0 !important;
+}
+html[data-theme="dark"] :where(input, textarea)::placeholder { color: #91a99a !important; opacity: 1; }
+html[data-theme="dark"] :where(label, th, td) { color: #dceae0 !important; }
+html[data-theme="dark"] th { background: #14291c !important; color: #a9beb0 !important; }
+html[data-theme="dark"] :where(.ghost, .secondary, .btn-secondary, button.secondary) {
+  background: #14291c !important;
+  border-color: #3a6047 !important;
+  color: #b7efc5 !important;
 }
