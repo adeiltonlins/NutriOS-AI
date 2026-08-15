@@ -20,7 +20,7 @@
 
 /* Avaliação corporal: grade alinhada e checkbox sem virar bloco gigante */
 #assessment .content-split{align-items:start!important}
-#assessment .assessment-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;align-items:start!important}
+#assessment .assessment-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;align-items:start!important}
 #assessment .assessment-grid>label{min-width:0!important;display:grid!important;grid-template-rows:auto 52px!important;gap:8px!important;align-content:start!important}
 #assessment .assessment-grid input:not([type="checkbox"]),#assessment .assessment-grid select{height:52px!important;width:100%!important;margin:0!important}
 #assessment .assessment-grid .nutrios-picker{width:100%!important;min-width:0!important}
@@ -32,7 +32,15 @@
 #assessment .assessment-grid .consent input[type="checkbox"]{appearance:auto!important;-webkit-appearance:auto!important;width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;flex:0 0 20px!important;margin:2px 0 0!important;padding:0!important;accent-color:#22ad55!important;box-shadow:none!important}
 #assessment .assessment-grid .consent span{display:grid!important;gap:3px!important;min-width:0!important;line-height:1.45!important}
 #assessment .assessment-grid .consent small{white-space:normal!important;color:#a9baaf!important}
+#assessment .assessment-grid .photo-upload-field{grid-template-rows:auto auto!important;padding:16px!important;border:1px solid rgba(100,207,134,.22)!important;border-radius:16px!important;background:rgba(11,26,17,.35)!important}
+#assessment .photo-upload-actions{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+#assessment .photo-upload-actions input[type=file]{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+#assessment .photo-upload-button{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;padding:10px 14px!important;border:1px dashed #45d47a!important;border-radius:12px!important;color:#70e59a!important;background:rgba(69,212,122,.07)!important;cursor:pointer!important}
+#assessment .photo-upload-status{font-size:12px!important;color:#a9baaf!important;font-weight:600!important}
+#assessment .photo-upload-status.ok{color:#70e59a!important}
+.record-body label.consent>input[type="checkbox"],.record-body #saveAsTemplate[type="checkbox"]{appearance:none!important;-webkit-appearance:none!important;display:grid!important;place-content:center!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important;flex:0 0 20px!important;margin:2px 0 0!important;padding:0!important;border:2px solid #55d982!important;border-radius:6px!important;background:transparent!important;box-shadow:none!important}
+.record-body label.consent>input[type="checkbox"]:checked,.record-body #saveAsTemplate[type="checkbox"]:checked{background:#45d47a!important;border-color:#45d47a!important}
+.record-body label.consent>input[type="checkbox"]:checked:after,.record-body #saveAsTemplate[type="checkbox"]:checked:after{content:"✓"!important;color:#071a0e!important;font-size:14px!important;font-weight:900!important;line-height:1!important}
 #assessment .visual-photo-preview:empty{min-height:0!important;background:transparent!important;border:0!important;padding:0!important}
 
-@media(max-width:1100px){#assessment .assessment-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:650px){#assessment .assessment-grid{grid-template-columns:1fr!important}.clinical-dialog-card{padding:18px}.dialog-actions>*{flex:1}}
