@@ -384,3 +384,105 @@ html[data-theme="dark"] :where(.ghost, .secondary, .btn-secondary, button.second
   border-color: #3a6047 !important;
   color: #b7efc5 !important;
 }
+
+/* SaaS layout contract v3.
+   A single responsive rhythm for forms, cards, toolbars and data views. */
+:root {
+  --ui-page-max: 1440px;
+  --ui-page-gutter: clamp(16px, 3vw, 40px);
+  --ui-section-gap: clamp(18px, 2.2vw, 28px);
+  --ui-grid-gap: clamp(14px, 1.7vw, 22px);
+  --ui-control-height: 48px;
+}
+
+body:not(.login-page):not(.patient-page) :where(.page, .wrap, .main, .admin-main, .record-main) {
+  min-width: 0;
+}
+body:not(.login-page):not(.patient-page) :where(.page, .wrap) {
+  width: min(100%, var(--ui-page-max));
+}
+:where(.grid, .form-grid, .assessment-grid, .metrics, .stats, .content-split, .row, .toolbar, .actions) > * {
+  min-width: 0;
+}
+:where(.field, label, .input-group, .form-group) {
+  min-width: 0;
+}
+:where(.field, .form-group, label) > :where(input, select, textarea) {
+  max-width: 100%;
+}
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select) {
+  min-height: var(--ui-control-height);
+}
+:where(textarea) {
+  min-height: 104px;
+  resize: vertical;
+}
+:where(.panel, .card, .form-card, .clinical-card, .table-card) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+:where(.panel-head, .section-heading, .top, .toolbar, .actions, .modal-actions) {
+  align-items: center;
+  gap: 12px;
+}
+:where(.table-wrap, .table-shell) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+:where(.table-wrap, .table-shell) table {
+  min-width: 680px;
+}
+
+/* Tablet: avoid squeezed form controls and cards touching each other. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  body:not(.login-page):not(.patient-page) :where(.page, .wrap, .main, .admin-main, .record-main) {
+    padding-left: 22px !important;
+    padding-right: 22px !important;
+  }
+  :where(.grid, .form-grid, .assessment-grid, .metrics-grid, .stats) {
+    column-gap: 22px !important;
+    row-gap: 18px !important;
+  }
+  :where(.grid, .form-grid, .assessment-grid)[style*="repeat(3"],
+  :where(.grid, .form-grid, .assessment-grid)[style*="repeat(4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  :where(.toolbar, .panel-head, .section-heading, .top) {
+    flex-wrap: wrap;
+  }
+  :where(.toolbar) > :where(input, select) {
+    flex: 1 1 220px;
+  }
+}
+
+/* Narrow tablet and mobile: clarity wins over density. */
+@media (max-width: 820px) {
+  :where(.content-split, .form-grid, .assessment-grid, .row) {
+    grid-template-columns: 1fr !important;
+  }
+  :where(.full, [class*="full-"]) {
+    grid-column: 1 / -1 !important;
+  }
+  :where(.panel, .card, .form-card, .clinical-card) {
+    padding: clamp(16px, 4vw, 22px);
+  }
+}
+
+@media (max-width: 560px) {
+  :root { --ui-control-height: 46px; }
+  body:not(.login-page):not(.patient-page) :where(.page, .wrap, .main, .admin-main, .record-main) {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  :where(.actions, .modal-actions) {
+    width: 100%;
+  }
+  :where(.actions, .modal-actions) > :where(button, a, .btn, .button) {
+    flex: 1 1 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
