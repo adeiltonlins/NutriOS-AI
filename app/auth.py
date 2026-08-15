@@ -124,6 +124,11 @@ def create_session(user: dict, response: Response) -> None:
                         samesite=os.getenv("COOKIE_SAMESITE", "lax"), path="/")
 
 
+def revoke_and_rotate_session(user: dict, response: Response) -> None:
+    saas_store.revoke_user_sessions(user["id"])
+    create_session(user, response)
+
+
 def user_from_token(request: Request, token: str | None) -> dict:
     if not token:
         raise HTTPException(401, "Sessão necessária")
@@ -147,7 +152,16 @@ def user_from_token(request: Request, token: str | None) -> dict:
 
 
 def current_user(request: Request, token: str | None = Cookie(default=None, alias=COOKIE_NAME)) -> dict:
-    return user_from_token(request, token)
+    user = user_from_token(request, token)
+    if (request.url.path == "/app" or request.url.path.startswith("/app/")) and user.get("role") != "client":
+        raise HTTPException(403, "Acesso de nutricionista necessário")
+    return user
+
+
+def require_nutritionist(user: dict = Depends(current_user)) -> dict:
+    if user.get("role") != "client":
+        raise HTTPException(403, "Acesso de nutricionista necessário")
+    return user
 
 
 def require_admin(user: dict = Depends(current_user)) -> dict:

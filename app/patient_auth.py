@@ -59,16 +59,19 @@ def consume_codes(patient_id: str) -> None:
         payload={"used_at":now}, prefer="return=minimal"
     )
 
-def authenticate_password(identifier: str, password: str) -> dict | None:
+def authenticate_password(identifier: str, password: str, client_slug: str | None = None) -> dict | None:
     """Autentica somente pacientes ativos e dentro da validade contratada."""
     normalized = identifier.strip().lower()
     if not normalized or not password:
         return None
-    rows = saas_store._request(
-        "GET", "patient_accounts",
-        params={"select": "*", "login_identifier": f"eq.{normalized}", "active": "eq.true", "archived_at": "is.null", "limit": "1"},
-    ) or []
-    if not rows:
+    params = {"select": "*", "login_identifier": f"eq.{normalized}", "active": "eq.true", "archived_at": "is.null", "limit": "2"}
+    if client_slug:
+        owner = saas_store.get_user_by_slug(client_slug)
+        if not owner or owner.get("role") != "client" or not owner.get("active"):
+            return None
+        params["client_id"] = f"eq.{owner['id']}"
+    rows = saas_store._request("GET", "patient_accounts", params=params) or []
+    if len(rows) != 1:
         return None
     patient = rows[0]
     if datetime.fromisoformat(patient["access_expires_at"].replace("Z", "+00:00")) <= datetime.now(timezone.utc):
@@ -82,7 +85,7 @@ def set_credentials(patient: dict, identifier: str, password: str) -> dict:
         raise ValueError("Use um e-mail ou identificador com pelo menos 4 caracteres")
     existing = saas_store._request(
         "GET", "patient_accounts",
-        params={"select": "id", "login_identifier": f"eq.{normalized}", "id": f"neq.{patient['id']}", "limit": "1"},
+        params={"select": "id", "client_id": f"eq.{patient['client_id']}", "login_identifier": f"eq.{normalized}", "id": f"neq.{patient['id']}", "limit": "1"},
     ) or []
     if existing:
         raise ValueError("Este identificador já está em uso")
@@ -114,4 +117,9 @@ def revoke(patient_id: str):
     saas_store._request("PATCH","patient_sessions",params={"patient_id":f"eq.{patient_id}","revoked_at":"is.null"},payload={"revoked_at":now},prefer="return=minimal")
     saas_store._request("PATCH","patient_access_codes",params={"patient_id":f"eq.{patient_id}","revoked_at":"is.null"},payload={"revoked_at":now},prefer="return=minimal")
 
-def logout(response: Response): response.delete_cookie(COOKIE_NAME,path="/")
+def logout(response: Response, token: str | None = None) -> None:
+    if token:
+        rows = saas_store._request("GET", "patient_sessions", params={"select": "id,token_hash", "token_lookup": f"eq.{_lookup(token, 'session')}", "revoked_at": "is.null", "limit": "1"}) or []
+        if rows and hmac.compare_digest(rows[0]["token_hash"], _digest(token, "session")):
+            saas_store._request("PATCH", "patient_sessions", params={"id": f"eq.{rows[0]['id']}"}, payload={"revoked_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
+    response.delete_cookie(COOKIE_NAME, path="/")

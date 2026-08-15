@@ -15,8 +15,10 @@
 <link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
 <link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
 <link rel="stylesheet" href="/static/nutrios-v28-clinical-flow.css?v=28">
+<link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=1">
 </head>
 <body>
+<a class="ui-skip-link" href="#dashboardContent">Ir para o conteúdo</a>
 <div class="os-shell">
   <aside class="os-sidebar">
     <a class="os-brand" href="/app" aria-label="NutriOS">
@@ -53,8 +55,8 @@
         <kbd>Ctrl + K</kbd>
       </div>
       <div class="os-top-actions">
-        <button class="os-icon-btn" type="button" title="Notificações">♢<span class="os-notification-dot" id="alertCount">0</span></button>
-        <a class="os-icon-btn" href="/app/conversas" title="Conversas">○</a>
+        <button class="os-icon-btn" type="button" title="Notificações" aria-label="Abrir notificações">♢<span class="os-notification-dot" id="alertCount">0</span></button>
+        <a class="os-icon-btn" href="/app/conversas" title="Conversas" aria-label="Abrir conversas">○</a>
         <div class="os-profile">
           <div class="os-avatar" id="avatarInitial">N</div>
           <div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div>
@@ -63,7 +65,7 @@
       </div>
     </header>
 
-    <main class="os-main">
+    <main class="os-main" id="dashboardContent">
       <section class="os-heading-row">
         <div>
           <h1 id="hello">Bem-vindo de volta!</h1>

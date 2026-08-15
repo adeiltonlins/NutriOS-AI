@@ -17,10 +17,13 @@ Fluxo:
 Se MP_ACCESS_TOKEN não estiver configurado, as funções viram "no-op" —
 mesmo padrão usado no leads_store.py, pra não quebrar o resto do projeto.
 """
+import hashlib
+import hmac
 import os
 import requests
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
+MP_WEBHOOK_SECRET = os.environ.get("MP_WEBHOOK_SECRET", "")
 VALOR_CONSULTA = float(os.environ.get("VALOR_CONSULTA", "150.00"))
 NOME_ITEM = os.environ.get("NOME_ITEM_PAGAMENTO", "Consulta nutricional")
 # URL pública do seu serviço no Render, ex: https://nutri-chatbot-8h6k.onrender.com
@@ -36,6 +39,28 @@ def _headers():
         "Authorization": f"Bearer {MP_ACCESS_TOKEN}",
         "Content-Type": "application/json",
     }
+
+
+def validar_assinatura_webhook(x_signature: str | None, x_request_id: str | None, data_id: str | None) -> bool:
+    if not MP_WEBHOOK_SECRET:
+        raise RuntimeError("MP_WEBHOOK_SECRET não configurado")
+    if not x_signature:
+        return False
+    parts = {}
+    for item in x_signature.split(","):
+        key, separator, value = item.strip().partition("=")
+        if separator and key in {"ts", "v1"}:
+            parts[key] = value
+    if not parts.get("ts") or not parts.get("v1"):
+        return False
+    manifest = ""
+    if data_id:
+        manifest += f"id:{data_id.lower()};"
+    if x_request_id:
+        manifest += f"request-id:{x_request_id};"
+    manifest += f"ts:{parts['ts']};"
+    expected = hmac.new(MP_WEBHOOK_SECRET.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(parts["v1"], expected)
 
 
 def criar_link_pagamento(session_id: str) -> str | None:

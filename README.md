@@ -168,4 +168,4 @@ O ADMIN mestre visualiza contagens globais por nutricionista. Cada nutricionista
 
 ## Análise Corporal Visual NutriBot (v25)
 
-Execute `migrations/019_visual_body_analysis.sql` no SQL Editor do Supabase. O módulo reaproveita as fotos privadas de evolução, associa imagens frontal e lateral à avaliação, calcula indicadores somente a partir das medidas registradas pelo nutricionista e gera um relatório PDF em duas páginas. Ele não realiza escaneamento nem reconstrução corporal 3D.
+Execute `migrations/020_visual_body_analysis.sql` no SQL Editor do Supabase. O módulo reaproveita as fotos privadas de evolução, associa imagens frontal e lateral à avaliação, calcula indicadores somente a partir das medidas registradas pelo nutricionista e gera um relatório PDF em duas páginas. Ele não realiza escaneamento nem reconstrução corporal 3D.
