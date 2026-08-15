@@ -32,15 +32,25 @@
 #assessment .assessment-grid .consent input[type="checkbox"]{appearance:auto!important;-webkit-appearance:auto!important;width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;flex:0 0 20px!important;margin:2px 0 0!important;padding:0!important;accent-color:#22ad55!important;box-shadow:none!important}
 #assessment .assessment-grid .consent span{display:grid!important;gap:3px!important;min-width:0!important;line-height:1.45!important}
 #assessment .assessment-grid .consent small{white-space:normal!important;color:#a9baaf!important}
-#assessment .assessment-grid .photo-upload-field{grid-template-rows:auto auto!important;padding:16px!important;border:1px solid rgba(100,207,134,.22)!important;border-radius:16px!important;background:rgba(11,26,17,.35)!important}
-#assessment .photo-upload-actions{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-#assessment .photo-upload-actions input[type=file]{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+#assessment .assessment-photos{min-width:0;margin:2px 0 0;padding:18px;border:1px solid rgba(100,207,134,.22);border-radius:18px;background:rgba(11,26,17,.35)}
+#assessment .assessment-photos legend{padding:0 8px;color:var(--clinic-text,#e9f6ec);font-weight:850}
+#assessment .assessment-photos>p{margin:0 0 15px;color:var(--clinic-muted,#a9baaf);font-size:13px;line-height:1.5}
+#assessment .assessment-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#assessment .assessment-photo-card{display:grid;grid-template-rows:auto 52px minmax(84px,auto) auto;gap:8px;min-width:0;padding:16px;border:1px solid rgba(100,207,134,.2);border-radius:16px;background:rgba(8,30,17,.46)}
+#assessment .assessment-photo-card>label:first-child{color:var(--clinic-text,#e9f6ec);font-size:13px;font-weight:800}
+#assessment .assessment-photo-card select{width:100%;height:52px;margin:0}
+#assessment .assessment-photo-card input[type=file]{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
 #assessment .photo-upload-button{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;padding:10px 14px!important;border:1px dashed #45d47a!important;border-radius:12px!important;color:#70e59a!important;background:rgba(69,212,122,.07)!important;cursor:pointer!important}
+#assessment .photo-upload-button:hover{background:rgba(69,212,122,.13)!important;border-color:#70e59a!important}
+#assessment .photo-upload-button:focus-within{outline:3px solid rgba(112,229,154,.24);outline-offset:2px}
 #assessment .photo-upload-status{font-size:12px!important;color:#a9baaf!important;font-weight:600!important}
 #assessment .photo-upload-status.ok{color:#70e59a!important}
+#assessment .photo-upload-status.error{color:#ff91a4!important}
+#assessment .photo-upload-status.loading{color:#ffd27a!important}
 .record-body label.consent>input[type="checkbox"],.record-body #saveAsTemplate[type="checkbox"]{appearance:none!important;-webkit-appearance:none!important;display:grid!important;place-content:center!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important;flex:0 0 20px!important;margin:2px 0 0!important;padding:0!important;border:2px solid #55d982!important;border-radius:6px!important;background:transparent!important;box-shadow:none!important}
 .record-body label.consent>input[type="checkbox"]:checked,.record-body #saveAsTemplate[type="checkbox"]:checked{background:#45d47a!important;border-color:#45d47a!important}
 .record-body label.consent>input[type="checkbox"]:checked:after,.record-body #saveAsTemplate[type="checkbox"]:checked:after{content:"✓"!important;color:#071a0e!important;font-size:14px!important;font-weight:900!important;line-height:1!important}
 #assessment .visual-photo-preview:empty{min-height:0!important;background:transparent!important;border:0!important;padding:0!important}
 
-@media(max-width:650px){#assessment .assessment-grid{grid-template-columns:1fr!important}.clinical-dialog-card{padding:18px}.dialog-actions>*{flex:1}}
+@media(max-width:900px){#assessment .assessment-photo-grid{grid-template-columns:1fr}}
+@media(max-width:650px){#assessment .assessment-grid{grid-template-columns:1fr!important}#assessment .assessment-photos{padding:14px}#assessment .assessment-photo-card{padding:14px}.clinical-dialog-card{padding:18px}.dialog-actions>*{flex:1}}
