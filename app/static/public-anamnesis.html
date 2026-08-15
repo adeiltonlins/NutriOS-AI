@@ -25,15 +25,15 @@
 <body class="patient-page">
 <main class="wrap"><section class="card">
   <h1>Anamnese nutricional</h1>
-  <p class="muted">Suas respostas serÃ£o enviadas com seguranÃ§a somente para o profissional responsÃ¡vel pelo seu atendimento.</p>
+  <p class="muted">Suas respostas serão enviadas com segurança somente para o profissional responsável pelo seu atendimento.</p>
   <form id="form">
     <label>Objetivo principal<textarea name="objetivo" required></textarea></label>
     <label>Idade<input name="idade" type="number" min="1" max="120" required></label>
     <label>Peso e altura<input name="peso_altura" placeholder="Ex.: 75 kg e 1,70 m" required></label>
-    <label>Possui alguma doenÃ§a, alergia ou restriÃ§Ã£o alimentar?<textarea name="restricoes"></textarea></label>
+    <label>Possui alguma doença, alergia ou restrição alimentar?<textarea name="restricoes"></textarea></label>
     <label>Utiliza medicamentos ou suplementos?<textarea name="medicamentos"></textarea></label>
-    <label>Como Ã© sua rotina e alimentaÃ§Ã£o atualmente?<textarea name="rotina"></textarea></label>
-    <label>JÃ¡ realizou acompanhamento nutricional?<select name="acompanhamento"><option>NÃ£o</option><option>Sim</option></select></label>
+    <label>Como é sua rotina e alimentação atualmente?<textarea name="rotina"></textarea></label>
+    <label>Já realizou acompanhamento nutricional?<select name="acompanhamento"><option>Não</option><option>Sim</option></select></label>
     <button>Enviar anamnese</button><p id="msg"></p>
   </form>
 </section></main>
@@ -43,12 +43,12 @@ const slug=location.pathname.split('/')[2];
 const sessionId=new URLSearchParams(location.search).get('session_id');
 form.onsubmit=async e=>{
   e.preventDefault();
-  if(!sessionId){msg.textContent='Link invÃ¡lido. Solicite um novo link Ã  clÃ­nica.';return}
+  if(!sessionId){msg.textContent='Link inválido. Solicite um novo link à clínica.';return}
   const answers=Object.fromEntries(new FormData(e.target));
   const endpoint=isMaster?'/public/master/anamnese':`/public/clientes/${encodeURIComponent(slug)}/anamnese`;
   const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:sessionId,answers})});
   const x=await r.json().catch(()=>({}));
-  msg.textContent=r.ok?'Anamnese enviada com sucesso! A clÃ­nica jÃ¡ pode visualizar suas respostas.':x.detail||'NÃ£o foi possÃ­vel enviar.';
+  msg.textContent=r.ok?'Anamnese enviada com sucesso! A clínica já pode visualizar suas respostas.':x.detail||'Não foi possível enviar.';
   msg.className=r.ok?'ok':'';
   if(r.ok)e.target.querySelectorAll('input,textarea,select,button').forEach(i=>i.disabled=true)
 }

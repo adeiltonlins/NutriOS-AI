@@ -88,7 +88,7 @@
   section.innerHTML = `
     <div class="panel-head"><div class="finance-copy"><h2 style="margin:0">Pagamentos da experiência pública</h2><span class="muted">Vendas dos pacientes no seu link mestre — separado das mensalidades dos nutricionistas</span></div><div class="finance-actions"><button class="primary" id="copyMasterChatFinance">Copiar link público</button><button class="ghost" id="refreshMasterPayments">Atualizar pagamentos</button></div></div>
     <div class="table"><table class="finance-table"><thead><tr><th>Cliente</th><th>WhatsApp</th><th>Status Mercado Pago</th><th>Valor</th><th>Data</th><th>Liberação</th><th>Ação</th></tr></thead><tbody id="masterPaymentRows"><tr><td colspan="7" class="finance-empty">Carregando pagamentos…</td></tr></tbody></table></div>
-    <div class="finance-note">“Receita mensal” é o que os nutricionistas pagam pelo SaaS. “Receita gerada” são as vendas realizadas pela experiência pública.</div>`;
+    <div class="finance-note">"Receita mensal" é o que os nutricionistas pagam pelo SaaS. "Receita gerada" são as vendas realizadas pela experiência pública.</div>`;
   nutritionists.parentNode.insertBefore(section, nutritionists);
 
   const rows = document.getElementById('masterPaymentRows');
