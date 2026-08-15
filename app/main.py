@@ -118,6 +118,18 @@ async def security_middleware(request: Request, call_next):
         if request.method in {"POST", "PUT", "PATCH"} and has_body and request.url.path != "/auth/logout" and not multipart_allowed and request.headers.get("content-type", "").split(";", 1)[0] != "application/json":
             return Response("Content-Type inválido", status_code=415)
     response = await call_next(request)
+    content_type = response.headers.get("content-type", "")
+    textual_media_types = (
+        "text/",
+        "application/javascript",
+        "application/json",
+        "application/xml",
+    )
+    if content_type.startswith(textual_media_types):
+        media_type = content_type.split(";", 1)[0]
+        response.headers["Content-Type"] = f"{media_type}; charset=utf-8"
+    if request.url.path.endswith((".html", ".css", ".js")) or content_type.startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, max-age=0"
     response.headers["X-Content-Type-Options"] = "nosniff"
     # O laboratório mestre usa um iframe da própria origem. Qualquer outra
     # página continua proibida de ser embutida por sites externos.
