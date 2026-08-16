@@ -486,3 +486,138 @@ body:not(.login-page):not(.patient-page) :where(.page, .wrap) {
     text-align: center;
   }
 }
+
+/* Audit pass: predictable overflow and modal behavior across legacy modules. */
+:where(.table, .table-wrap, .table-shell):not(table) {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(dialog) {
+  max-width: calc(100vw - 28px);
+  max-height: calc(100dvh - 28px);
+}
+
+/* Patient access has a deliberate dark/light split. Keep legacy theme layers
+   from creating duplicate marks or low-contrast text on the dark showcase. */
+body.patient-login-page {
+  color-scheme: light;
+  background: #f5faf7 !important;
+}
+
+.patient-login-page .scene {
+  background: #f5faf7 !important;
+}
+
+.patient-login-page .showcase {
+  background: linear-gradient(145deg, #143322, #0b1f14) !important;
+  border-color: #28563a !important;
+}
+
+.patient-login-page .showcase .brand {
+  color: #f3fbf5 !important;
+  -webkit-text-fill-color: #f3fbf5 !important;
+  text-shadow: none !important;
+}
+
+.patient-login-page .showcase .brand::before,
+.patient-login-page .showcase .brand::after {
+  content: none !important;
+  display: none !important;
+}
+
+.patient-login-page .showcase .brand i {
+  color: #072311 !important;
+  -webkit-text-fill-color: #072311 !important;
+}
+
+.patient-login-page .showcase h1 {
+  color: #f3fbf5 !important;
+  -webkit-text-fill-color: #f3fbf5 !important;
+}
+
+.patient-login-page .showcase .gradient {
+  background: linear-gradient(90deg, #8ce5a7, #45c871) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.patient-login-page .showcase :where(p, .eyebrow) {
+  color: #a9d8b7 !important;
+  -webkit-text-fill-color: #a9d8b7 !important;
+}
+
+.patient-login-page .showcase .trust span {
+  color: #e9f7ed !important;
+  background: rgba(7, 26, 14, .52) !important;
+  border-color: #34724b !important;
+}
+
+.patient-login-page .login-side {
+  background: #f5faf7 !important;
+}
+
+.patient-login-page .login-side .card {
+  background: #fff !important;
+  border: 1px solid #cfe1d5 !important;
+  box-shadow: 0 24px 70px rgba(19, 69, 37, .10) !important;
+  transform: none !important;
+}
+
+.patient-login-page .login-side :where(h2, label) {
+  color: #102a19 !important;
+  -webkit-text-fill-color: #102a19 !important;
+}
+
+.patient-login-page .login-side :where(p, .muted) {
+  color: #5f7467 !important;
+  -webkit-text-fill-color: #5f7467 !important;
+}
+
+.patient-login-page .login-side .eyebrow,
+.patient-login-page .back {
+  color: #087c34 !important;
+  -webkit-text-fill-color: #087c34 !important;
+}
+
+.patient-login-page .switch {
+  background: #edf5ef !important;
+  border: 1px solid #d6e5da;
+}
+
+.patient-login-page .switch button {
+  background: transparent !important;
+  color: #536c5b !important;
+}
+
+.patient-login-page .switch button.on {
+  background: #fff !important;
+  color: #087c34 !important;
+  box-shadow: 0 5px 16px rgba(19, 69, 37, .08);
+}
+
+.patient-login-page .login-side input {
+  background: #fff !important;
+  color: #102a19 !important;
+  border-color: #bdd4c5 !important;
+}
+
+.patient-login-page .login-side input:focus {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 14%, transparent) !important;
+}
+
+.patient-login-page .identity {
+  background: #f4f9f5 !important;
+  border-color: #d2e3d7 !important;
+}
+
+@media (max-width: 900px) {
+  .patient-login-page .login-side { min-height: 100dvh; padding: 18px; }
+  .patient-login-page .login-side .card { padding: clamp(22px, 6vw, 30px) !important; }
+}
