@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 import requests
 
 from app.knowledge_base import base_conhecimento
-from app.llm import gerar_resposta, resposta_contingencia, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
+from app.llm import gerar_resposta, gerar_resposta_paciente, resposta_contingencia, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
 from app import pagamento
 from app import auth, business_store, emailer, patient_auth, saas_store, clinical_extensions
@@ -1001,11 +1001,11 @@ def app_analise_corporal_alias(user: dict = Depends(auth.current_user)):
 
 @app.get("/app/financeiro")
 def app_financeiro_alias(user: dict = Depends(auth.current_user)):
-    return RedirectResponse("/app/metricas", status_code=307)
+    return FileResponse(STATIC_DIR / "clinical-finance.html")
 
 @app.get("/app/relatorios")
 def app_relatorios_alias(user: dict = Depends(auth.current_user)):
-    return RedirectResponse("/app/metricas", status_code=307)
+    return RedirectResponse("/app/clinica", status_code=307)
 
 @app.get("/app/pacientes")
 def patient_management_page(user: dict = Depends(auth.current_user)):
@@ -1815,6 +1815,11 @@ def update_own_config(payload: dict, user: dict = Depends(auth.current_user)):
     allowed = {k: v for k, v in payload.items() if k in {"nome", "especialidade", "whatsapp", "link_consulta", "identidade_ia", "mensagem_inicial", "cta", "horario", "logo_url", "prompt", "free_message_limit", "crn", "cor_principal", "instagram", "acoes_rapidas", "anamnesis_url", "whatsapp_message_template", "payment_wait_message", "notification_email", "training_enabled"}}
     if "free_message_limit" in allowed:
         allowed["free_message_limit"] = max(1, min(50, int(allowed["free_message_limit"] or 8)))
+    if "link_consulta" in allowed:
+        link = str(allowed["link_consulta"] or "").strip()
+        if link and not link.startswith("https://"):
+            raise HTTPException(400, "O link de pagamento deve começar com https://")
+        allowed["link_consulta"] = link
     current.update(allowed)
     updated = saas_store.update_user(user["id"], {"ai_config": current})
     return {"ok": True, "ai_config": updated.get("ai_config") if updated else current}
@@ -1829,6 +1834,9 @@ def register_lead_contact(request: Request, payload: LeadContactRequest):
     config = client.get("ai_config") or {}
     payment_url = str(config.get("link_consulta") or "").strip()
     is_master = payload.client_id == "master"
+    if not is_master and not payment_url.startswith("https://"):
+        services = business_store.list_rows("client_services", client["id"], order="created_at.asc")
+        payment_url = next((str(row.get("payment_url") or "").strip() for row in services if row.get("active", True) and str(row.get("payment_url") or "").strip().startswith("https://")), "")
     if is_master and not payment_url.startswith("https://") and pagamento.PAGAMENTO_ATIVO:
         payment_url = pagamento.criar_link_pagamento(payload.session_id)
     if not payment_url.startswith("https://"):
@@ -2623,9 +2631,18 @@ def patient_private_chat(request: Request, req: PerguntaRequest, patient: dict =
     used = int(patient.get("messages_used") or 0); limit = int(patient.get("message_limit") or 200)
     if used >= limit:
         raise HTTPException(429, "Seu limite de mensagens foi atingido. Fale com seu nutricionista para renovar ou ampliar o plano.")
-    req.client_id = patient["client_id"]; req.client_slug = None; req.lead_source = "patient_portal"
-    request.state.patient_context = patient.get("diet_context") or "Paciente ativo em acompanhamento. Responda apenas dentro das orientações gerais do nutricionista e encaminhe questões clínicas ao profissional."
-    response = chat(request, req)
+    owner = saas_store.get_user(patient["client_id"]) or {}
+    client_config = owner.get("ai_config") or {}
+    rows = base_conhecimento.buscar_contexto(req.pergunta, limite=5)
+    contexto_rag = base_conhecimento.formatar_contexto_para_prompt(rows)
+    patient_context = patient.get("diet_context") or "Paciente ativo em acompanhamento. Encaminhe decisões clínicas ao profissional."
+    contexto = f"{patient_context}\n\n{contexto_rag}".strip()
+    try:
+        resposta = gerar_resposta_paciente(req.pergunta, contexto, [item.model_dump() for item in req.historico], client_config)
+    except Exception as exc:
+        logger.exception("Falha ao gerar resposta da IA para paciente (patient_id=%s): %s", patient.get("id"), type(exc).__name__)
+        resposta = resposta_contingencia(req.pergunta, client_config)
+    response = RespostaResponse(resposta=resposta, fontes_utilizadas=[], requires_contact=False)
     saas_store._request("PATCH", "patient_accounts", params={"id": f"eq.{patient['id']}"}, payload={"messages_used": used + 1, "last_access_at": datetime.now(timezone.utc).isoformat(), "updated_at": datetime.now(timezone.utc).isoformat()}, prefer="return=minimal")
     return response
 

@@ -141,6 +141,48 @@ def montar_system_prompt(config: dict | None = None) -> str:
 
 SYSTEM_PROMPT = montar_system_prompt()
 
+PATIENT_SYSTEM_PROMPT_TEMPLATE = """\
+Você se chama {ASSISTENTE_NOME}. Você acompanha os pacientes ativos de {NUTRICIONISTA_NOME}, especialista em {NUTRICIONISTA_ESPECIALIDADE}.
+Este é um portal privado: a pessoa já é paciente. Responda apenas sobre alimentação, rotina, adesão e orientações gerais do acompanhamento, usando o contexto fornecido sem inventar dados.
+Nunca fale sobre venda, cobrança, pagamento, contratação, lead ou convite para consulta. Nunca gere links, ofertas ou chamadas comerciais.
+Não prescreva nem altere dieta, quantidades, restrições ou medicações. Em sintomas, alergias, piora clínica ou decisões individuais, oriente a falar com o nutricionista ou procurar atendimento adequado.
+Responda em português do Brasil, com clareza, acolhimento e objetividade.
+"""
+
+
+def montar_patient_system_prompt(config: dict | None = None) -> str:
+    config = config or {}
+    return PATIENT_SYSTEM_PROMPT_TEMPLATE.format(
+        ASSISTENTE_NOME=config.get("identidade_ia") or "NutriOS",
+        NUTRICIONISTA_NOME=config.get("nome") or NUTRICIONISTA_NOME,
+        NUTRICIONISTA_ESPECIALIDADE=config.get("especialidade") or NUTRICIONISTA_ESPECIALIDADE,
+    )
+
+
+def gerar_resposta_paciente(pergunta: str, contexto: str, historico: list[dict] | None = None, client_config: dict | None = None) -> str:
+    """Gera orientação para paciente ativo sem atravessar o funil comercial."""
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    contents = []
+    for msg in (historico or []):
+        role = "user" if msg.get("autor") == "user" else "model"
+        contents.append({"role": role, "parts": [{"text": msg.get("texto", "")}]})
+    contents.append({"role": "user", "parts": [{"text": f"CONTEXTO DO ACOMPANHAMENTO:\n{contexto}\n\nPERGUNTA DO PACIENTE:\n{pergunta}"}]})
+    models = [MODEL] + ([FALLBACK_MODEL] if FALLBACK_MODEL and FALLBACK_MODEL != MODEL else [])
+    last_error = None
+    for model in models:
+        try:
+            resposta = client.models.generate_content(model=model, contents=contents, config={"system_instruction": montar_patient_system_prompt(client_config), "max_output_tokens": 2000})
+            if str(resposta.text or "").strip():
+                return resposta.text
+            last_error = RuntimeError("Resposta vazia do provedor")
+        except errors.APIError as exc:
+            last_error = exc
+            if exc.code in {400, 401, 403, 429}:
+                break
+        except Exception as exc:
+            last_error = exc
+    raise last_error or RuntimeError("Nenhum modelo de IA disponível")
+
 
 def gerar_resposta(
     pergunta: str,
