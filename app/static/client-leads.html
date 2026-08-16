@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="/static/nutrios-v26-refine.css?v=26">
 <link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
 <link rel="stylesheet" href="/static/nutrios-v28-clinical-flow.css?v=28">
-<link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=5">
+<link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=6">
 </head><body class="leads-page"><main class="wrap"><header class="top"><div><a href="/app">â† Voltar</a><div class="eyebrow">COMERCIAL</div><h1>Conversas e oportunidades</h1><div class="muted">Acompanhe contatos, intenÃ§Ã£o de agendamento e pagamentos em um sÃ³ lugar.</div></div><button onclick="load()">Atualizar</button></header><section class="stats"><div class="stat"><b id="total">â€”</b><span class="muted">Conversas</span></div><div class="stat"><b id="verify">â€”</b><span class="muted">Aguardando conferÃªncia</span></div><div class="stat"><b id="paid">â€”</b><span class="muted">Pagamentos confirmados</span></div></section><section class="panel"><div id="list" class="list">Carregando...</div></section></main><script>
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const labels={new:'Nova conversa',awaiting_payment:'Aguardando pagamento',awaiting_verification:'Aguardando conferÃªncia',payment_confirmed:'Pagamento confirmado',contacted:'Cliente contatado',anamnesis_sent:'Anamnese enviada',scheduled:'Consulta agendada'};let config={};

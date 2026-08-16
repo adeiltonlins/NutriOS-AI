@@ -6,12 +6,12 @@
   --ui-success: #168f43;
   --ui-danger: #c33f4a;
   --ui-warning: #a85f09;
-  --ui-bg: #f5f8f6;
-  --ui-surface: #ffffff;
-  --ui-surface-soft: #f0f5f2;
+  --ui-bg: #f2f5f3;
+  --ui-surface: #f9fbfa;
+  --ui-surface-soft: #edf2ef;
   --ui-text: #15251b;
-  --ui-muted: #63756a;
-  --ui-line: #dce7df;
+  --ui-muted: #42574a;
+  --ui-line: #cad8ce;
   --ui-focus: #55b978;
   --ui-radius-sm: 10px;
   --ui-radius-md: 14px;
@@ -49,12 +49,12 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
-  --ui-bg: #f5f8f6;
-  --ui-surface: #ffffff;
-  --ui-surface-soft: #f0f5f2;
+  --ui-bg: #f2f5f3;
+  --ui-surface: #f9fbfa;
+  --ui-surface-soft: #edf2ef;
   --ui-text: #15251b;
-  --ui-muted: #63756a;
-  --ui-line: #dce7df;
+  --ui-muted: #42574a;
+  --ui-line: #cad8ce;
   --ui-brand: #168f43;
   --ui-brand-strong: #0f7134;
   --ui-brand-soft: #eaf8ef;
@@ -123,7 +123,7 @@ html[data-theme="light"] .patient-page .wrap > .stats .stat b {
 }
 html[data-theme="light"] .patient-page .wrap > .stats .sub,
 html[data-theme="light"] .patient-page .wrap > .panel th,
-html[data-theme="light"] .patient-page .module-context p { color: #607268 !important; }
+html[data-theme="light"] .patient-page .module-context p { color: #46594e !important; }
 html[data-theme="light"] .patient-page .module-context { background: #eaf6ee !important; border-color: #b9dcc5 !important; }
 html[data-theme="light"] .patient-page .module-context h2 { color: #13261a !important; }
 html[data-theme="light"] .patient-page .context-kicker { color: #087d35 !important; }
@@ -131,7 +131,7 @@ html[data-theme="light"] .patient-page .wrap > .panel th { background: #e8f1eb !
 html[data-theme="light"] .patient-page .wrap > .panel td { color: var(--ui-text) !important; }
 html[data-theme="light"] .patient-page .usage { background: #dce8df !important; }
 html[data-theme="light"] .patient-page .module-context .ghost,
-html[data-theme="light"] .patient-page .wrap > .panel .ghost { background: #fff !important; border-color: #bfd8c7 !important; color: #185c31 !important; }
+html[data-theme="light"] .patient-page .wrap > .panel .ghost { background: var(--ui-surface) !important; border-color: #b5cbbb !important; color: #185c31 !important; }
 html[data-theme="light"] .patient-page .wrap > .panel .tabs .on { background: #e5f5ea !important; color: #087d35 !important; }
 
 /* Professional dashboard refinements */
@@ -309,8 +309,8 @@ html[data-theme="light"] :where(.money, .ok, .success, .text-brand) {
   -webkit-text-fill-color: #087d35 !important;
 }
 html[data-theme="light"] :where(.muted, .sub, .meta, small, .description, .helper, .legend, .capacity-label) {
-  color: #596b61 !important;
-  -webkit-text-fill-color: #596b61 !important;
+  color: #415448 !important;
+  -webkit-text-fill-color: #415448 !important;
 }
 html[data-theme="light"] :where(.brand, .admin-brand, .sidebar-brand, .logo, .brand-name, .os-brand-name),
 html[data-theme="light"] :where(.brand, .admin-brand, .sidebar-brand, .logo) strong {
@@ -323,14 +323,14 @@ html[data-theme="light"] :where(.nav.active, .nav:hover, .admin-nav .nav.active,
   color: #087d35 !important;
 }
 html[data-theme="light"] :where(input, select, textarea) {
-  background: #fff !important;
-  border-color: #bfd2c5 !important;
+  background: var(--ui-surface) !important;
+  border-color: #b5c9ba !important;
   color: #15251b !important;
   -webkit-text-fill-color: #15251b !important;
 }
-html[data-theme="light"] :where(input, textarea)::placeholder { color: #718077 !important; opacity: 1; }
+html[data-theme="light"] :where(input, textarea)::placeholder { color: #586a5f !important; opacity: 1; }
 html[data-theme="light"] :where(label, th, td) { color: #263a2d !important; }
-html[data-theme="light"] th { background: #edf4ef !important; color: #4c6054 !important; }
+html[data-theme="light"] th { background: #e8efeb !important; color: #405347 !important; }
 html[data-theme="light"] .side-footer {
   background: #173c26 !important;
   border-color: #285c3b !important;
@@ -338,8 +338,8 @@ html[data-theme="light"] .side-footer {
 }
 html[data-theme="light"] .side-footer :where(b, small) { color: #eef8f1 !important; -webkit-text-fill-color: #eef8f1 !important; }
 html[data-theme="light"] :where(.ghost, .secondary, .btn-secondary, button.secondary) {
-  background: #fff !important;
-  border-color: #bcd4c4 !important;
+  background: var(--ui-surface) !important;
+  border-color: #b5cbbb !important;
   color: #185c31 !important;
 }
 html[data-theme="light"] :where(.admin-stats .stat, .stats .stat) > div > b:not(.money) {
@@ -422,6 +422,14 @@ body:not(.login-page):not(.patient-page) :where(.page, .wrap) {
   /* Break only genuinely long tokens; table cells define a stricter contract below. */
   overflow-wrap: break-word;
   word-break: normal;
+}
+:where(button, .btn, .button, [role="button"], a.primary, a.secondary, a.ghost) {
+  max-width: 100%;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 :where(.panel-head, .section-heading, .top, .toolbar, .actions, .modal-actions) {
   align-items: center;
