@@ -419,21 +419,31 @@ body:not(.login-page):not(.patient-page) :where(.page, .wrap) {
 }
 :where(.panel, .card, .form-card, .clinical-card, .table-card) {
   min-width: 0;
-  overflow-wrap: anywhere;
+  /* Break only genuinely long tokens; table cells define a stricter contract below. */
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 :where(.panel-head, .section-heading, .top, .toolbar, .actions, .modal-actions) {
   align-items: center;
   gap: 12px;
 }
-:where(.table-wrap, .table-shell) {
+:where(.table-wrap, .table-shell, div.table) {
   width: 100%;
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
 }
-:where(.table-wrap, .table-shell) table {
+:where(.table-wrap, .table-shell, div.table) table {
   min-width: 680px;
+}
+:where(th, td) {
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: manual;
+}
+:where(th, td) > :where(.badge, .pill, .tag, .status-chip) {
+  white-space: nowrap;
 }
 
 /* Tablet: avoid squeezed form controls and cards touching each other. */
