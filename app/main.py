@@ -2633,7 +2633,7 @@ def patient_private_chat(request: Request, req: PerguntaRequest, patient: dict =
         raise HTTPException(429, "Seu limite de mensagens foi atingido. Fale com seu nutricionista para renovar ou ampliar o plano.")
     owner = saas_store.get_user(patient["client_id"]) or {}
     client_config = owner.get("ai_config") or {}
-    rows = base_conhecimento.buscar_contexto(req.pergunta, limite=5)
+    rows = base_conhecimento.buscar_contexto(req.pergunta, top_k=5)
     contexto_rag = base_conhecimento.formatar_contexto_para_prompt(rows)
     patient_context = patient.get("diet_context") or "Paciente ativo em acompanhamento. Encaminhe decisões clínicas ao profissional."
     contexto = f"{patient_context}\n\n{contexto_rag}".strip()

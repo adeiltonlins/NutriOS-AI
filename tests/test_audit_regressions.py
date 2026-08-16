@@ -32,8 +32,6 @@ def test_patient_chat_does_not_read_or_write_leads(monkeypatch):
     patient = {"id": "patient-1", "client_id": "nutri-1", "messages_used": 0, "message_limit": 10, "diet_context": "Plano em acompanhamento"}
     monkeypatch.setattr(main.saas_store, "get_user", lambda *_args: {"id": "nutri-1", "ai_config": {"nome": "Dra. Ana"}})
     monkeypatch.setattr(main.saas_store, "_request", lambda *_args, **_kwargs: [])
-    monkeypatch.setattr(main.base_conhecimento, "buscar_contexto", lambda *_args, **_kwargs: [])
-    monkeypatch.setattr(main.base_conhecimento, "formatar_contexto_para_prompt", lambda *_args: "")
     monkeypatch.setattr(main, "gerar_resposta_paciente", lambda *_args, **_kwargs: "Uma opção geral é combinar fruta e proteína; confirme porções com sua nutricionista.")
     monkeypatch.setattr(main.leads_store, "buscar_lead", lambda *_args: (_ for _ in ()).throw(AssertionError("portal privado não consulta leads")))
     monkeypatch.setattr(main.leads_store, "salvar_lead", lambda *_args: (_ for _ in ()).throw(AssertionError("portal privado não salva leads")))
