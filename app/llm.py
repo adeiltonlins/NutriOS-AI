@@ -14,8 +14,12 @@ não muda.
 """
 import os
 from google import genai
+from google.genai import errors
 
-MODEL = "gemini-flash-latest"  # alias que sempre aponta pra versão Flash mais recente do Gemini
+# Modelo estável por padrão. O alias ``latest`` pode mudar sem deploy e é
+# menos previsível para uma aplicação clínica em produção.
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.6-flash")
 
 # ---- Configuração por cliente (nutricionista) ----
 # Pra atender um nutricionista diferente no futuro, só trocar essas 3
@@ -196,13 +200,63 @@ MENSAGEM DA PESSOA:
 
     contents.append({"role": "user", "parts": [{"text": mensagem_atual}]})
 
-    resposta = client.models.generate_content(
-        model=MODEL,
-        contents=contents,
-        config={
-            "system_instruction": montar_system_prompt(client_config),
-            "max_output_tokens": 2000,
-        },
-    )
+    config = {
+        "system_instruction": montar_system_prompt(client_config),
+        "max_output_tokens": 2000,
+    }
+    models = [MODEL]
+    if FALLBACK_MODEL and FALLBACK_MODEL not in models:
+        models.append(FALLBACK_MODEL)
 
-    return resposta.text
+    last_error = None
+    for model in models:
+        try:
+            resposta = client.models.generate_content(model=model, contents=contents, config=config)
+            if str(resposta.text or "").strip():
+                return resposta.text
+            last_error = RuntimeError("Resposta vazia do provedor")
+        except errors.APIError as exc:
+            last_error = exc
+            # Chave inválida ou sem cota também falhará no segundo modelo.
+            if exc.code in {400, 401, 403, 429}:
+                break
+        except Exception as exc:
+            last_error = exc
+
+    raise last_error or RuntimeError("Nenhum modelo de IA disponível")
+
+
+def resposta_contingencia(pergunta: str, client_config: dict | None = None) -> str:
+    """Entrega orientação segura quando o provedor externo está indisponível."""
+    texto = pergunta.casefold()
+    profissional = (client_config or {}).get("nome") or "seu nutricionista"
+
+    if "lactose" in texto:
+        return (
+            "Em geral, você pode considerar iogurte e leite sem lactose, bebidas vegetais sem açúcar, "
+            "ovos, frutas, aveia e tapioca com um recheio proteico. Confira o rótulo para evitar leite, "
+            "soro de leite ou lactose quando houver sensibilidade. A melhor combinação depende do seu plano "
+            f"e da sua tolerância; confirme quantidades e substituições com {profissional}."
+        )
+    if any(term in texto for term in ("café da manhã", "cafe da manha", "desjejum")):
+        return (
+            "Uma base segura para o café da manhã é combinar uma fonte de proteína, uma fruta e uma fonte "
+            "de carboidrato ou fibra. Exemplos gerais incluem ovos com fruta e aveia, ou iogurte com fruta "
+            f"e sementes. As porções devem seguir o plano definido por {profissional}."
+        )
+    if any(term in texto for term in ("água", "agua", "hidrata")):
+        return (
+            "Distribua a ingestão de água ao longo do dia e observe sede, cor da urina, clima e atividade "
+            f"física. Necessidades individuais variam; {profissional} pode ajustar uma meta ao seu caso."
+        )
+    if any(term in texto for term in ("emagrecer", "perder peso", "ganhar massa", "massa muscular")):
+        return (
+            "O resultado costuma depender da regularidade das refeições, qualidade do sono, atividade física "
+            "e de um plano compatível com sua rotina. Evite mudanças extremas ou cortar grupos alimentares sem "
+            f"avaliação; registre sua dificuldade para {profissional} ajustar o acompanhamento."
+        )
+    return (
+        "A conexão com a inteligência nutricional está temporariamente limitada. Enquanto ela se restabelece, "
+        "mantenha as orientações do seu plano e não altere quantidades ou restrições por conta própria. "
+        f"Se a dúvida envolver sintomas, alergias ou mudança clínica, fale diretamente com {profissional}."
+    )

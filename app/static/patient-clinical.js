@@ -37,6 +37,7 @@
     patientQuestionnaires.innerHTML = questionnaires.filter(q=>q.template_key!=='patient_report').map((q) => `<article class="document"><h3>${esc2(q.title)}</h3><p>Status: ${esc2(q.status)}</p>${q.status === 'assigned' ? `<form data-questionnaire="${q.id}">${(q.schema_snapshot||[]).map(f=>`<label>${esc2(f[1])}${f[2]==='scale'?`<input name="${esc2(f[0])}" type="range" min="0" max="10" value="5">`:f[2]==='number'?`<input name="${esc2(f[0])}" type="number">`:f[2]==='boolean'?`<select name="${esc2(f[0])}"><option value="false">Não</option><option value="true">Sim</option></select>`:`<textarea name="${esc2(f[0])}"></textarea>`}</label>`).join('')}<button>Enviar respostas</button></form>`:''}</article>`).join('') || '<div class="empty-state compact"><b>Nenhum questionário liberado no momento.</b><p>Quando o nutricionista atribuir um formulário clínico, ele aparecerá aqui para você responder.</p></div>';
     document.querySelectorAll('[data-questionnaire]').forEach(form=>form.onsubmit=async e=>{e.preventDefault();const answers=Object.fromEntries(new FormData(form));const r=await fetch('/paciente/api/questionarios/'+form.dataset.questionnaire,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers})});if(r.ok)loadClinical();});
   }
+  window.addEventListener("nutrios:checkin-saved", loadClinical);
   const reportForm=document.querySelector('#patientReportForm');
   if(reportForm) reportForm.onsubmit=async(event)=>{
     event.preventDefault();

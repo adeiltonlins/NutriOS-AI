@@ -20,14 +20,14 @@ def test_chat_returns_model_answer_without_writing_lead(monkeypatch):
     assert result.requires_contact is False
 
 
-def test_chat_has_friendly_fallback_when_gemini_fails(monkeypatch):
+def test_chat_has_useful_fallback_when_gemini_fails(monkeypatch):
     monkeypatch.setenv("IA_ATIVA", "true")
     monkeypatch.setattr(main.base_conhecimento, "buscar_contexto", lambda *_args, **_kwargs: [])
     monkeypatch.setattr(main.base_conhecimento, "formatar_contexto_para_prompt", lambda _rows: "")
     monkeypatch.setattr(main, "gerar_resposta", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("provider down")))
-    result = main.chat.__wrapped__(request(), main.PerguntaRequest(pergunta="Tenho uma dúvida"))
-    assert "instabilidade" in result.resposta
-    assert "quero agendar" in result.resposta
+    result = main.chat.__wrapped__(request(), main.PerguntaRequest(pergunta="Tenho intolerância à lactose. O que posso comer no café da manhã?"))
+    assert "sem lactose" in result.resposta
+    assert "instabilidade" not in result.resposta
 
 
 def test_consultation_intent_does_not_depend_on_gemini(monkeypatch):

@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 import requests
 
 from app.knowledge_base import base_conhecimento
-from app.llm import gerar_resposta, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
+from app.llm import gerar_resposta, resposta_contingencia, LINK_AGENDAMENTO, MARCADOR_LINK_PAGAMENTO, NUTRICIONISTA_NOME
 from app import leads_store
 from app import pagamento
 from app import auth, business_store, emailer, patient_auth, saas_store, clinical_extensions
@@ -2574,7 +2574,7 @@ def chat(request: Request, req: PerguntaRequest):
                 "Falha ao gerar resposta da IA (test_mode=%s, client_id=%s, client_slug=%s): %s",
                 req.test_mode, req.client_id, req.client_slug, type(exc).__name__,
             )
-            resposta = "Tive uma instabilidade rápida ao preparar essa resposta. Pode repetir sua dúvida em uma frase? Se você deseja marcar uma consulta, escreva ‘quero agendar’."
+            resposta = resposta_contingencia(req.pergunta, client_config)
 
     # O Bruce usa um marcador em vez de escrever o link — aqui a gente
     # detecta a intenção de convidar pra consulta e troca pelo link real.
