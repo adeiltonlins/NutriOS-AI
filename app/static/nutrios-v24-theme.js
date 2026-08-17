@@ -17,11 +17,62 @@
   }
   window.NutriOSTheme={apply,get:current,toggle:()=>apply(root.getAttribute('data-theme')==='dark'?'light':'dark')};
   apply(current());
+
+  // PWA: no link público de cada nutricionista, a instalação assume a identidade
+  // visual daquele profissional (nome, cor e logo), em vez do ícone genérico.
+  async function setupTenantPWA(){
+    const match=location.pathname.match(/^\/n\/([^/]+)$/);
+    if(!match)return;
+    const slug=decodeURIComponent(match[1]);
+    const fallback='/static/icons/icon-512.svg';
+    try{
+      const r=await fetch('/public/clientes/'+encodeURIComponent(slug),{credentials:'same-origin'});
+      if(!r.ok)throw new Error('identity');
+      const cfg=await r.json();
+      const name=String(cfg.nome||'NutriOS').slice(0,80);
+      const color=/^#[0-9a-fA-F]{6}$/.test(String(cfg.cor_principal||''))?cfg.cor_principal:'#003d27';
+      const icon=String(cfg.logo_url||fallback);
+      const manifest={
+        name:name+' — NutriOS',
+        short_name:name.slice(0,24),
+        description:'Atendimento nutricional digital',
+        start_url:location.pathname,
+        scope:location.pathname.replace(/\/$/,'')+'/',
+        display:'standalone',
+        background_color:'#00261a',
+        theme_color:color,
+        orientation:'portrait-primary',
+        lang:'pt-BR',
+        icons:[
+          {src:icon,sizes:'192x192',type:'image/png',purpose:'any'},
+          {src:icon,sizes:'512x512',type:'image/png',purpose:'any'},
+          {src:icon,sizes:'512x512',type:'image/png',purpose:'maskable'}
+        ]
+      };
+      const blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
+      const url=URL.createObjectURL(blob);
+      let link=document.querySelector('link[rel="manifest"]');
+      if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link)}
+      link.href=url;
+      document.documentElement.style.setProperty('--tenant-color',color);
+      if(cfg.logo_url){
+        let fav=document.querySelector('link[data-nutrios-tenant-icon]');
+        if(!fav){fav=document.createElement('link');fav.rel='icon';fav.dataset.nutriosTenantIcon='1';document.head.appendChild(fav)}
+        fav.href=cfg.logo_url;
+      }
+    }catch(_){
+      let link=document.querySelector('link[rel="manifest"]');
+      if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link)}
+      link.href='/static/manifest.json';
+    }
+  }
+
   function mount(){
     if(!document.getElementById('nutrios-theme-toggle')){
       const b=document.createElement('button');b.id='nutrios-theme-toggle';b.type='button';b.onclick=()=>window.NutriOSTheme.toggle();document.body.appendChild(b);
     }
     apply(current());
+    setupTenantPWA();
   }
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',mount):mount();
 })();
