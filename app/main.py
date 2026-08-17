@@ -582,6 +582,28 @@ def me(user: dict = Depends(auth.current_user)):
     return {"id": user["id"], "name": user["name"], "role": user["role"], "active": user["active"]}
 
 
+# Push notification subscription
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: dict
+
+
+@app.post("/api/push/subscribe")
+def push_subscribe(sub: PushSubscription, user: dict = Depends(auth.current_user)):
+    """Save push subscription for the authenticated user."""
+    saas_store.update_user(user["id"], {
+        "push_subscription": sub.model_dump()
+    })
+    return {"ok": True}
+
+
+@app.post("/api/push/unsubscribe")
+def push_unsubscribe(user: dict = Depends(auth.current_user)):
+    """Remove push subscription for the authenticated user."""
+    saas_store.update_user(user["id"], {"push_subscription": None})
+    return {"ok": True}
+
+
 @app.get("/app")
 def client_app(background_tasks: BackgroundTasks, user: dict = Depends(auth.current_user)):
     if user.get("role") == "client" and not user.get("password_hash"):
@@ -3064,3 +3086,52 @@ def painel_conversa(request: Request, token: str = Query(default=""), session_id
     </body>
     </html>
     """
+
+
+
+# ---------------------------------------------------------------------------
+# Push notifications (admin -> users)
+# ---------------------------------------------------------------------------
+
+
+class PushBroadcast(BaseModel):
+    title: str
+    body: str
+    url: str = "/app"
+    # Opcional: enviar só para um nutricionista/cliente específico (id).
+    user_id: str | None = None
+
+
+@app.post("/admin/api/push/send")
+def admin_push_send(payload: PushBroadcast, admin: dict = Depends(auth.require_admin)):
+    """Dispara push para todos os usuários com subscription ativa (ou um só)."""
+    if not (os.getenv("VAPID_PRIVATE_KEY") and os.getenv("VAPID_PUBLIC_KEY")):
+        raise HTTPException(503, "VAPID não configurado no servidor")
+    from app.push_sender import send_push
+
+    users = saas_store.list_users()
+    alvos = [u for u in users if u.get("active") and u.get("push_subscription")]
+    if payload.user_id:
+        alvos = [u for u in alvos if u.get("id") == payload.user_id]
+
+    enviados = 0
+    falhas = 0
+    for u in alvos:
+        ok = send_push(u["push_subscription"], payload.title, payload.body, payload.url)
+        if ok:
+            enviados += 1
+        else:
+            falhas += 1
+    return {"ok": True, "enviados": enviados, "falhas": falhas, "total_subscriptions": len(alvos)}
+
+
+@app.get("/admin/api/push/status")
+def admin_push_status(admin: dict = Depends(auth.require_admin)):
+    """Mostra se o servidor está pronto para enviar push e quantos inscritos há."""
+    users = saas_store.list_users()
+    inscritos = [u for u in users if u.get("active") and u.get("push_subscription")]
+    return {
+        "vapid_configurado": bool(os.getenv("VAPID_PRIVATE_KEY") and os.getenv("VAPID_PUBLIC_KEY")),
+        "vapid_public_key": os.getenv("VAPID_PUBLIC_KEY", ""),
+        "inscritos": len(inscritos),
+    }

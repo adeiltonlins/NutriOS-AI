@@ -301,14 +301,43 @@ init().catch(()=>location='/login');
 </script>
 <script src="/static/nutrios-v24-theme.js?v=24"></script>
 <script src="/static/nutrios-datetime.js?v=26"></script>
+<meta name="vapid-public-key" content="BJj-1ef6-JzSPPc6NNNQnOQl_I0uvLtDCh7XuwfrjIIPfAGx7DfxIc5CPHyvyy3xVrfUaDvmUCm6V5D0IF_IT3s">
 <script>
-// PWA Service Worker registration
+// PWA Service Worker registration + Push subscription
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/static/sw.js')
-      .then(reg => console.log('[SW] Registrado:', reg.scope))
-      .catch(err => console.error('[SW] Falha:', err));
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/static/sw.js');
+      console.log('[SW] Registrado:', reg.scope);
+      
+      // Subscribe to push if not already subscribed
+      const existing = await reg.pushManager.getSubscription();
+      if (!existing) {
+        const vapidKey = document.querySelector('meta[name=vapid-public-key]')?.content;
+        if (vapidKey) {
+          const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidKey)
+          });
+          await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sub)
+          });
+          console.log('[Push] Subscribed');
+        }
+      }
+    } catch (err) {
+      console.error('[SW] Falha:', err);
+    }
   });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 </script>
 </body>
