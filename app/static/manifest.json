@@ -1,0 +1,52 @@
+{
+  "name": "NutriOS",
+  "short_name": "NutriOS",
+  "description": "Painel profissional para nutricionistas — pacientes, agenda, financeiro, evolução e inteligência clínica",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "scope": "/app",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "medical", "productivity"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Novo paciente",
+      "short_name": "Novo",
+      "description": "Cadastrar novo paciente",
+      "url": "/app/pacientes?novo=1",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Agenda",
+      "short_name": "Agenda",
+      "description": "Ver consultas agendadas",
+      "url": "/app/gestao",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Financeiro",
+      "short_name": "Financeiro",
+      "description": "Receitas e despesas do mês",
+      "url": "/app/financeiro",
+      "icons": [{ "src": "/static/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

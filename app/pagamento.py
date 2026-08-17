@@ -16,11 +16,19 @@ Fluxo:
 
 Se MP_ACCESS_TOKEN não estiver configurado, as funções viram "no-op" —
 mesmo padrão usado no leads_store.py, pra não quebrar o resto do projeto.
+
+Modo de teste: se TEST_PAYMENT_MODE=true, cria links simulados e webhook
+aceita confirmação manual para validar fluxo sem tocar no MP real.
 """
 import hashlib
 import hmac
 import os
 import requests
+from datetime import datetime, timezone
+
+# Modo de teste — nunca use em produção
+TEST_PAYMENT_MODE = os.environ.get("TEST_PAYMENT_MODE", "false").lower() == "true"
+_test_payments = {}  # session_id -> {status, payment_id, paid_at}
 
 MP_ACCESS_TOKEN = os.environ.get("MP_ACCESS_TOKEN", "")
 MP_WEBHOOK_SECRET = os.environ.get("MP_WEBHOOK_SECRET", "")
@@ -29,7 +37,7 @@ NOME_ITEM = os.environ.get("NOME_ITEM_PAGAMENTO", "Consulta nutricional")
 # URL pública do seu serviço no Render, ex: https://nutri-chatbot-8h6k.onrender.com
 URL_BASE = os.environ.get("URL_BASE", "").rstrip("/")
 
-PAGAMENTO_ATIVO = bool(MP_ACCESS_TOKEN and URL_BASE)
+PAGAMENTO_ATIVO = bool((MP_ACCESS_TOKEN and URL_BASE) or TEST_PAYMENT_MODE)
 
 _API_BASE = "https://api.mercadopago.com"
 
@@ -63,6 +71,34 @@ def validar_assinatura_webhook(x_signature: str | None, x_request_id: str | None
     return hmac.compare_digest(parts["v1"], expected)
 
 
+def _test_payment_url(session_id: str) -> str:
+    """Gera URL de pagamento simulada para testes."""
+    return f"{URL_BASE or 'https://test.local'}/pagamento/teste?session_id={session_id}"
+
+
+def _register_test_payment(session_id: str, status: str = "pending"):
+    """Registra pagamento de teste para consulta via webhook/sucesso."""
+    _test_payments[session_id] = {
+        "status": status,
+        "payment_id": f"TEST-{session_id[:8]}",
+        "paid_at": datetime.now(timezone.utc).isoformat(),
+        "external_reference": session_id,
+        "transaction_amount": VALOR_CONSULTA,
+    }
+
+
+def _get_test_payment(session_id: str) -> dict | None:
+    return _test_payments.get(session_id)
+
+
+def confirmar_pagamento_teste(session_id: str) -> bool:
+    """Endpoint auxiliar: marca pagamento de teste como aprovado."""
+    if not TEST_PAYMENT_MODE:
+        return False
+    _register_test_payment(session_id, "approved")
+    return True
+
+
 def criar_link_pagamento(session_id: str) -> str | None:
     """
     Cria uma preferência de pagamento (Checkout Pro) pra essa sessão e
@@ -71,6 +107,9 @@ def criar_link_pagamento(session_id: str) -> str | None:
     Usa external_reference=session_id, o que permite depois relacionar
     o pagamento confirmado de volta com a conversa/lead certo.
     """
+    if TEST_PAYMENT_MODE:
+        _register_test_payment(session_id, "pending")
+        return _test_payment_url(session_id)
     if not PAGAMENTO_ATIVO:
         return None
 
@@ -111,6 +150,14 @@ def consultar_pagamento(payment_id: str) -> dict | None:
     """Busca o status real de um pagamento direto na API do Mercado Pago."""
     if not PAGAMENTO_ATIVO:
         return None
+    if TEST_PAYMENT_MODE and payment_id.startswith("TEST-"):
+        # Busca pelo session_id derivado do payment_id
+        session_id = payment_id.replace("TEST-", "")
+        # Precisa encontrar a chave completa (pode ter mais chars)
+        for k, v in _test_payments.items():
+            if k.startswith(session_id):
+                return v
+        return None
     try:
         resp = requests.get(
             f"{_API_BASE}/v1/payments/{payment_id}",
@@ -132,6 +179,9 @@ def buscar_pagamentos_por_referencia(external_reference: str) -> list[dict]:
     """
     if not PAGAMENTO_ATIVO:
         return []
+    if TEST_PAYMENT_MODE:
+        payment = _get_test_payment(external_reference)
+        return [payment] if payment else []
     try:
         resp = requests.get(
             f"{_API_BASE}/v1/payments/search",

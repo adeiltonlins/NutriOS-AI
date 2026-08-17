@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NutriOS — Painel profissional</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NutriOS">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/nutrios-dashboard-v6.css?v=20260813">
   <link rel="stylesheet" href="/static/nutrios-dashboard-v7.css?v=7">
 <link rel="stylesheet" href="/static/nutrios-analytics-v14.css?v=14">
@@ -295,5 +301,15 @@ init().catch(()=>location='/login');
 </script>
 <script src="/static/nutrios-v24-theme.js?v=24"></script>
 <script src="/static/nutrios-datetime.js?v=26"></script>
+<script>
+// PWA Service Worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/static/sw.js')
+      .then(reg => console.log('[SW] Registrado:', reg.scope))
+      .catch(err => console.error('[SW] Falha:', err));
+  });
+}
+</script>
 </body>
 </html>

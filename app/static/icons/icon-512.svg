@@ -1,0 +1,30 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="50%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#16a34a"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Leaf/sprout symbol -->
+  <g transform="translate(256, 280)">
+    <!-- Stem -->
+    <path d="M0 0 Q0 -40 0 -80" stroke="url(#leaf)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <!-- Main leaf -->
+    <path d="M0 -80 Q-35 -130 0 -160 Q35 -130 0 -80" fill="url(#leaf)"/>
+    <!-- Leaf vein -->
+    <path d="M0 -80 Q0 -120 0 -160" stroke="rgba(255,255,255,0.3)" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- Small leaf left -->
+    <path d="M-8 -50 Q-30 -70 -15 -90 Q-5 -70 -8 -50" fill="url(#leaf)" opacity="0.8" transform="rotate(-20)"/>
+    <!-- Small leaf right -->
+    <path d="M8 -50 Q30 -70 15 -90 Q5 -70 8 -50" fill="url(#leaf)" opacity="0.8" transform="rotate(20)"/>
+  </g>
+  <!-- Subtle glow ring -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="rgba(16,185,129,0.15)" stroke-width="2"/>
+</svg>
