@@ -83,11 +83,22 @@ def _load_brand_image(slug: str):
         return None
 
 
+def _default_icon(size: int) -> bytes:
+    """Return the NutriOS fallback icon at the exact requested iOS/PWA size."""
+    filename = "icon-192.png" if size <= 192 else "icon-512.png"
+    path = STATIC_DIR / "icons" / filename
+    image = Image.open(path).convert("RGBA")
+    if image.size != (size, size):
+        image = image.resize((size, size), Image.Resampling.LANCZOS)
+    out = io.BytesIO()
+    image.save(out, format="PNG", optimize=True)
+    return out.getvalue()
+
+
 def _render_logo(slug: str, size: int, maskable: bool = False) -> bytes:
     image = _load_brand_image(slug)
     if image is None:
-        path = STATIC_DIR / "icons" / ("icon-192.png" if size == 192 else "icon-512.png")
-        return path.read_bytes()
+        return _default_icon(size)
     canvas = Image.new("RGBA", (size, size), (247, 250, 248, 255))
     target = int(size * (0.68 if maskable else 0.82))
     fitted = ImageOps.contain(image, (target, target), Image.Resampling.LANCZOS)
@@ -99,18 +110,18 @@ def _render_logo(slug: str, size: int, maskable: bool = False) -> bytes:
 
 @router.get("/n/{public_slug}/pwa-icon/{variant}.png")
 def personalized_icon(public_slug: str, variant: str):
-    variants = {"192": (192, False), "512": (512, False), "512-maskable": (512, True)}
+    variants = {"180": (180, False), "192": (192, False), "512": (512, False), "512-maskable": (512, True)}
     if variant not in variants:
         raise HTTPException(404, "Ícone não encontrado")
     size, maskable = variants[variant]
-    return Response(_render_logo(public_slug, size, maskable), media_type="image/png", headers={"Cache-Control": "public, max-age=300, stale-while-revalidate=86400"})
+    return Response(_render_logo(public_slug, size, maskable), media_type="image/png", headers={"Cache-Control": "no-store, max-age=0"})
 
 
 @router.get("/n/{public_slug}/sw.js")
 def personalized_service_worker(public_slug: str):
     _client(public_slug)
     scope = f"/n/{public_slug}"
-    script = f"""const CACHE='nutrios-pwa-{public_slug}-v1';\nconst SCOPE={scope!r};\nself.addEventListener('install',event=>{{event.waitUntil(caches.open(CACHE).then(cache=>cache.add(SCOPE)).catch(()=>{{}}));self.skipWaiting();}});\nself.addEventListener('activate',event=>{{event.waitUntil(self.clients.claim());}});\nself.addEventListener('fetch',event=>{{const url=new URL(event.request.url);if(url.origin!==self.location.origin)return;if(!url.pathname.startsWith(SCOPE))return;event.respondWith(fetch(event.request).catch(()=>caches.match(event.request).then(r=>r||caches.match(SCOPE))));}});\n"""
+    script = f"""const CACHE='nutrios-pwa-{public_slug}-v2';\nconst SCOPE={scope!r};\nself.addEventListener('install',event=>{{event.waitUntil(caches.open(CACHE).then(cache=>cache.add(SCOPE)).catch(()=>{{}}));self.skipWaiting();}});\nself.addEventListener('activate',event=>{{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('nutrios-pwa-{public_slug}-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));}});\nself.addEventListener('fetch',event=>{{const url=new URL(event.request.url);if(url.origin!==self.location.origin)return;if(!url.pathname.startsWith(SCOPE))return;event.respondWith(fetch(event.request).catch(()=>caches.match(event.request).then(r=>r||caches.match(SCOPE))));}});\n"""
     return Response(script, media_type="application/javascript", headers={"Cache-Control": "no-store", "Service-Worker-Allowed": scope})
 
 
@@ -120,16 +131,23 @@ def personalized_service_worker(public_slug: str):
 def personalized_public_chat(public_slug: str):
     _client(public_slug)
     html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
-    manifest = f"/n/{quote(public_slug, safe='')}/manifest.webmanifest"
-    worker = f"/n/{quote(public_slug, safe='')}/sw.js"
+    slug = quote(public_slug, safe="")
+    manifest = f"/n/{slug}/manifest.webmanifest"
+    worker = f"/n/{slug}/sw.js"
     brand = _brand(public_slug)
     theme = _safe_color(brand["theme_color"])
-    icon = f"/n/{quote(public_slug, safe='')}/pwa-icon/192.png"
+    icon_180 = f"/n/{slug}/pwa-icon/180.png"
+    icon_192 = f"/n/{slug}/pwa-icon/192.png"
     scope = f"/n/{public_slug}"
     head = (
         f'<link rel="manifest" href="{manifest}">'
         f'<meta name="theme-color" content="{theme}">'
-        f'<link rel="apple-touch-icon" href="{icon}">'
+        f'<meta name="mobile-web-app-capable" content="yes">'
+        f'<meta name="apple-mobile-web-app-capable" content="yes">'
+        f'<meta name="apple-mobile-web-app-status-bar-style" content="default">'
+        f'<meta name="apple-mobile-web-app-title" content="{brand["short_name"]}">'
+        f'<link rel="apple-touch-icon" sizes="180x180" href="{icon_180}">'
+        f'<link rel="apple-touch-icon" sizes="192x192" href="{icon_192}">'
         f'<script>window.__NUTRIOS_PUBLIC_SLUG__={json.dumps(public_slug)};'
         f'if("serviceWorker" in navigator){{window.addEventListener("load",()=>navigator.serviceWorker.register({json.dumps(worker)},{{scope:{json.dumps(scope)}}}).catch(()=>{{}}));}}</script>'
     )
