@@ -40,7 +40,7 @@ jobs:
         run: >-
           python -m pytest -q
           tests/test_auth_unit.py
-          tests/test_tenant_isolation_v31.py
+          tests/test_rbac_tenant_core.py
           tests/test_dashboard_search_security.py
           tests/test_observability.py
 
