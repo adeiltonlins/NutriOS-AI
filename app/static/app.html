@@ -11,16 +11,13 @@
 <meta name="apple-mobile-web-app-title" content="NutriOS">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/nutrios-dashboard-bundle.css?v=20260823">
+<script defer src="/static/nutrios-charts.js?v=1"></script>
 </head>
 <body>
 <a class="ui-skip-link" href="#dashboardContent">Ir para o conteúdo</a>
 <div class="os-shell">
   <aside class="os-sidebar">
-    <a class="os-brand" href="/app" aria-label="NutriOS">
-      <span class="os-brand-mark" aria-hidden="true"></span>
-      <span class="os-brand-name">NutriOS</span>
-    </a>
-
+    <a class="os-brand" href="/app" aria-label="NutriOS"><span class="os-brand-mark" aria-hidden="true"></span><span class="os-brand-name">NutriOS</span></a>
     <nav class="os-nav" aria-label="Navegação principal">
       <a class="os-nav-item active" href="/app"><span class="os-nav-icon">⌂</span><span>Início</span></a>
       <a class="os-nav-item" href="/app/pacientes"><span class="os-nav-icon">♙</span><span>Pacientes</span></a>
@@ -36,10 +33,7 @@
       <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">▥</span><span>Captação e vendas</span></a>
       <a class="os-nav-item" href="/app/configuracoes"><span class="os-nav-icon">⚙</span><span>Configurações</span></a>
     </nav>
-
-    <div class="os-sidebar-footer">
-      <a class="os-help" href="/app/onboarding"><span>?</span> Central de ajuda</a>
-    </div>
+    <div class="os-sidebar-footer"><a class="os-help" href="/app/onboarding"><span>?</span> Central de ajuda</a></div>
   </aside>
 
   <section class="os-workspace">
@@ -52,32 +46,17 @@
       </div>
       <div class="os-top-actions">
         <button id="notificationButton" class="os-icon-btn" type="button" title="Notificações" aria-label="Abrir notificações" aria-haspopup="true" aria-expanded="false" aria-controls="notificationPopover">♢<span class="os-notification-dot" id="alertCount">0</span></button>
-        <div id="notificationPopover" class="os-notification-popover" role="dialog" aria-label="Notificações" hidden>
-          <strong>Notificações</strong>
-          <p id="notificationSummary">Carregando alertas...</p>
-          <a href="/app/clinica">Abrir central clínica →</a>
-        </div>
+        <div id="notificationPopover" class="os-notification-popover" role="dialog" aria-label="Notificações" hidden><strong>Notificações</strong><p id="notificationSummary">Carregando alertas...</p><a href="/app/clinica">Abrir central clínica →</a></div>
         <a class="os-icon-btn" href="/app/conversas" title="Conversas" aria-label="Abrir conversas">○</a>
-        <div class="os-profile">
-          <div class="os-avatar" id="avatarInitial">N</div>
-          <div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div>
-        </div>
+        <div class="os-profile"><div class="os-avatar" id="avatarInitial">N</div><div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div></div>
         <button class="os-logout" id="logout" type="button">Sair</button>
       </div>
     </header>
 
     <main class="os-main" id="dashboardContent">
-      <div id="dashboardError" class="os-dashboard-error" role="alert" hidden>
-        <p id="dashboardErrorMessage">Não foi possível carregar os dados agora.</p>
-        <button id="retryDashboard" type="button">Tentar novamente</button>
-      </div>
-
+      <div id="dashboardError" class="os-dashboard-error" role="alert" hidden><p id="dashboardErrorMessage">Não foi possível carregar os dados agora.</p><button id="retryDashboard" type="button">Tentar novamente</button></div>
       <section class="os-heading-row">
-        <div>
-          <h1 id="hello">Bem-vindo de volta!</h1>
-          <p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p>
-          <p class="os-platform-line">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência, com você no controle.</p>
-        </div>
+        <div><h1 id="hello">Bem-vindo de volta!</h1><p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p><p class="os-platform-line">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência, com você no controle.</p></div>
         <div class="os-heading-actions"><a class="os-primary-action" href="/app/pacientes?novo=1">+ Novo paciente</a><a class="os-secondary-action" href="/app/configuracoes#acessos">Compartilhar acessos</a><div class="os-date-card"><span>□</span><strong id="todayDate">—</strong></div></div>
       </section>
 
@@ -89,7 +68,7 @@
       </section>
 
       <section class="os-section os-analytics-section" aria-labelledby="analyticsTitle">
-        <div class="os-section-head os-analytics-head"><div><h2 id="analyticsTitle">Visão analítica</h2><p>Indicadores calculados com os dados reais da sua operação.</p></div><span class="os-live-badge">Dados reais</span></div>
+        <div class="os-section-head os-analytics-head"><div><h2 id="analyticsTitle">Visão analítica</h2><p>Indicadores calculados com os dados reais da sua operação.</p></div><span id="dataFreshness" class="os-live-badge">Dados reais</span></div>
         <div class="os-analytics-grid">
           <article class="os-chart-card os-chart-wide"><div class="os-chart-head"><div><h3>Receita e despesas</h3><p>Últimos 12 meses</p></div><div class="os-chart-legend"><span><i class="income"></i>Receita</span><span><i class="expense"></i>Despesas</span></div></div><div id="financeChart" class="os-chart-stage" aria-label="Gráfico de receita e despesas"></div></article>
           <article class="os-chart-card"><div class="os-chart-head"><div><h3>Distribuição de pacientes</h3><p>Ativos e inativos</p></div></div><div id="patientDonut" class="os-donut-wrap" aria-label="Distribuição de pacientes"></div></article>
@@ -111,105 +90,46 @@
         </div>
       </section>
 
-      <section class="os-section os-activity-section">
-        <div class="os-section-head"><div><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div>
-        <div id="activityList" class="os-activity-list" aria-live="polite" aria-busy="true"><div class="os-empty">Carregando atividades...</div></div>
-      </section>
+      <section class="os-section os-activity-section"><div class="os-section-head"><div><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div><div id="activityList" class="os-activity-list" aria-live="polite" aria-busy="true"><div class="os-empty">Carregando atividades...</div></div></section>
     </main>
   </section>
 </div>
 
 <script>
 const qs=s=>document.querySelector(s);
-const els={
-  todayDate:document.getElementById('todayDate'),activityList:document.getElementById('activityList'),appointmentsTotal:document.getElementById('appointmentsTotal'),adherenceAverage:document.getElementById('adherenceAverage'),assessmentTotal:document.getElementById('assessmentTotal'),profileName:document.getElementById('profileName'),avatarInitial:document.getElementById('avatarInitial'),hello:document.getElementById('hello'),metricPatients:document.getElementById('metricPatients'),metricAppointments:document.getElementById('metricAppointments'),metricIncome:document.getElementById('metricIncome'),metricAlerts:document.getElementById('metricAlerts'),alertCount:document.getElementById('alertCount'),moduleSearch:document.getElementById('moduleSearch'),searchResults:document.getElementById('searchResults'),logout:document.getElementById('logout'),notificationButton:document.getElementById('notificationButton'),notificationPopover:document.getElementById('notificationPopover'),notificationSummary:document.getElementById('notificationSummary'),dashboardError:document.getElementById('dashboardError'),dashboardErrorMessage:document.getElementById('dashboardErrorMessage'),retryDashboard:document.getElementById('retryDashboard')
-};
+const els={todayDate:document.getElementById('todayDate'),activityList:document.getElementById('activityList'),appointmentsTotal:document.getElementById('appointmentsTotal'),adherenceAverage:document.getElementById('adherenceAverage'),assessmentTotal:document.getElementById('assessmentTotal'),profileName:document.getElementById('profileName'),avatarInitial:document.getElementById('avatarInitial'),hello:document.getElementById('hello'),metricPatients:document.getElementById('metricPatients'),metricAppointments:document.getElementById('metricAppointments'),metricIncome:document.getElementById('metricIncome'),metricAlerts:document.getElementById('metricAlerts'),alertCount:document.getElementById('alertCount'),moduleSearch:document.getElementById('moduleSearch'),searchResults:document.getElementById('searchResults'),logout:document.getElementById('logout'),notificationButton:document.getElementById('notificationButton'),notificationPopover:document.getElementById('notificationPopover'),notificationSummary:document.getElementById('notificationSummary'),dashboardError:document.getElementById('dashboardError'),dashboardErrorMessage:document.getElementById('dashboardErrorMessage'),retryDashboard:document.getElementById('retryDashboard'),dataFreshness:document.getElementById('dataFreshness')};
 const ESCAPE_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>ESCAPE_MAP[ch]);
+const safeHref=value=>{const path=String(value??'');return path.startsWith('/')&&!/[\u0000-\u001F"'<>\\]/.test(path)?esc(path):'#'};
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtDate=v=>{try{return new Date(v).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch{return '—'}};
+const CACHE_TTL_MS=5*60*1000;
 const cacheKey=user=>`nutrios:dashboard:${String(user?.id||user?.client_id||user?.identifier||'current')}`;
 let currentUser=null,searchTimer=null,searchController=null,activeSearchIndex=-1;
-
 function setDate(){els.todayDate.textContent=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(new Date())}
+function timeLabel(timestamp){return new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(new Date(timestamp))}
+function setFreshness(savedAt,{stale=false,live=false}={}){if(live){els.dataFreshness.textContent=`Dados reais · atualizado às ${timeLabel(savedAt)}`;return}els.dataFreshness.textContent=stale?`Dados salvos · atualizado às ${timeLabel(savedAt)}`:`Dados em cache · atualizado às ${timeLabel(savedAt)}`}
 function showError(message){els.dashboardErrorMessage.textContent=message;els.dashboardError.hidden=false}
 function hideError(){els.dashboardError.hidden=true}
-function getCachedDashboard(user){try{const raw=sessionStorage.getItem(cacheKey(user));if(!raw)return null;const parsed=JSON.parse(raw);return parsed&&parsed.data?parsed:null}catch{return null}}
+function getCachedDashboard(user){try{const raw=sessionStorage.getItem(cacheKey(user));if(!raw)return null;const parsed=JSON.parse(raw);if(!parsed?.data||!Number(parsed.savedAt))return null;return {...parsed,stale:(Date.now()-Number(parsed.savedAt))>CACHE_TTL_MS}}catch{return null}}
 function setCachedDashboard(user,data){try{sessionStorage.setItem(cacheKey(user),JSON.stringify({savedAt:Date.now(),data}))}catch{}}
-
-function renderActivities(data){
-  const items=[];
-  (data.checkins||[]).slice(0,3).forEach(x=>items.push({title:`${x.patient_name||'Paciente'} · Check-in respondido`,meta:`Adesão: ${x.adherence??'—'} · Energia: ${x.energy??'—'} · ${fmtDate(x.created_at)}`,status:'Concluído',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#diary`:'/app/pacientes'}));
-  (data.appointments||[]).slice(0,2).forEach(x=>items.push({title:`${x.patient_name||'Paciente'} · Consulta agendada`,meta:`${fmtDate(x.starts_at)}`,status:'Agendado',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#schedule`:'/app/agenda'}));
-  els.activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${x.href}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`;
-  els.activityList.setAttribute('aria-busy','false');
-}
-
-const monthLabel=m=>{const [y,mo]=String(m).split('-');return new Intl.DateTimeFormat('pt-BR',{month:'short'}).format(new Date(Number(y),Number(mo)-1,1)).replace('.','')};
-const hasPositive=arr=>arr.some(v=>Number(v)>0);
-const compactMoney=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',notation:'compact',maximumFractionDigits:1}).format(Number(v||0));
-const chartEmpty=msg=>`<div class="os-chart-empty"><strong>Ainda sem dados suficientes</strong><span>${esc(msg)}</span></div>`;
-
-function lineChart(target,series,opts={}){
-  const el=typeof target==='string'?qs(target):target;if(!el)return;
-  const values=series.flatMap(s=>s.values.filter(v=>v!==null&&v!==undefined).map(Number));
-  if(!values.length||!hasPositive(values.map(Math.abs))){el.innerHTML=chartEmpty(opts.empty||'Os dados aparecerão conforme você usar o NutriOS.');return}
-  const W=760,H=250,p={l:42,r:18,t:20,b:38},min=opts.min??0,max=Math.max(opts.max??0,...values,1),x=i=>p.l+(i*(W-p.l-p.r)/Math.max(1,(series[0].values.length-1))),y=v=>p.t+(max-Number(v||0))*(H-p.t-p.b)/Math.max(1,max-min);
-  const grid=[0,.25,.5,.75,1].map(k=>{const yy=p.t+k*(H-p.t-p.b),val=max*(1-k);return `<line x1="${p.l}" y1="${yy}" x2="${W-p.r}" y2="${yy}" class="grid"/><text x="${p.l-8}" y="${yy+4}" text-anchor="end" class="axis-y">${opts.money?compactMoney(val):Math.round(val)}</text>`}).join('');
-  const labels=series[0].labels.map((lab,i)=>`<text x="${x(i)}" y="${H-12}" text-anchor="middle" class="axis-x${i%2?' axis-x-alt':''}">${esc(monthLabel(lab))}</text>`).join('');
-  const paths=series.map((s,idx)=>{const pts=s.values.map((v,i)=>`${x(i)},${y(v??0)}`).join(' '),circles=s.values.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v??0)}" r="3.2" class="series-dot s${idx}"/>`).join('');return `<polyline points="${pts}" class="series-line s${idx}"/>${circles}`}).join('');
-  el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico')}">${grid}${paths}${labels}</svg>`;
-}
-function barChart(target,labels,values,opts={}){
-  const el=typeof target==='string'?qs(target):target;if(!el)return;if(!values.length||!hasPositive(values)){el.innerHTML=chartEmpty(opts.empty||'Nenhum registro no período.');return}
-  const W=760,H=220,p={l:28,r:16,t:16,b:38},max=Math.max(...values,1),slot=(W-p.l-p.r)/values.length,bw=Math.min(34,slot*.55);
-  const bars=values.map((v,i)=>{const h=(Number(v)/max)*(H-p.t-p.b),xx=p.l+i*slot+(slot-bw)/2,yy=H-p.b-h;return `<rect x="${xx}" y="${yy}" width="${bw}" height="${h}" rx="7" class="bar"/><text x="${xx+bw/2}" y="${Math.max(13,yy-7)}" text-anchor="middle" class="bar-value">${Number(v)}</text><text x="${xx+bw/2}" y="${H-12}" text-anchor="middle" class="axis-x${i%2?' axis-x-alt':''}">${esc(monthLabel(labels[i]))}</text>`}).join('');
-  el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico de barras')}">${bars}</svg>`;
-}
-function donutChart(target,active,inactive){
-  const el=typeof target==='string'?qs(target):target;if(!el)return;const total=Number(active||0)+Number(inactive||0);if(!total){el.innerHTML=chartEmpty('Cadastre pacientes para visualizar a distribuição.');return}
-  const pct=active/total,r=55,c=2*Math.PI*r,dash=c*pct;el.innerHTML=`<div class="os-donut-layout"><svg viewBox="0 0 150 150" class="os-donut-svg" role="img" aria-label="${Number(active)} pacientes ativos e ${Number(inactive)} inativos"><circle cx="75" cy="75" r="55" class="donut-track"/><circle cx="75" cy="75" r="55" class="donut-value" stroke-dasharray="${dash} ${c-dash}" transform="rotate(-90 75 75)"/><text x="75" y="70" text-anchor="middle" class="donut-pct">${Math.round(pct*100)}%</text><text x="75" y="91" text-anchor="middle" class="donut-label">ativos</text></svg><div class="os-donut-legend"><div><span class="dot active"></span><span>Ativos</span><strong>${Number(active)}</strong></div><div><span class="dot inactive"></span><span>Inativos</span><strong>${Number(inactive)}</strong></div><div class="total"><span>Total</span><strong>${total}</strong></div></div></div>`
-}
-function renderAnalytics(analytics){
-  const a=analytics||{},finance=a.finance||[];lineChart('#financeChart',[{labels:finance.map(x=>x.month),values:finance.map(x=>x.income)},{labels:finance.map(x=>x.month),values:finance.map(x=>x.expense)}],{money:true,label:'Receita e despesas dos últimos 12 meses',empty:'Registre pagamentos no Financeiro para formar a série histórica.'});
-  const ps=a.patient_status||{};donutChart('#patientDonut',ps.active||0,ps.inactive||0);const ap=a.appointments||[];barChart('#appointmentsChart',ap.map(x=>x.month),ap.map(x=>x.total),{label:'Consultas por mês',empty:'Consultas agendadas aparecerão aqui.'});els.appointmentsTotal.textContent=(a.totals?.appointments??0).toLocaleString('pt-BR');
-  const adh=a.checkin_adherence||[],valid=adh.filter(x=>x.value!==null&&Number(x.count||0)>0);lineChart('#adherenceChart',[{labels:valid.map(x=>x.month),values:valid.map(x=>x.value)}],{max:10,label:'Adesão média dos check-ins',empty:'A média será calculada após os pacientes responderem check-ins.'});const adhCount=valid.reduce((sum,x)=>sum+Number(x.count||0),0),adhWeighted=valid.reduce((sum,x)=>sum+Number(x.value||0)*Number(x.count||0),0);els.adherenceAverage.textContent=adhCount?`${(adhWeighted/adhCount).toFixed(1)}/10`:'—';
-  const ass=a.assessments||[];barChart('#assessmentChart',ass.map(x=>x.month),ass.map(x=>x.value),{label:'Avaliações corporais por mês',empty:'Avaliações corporais registradas aparecerão aqui.'});els.assessmentTotal.textContent=(a.totals?.assessments??0).toLocaleString('pt-BR');
-}
-function renderDashboard(data){
-  const m=data?.metrics||{};els.metricPatients.textContent=m.active??m.patients??0;els.metricAppointments.textContent=String(m.upcoming_appointments??0).padStart(2,'0');els.metricIncome.textContent=money(m.monthly_income);els.metricAlerts.textContent=String(m.open_alerts??0).padStart(2,'0');els.alertCount.textContent=m.open_alerts??0;els.alertCount.hidden=!(Number(m.open_alerts)>0);const alerts=Number(m.open_alerts||0);els.notificationSummary.textContent=alerts?`${alerts} alerta${alerts===1?'':'s'} clínico${alerts===1?'':'s'} aguardando revisão.`:'Nenhum alerta clínico pendente.';renderActivities(data);renderAnalytics(data.analytics||{})
-}
-
-async function init(){
-  setDate();hideError();els.activityList.setAttribute('aria-busy','true');
-  let me;try{me=await fetch('/api/me',{cache:'no-store'})}catch{showError('Sem conexão com o NutriOS. Verifique sua internet e tente novamente.');els.activityList.setAttribute('aria-busy','false');return}
-  if(me.status===401||me.status===403){location='/login';return}if(!me.ok){showError('Não foi possível validar sua sessão agora. Tente novamente em instantes.');els.activityList.setAttribute('aria-busy','false');return}
-  let user;try{user=await me.json()}catch{showError('A resposta da sessão veio inválida. Tente novamente.');els.activityList.setAttribute('aria-busy','false');return}
-  currentUser=user;const name=user.name||'Nutricionista';els.profileName.textContent=name;els.avatarInitial.textContent=name.trim().charAt(0).toUpperCase()||'N';els.hello.textContent=`Bem-vindo de volta, ${name.split(' ')[0]}!`;
-  const cached=getCachedDashboard(user);if(cached)renderDashboard(cached.data);
-  let r;try{r=await fetch('/app/api/dashboard-clinico',{cache:'no-store'})}catch{showError(cached?'Mostrando o último resumo salvo. Não foi possível atualizar os dados agora.':'Não foi possível carregar o dashboard. Verifique sua conexão e tente novamente.');els.activityList.setAttribute('aria-busy','false');return}
-  if(r.status===401||r.status===403){location='/login';return}if(!r.ok){showError(cached?'Mostrando o último resumo salvo. A atualização falhou.':'Não foi possível carregar o resumo agora. Tente novamente.');els.activityList.setAttribute('aria-busy','false');return}
-  try{const data=await r.json();renderDashboard(data);setCachedDashboard(user,data);hideError()}catch{showError(cached?'Mostrando o último resumo salvo. A atualização retornou dados inválidos.':'Não foi possível interpretar os dados do dashboard. Tente novamente.');els.activityList.setAttribute('aria-busy','false')}
-}
-
+function renderActivities(data){const items=[];(data.checkins||[]).slice(0,3).forEach(x=>items.push({title:`${x.patient_name||'Paciente'} · Check-in respondido`,meta:`Adesão: ${x.adherence??'—'} · Energia: ${x.energy??'—'} · ${fmtDate(x.created_at)}`,status:'Concluído',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#diary`:'/app/pacientes'}));(data.appointments||[]).slice(0,2).forEach(x=>items.push({title:`${x.patient_name||'Paciente'} · Consulta agendada`,meta:`${fmtDate(x.starts_at)}`,status:'Agendado',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#schedule`:'/app/agenda'}));els.activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${safeHref(x.href)}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`;els.activityList.setAttribute('aria-busy','false')}
+function renderAnalytics(analytics){const charts=window.NutriOSCharts;if(!charts)return;const a=analytics||{},finance=a.finance||[];charts.lineChart('#financeChart',[{labels:finance.map(x=>x.month),values:finance.map(x=>x.income)},{labels:finance.map(x=>x.month),values:finance.map(x=>x.expense)}],{money:true,label:'Receita e despesas dos últimos 12 meses',empty:'Registre pagamentos no Financeiro para formar a série histórica.'});const ps=a.patient_status||{};charts.donutChart('#patientDonut',ps.active||0,ps.inactive||0);const ap=a.appointments||[];charts.barChart('#appointmentsChart',ap.map(x=>x.month),ap.map(x=>x.total),{label:'Consultas por mês',empty:'Consultas agendadas aparecerão aqui.'});els.appointmentsTotal.textContent=(a.totals?.appointments??0).toLocaleString('pt-BR');const adh=a.checkin_adherence||[],valid=adh.filter(x=>x.value!==null&&Number(x.count||0)>0);charts.lineChart('#adherenceChart',[{labels:valid.map(x=>x.month),values:valid.map(x=>x.value)}],{max:10,label:'Adesão média dos check-ins',empty:'A média será calculada após os pacientes responderem check-ins.'});const count=valid.reduce((sum,x)=>sum+Number(x.count||0),0),weighted=valid.reduce((sum,x)=>sum+Number(x.value||0)*Number(x.count||0),0);els.adherenceAverage.textContent=count?`${(weighted/count).toFixed(1)}/10`:'—';const ass=a.assessments||[];charts.barChart('#assessmentChart',ass.map(x=>x.month),ass.map(x=>x.value),{label:'Avaliações corporais por mês',empty:'Avaliações corporais registradas aparecerão aqui.'});els.assessmentTotal.textContent=(a.totals?.assessments??0).toLocaleString('pt-BR')}
+function renderDashboard(data){const m=data?.metrics||{};els.metricPatients.textContent=m.active??m.patients??0;els.metricAppointments.textContent=String(m.upcoming_appointments??0).padStart(2,'0');els.metricIncome.textContent=money(m.monthly_income);els.metricAlerts.textContent=String(m.open_alerts??0).padStart(2,'0');els.alertCount.textContent=m.open_alerts??0;els.alertCount.hidden=!(Number(m.open_alerts)>0);const alerts=Number(m.open_alerts||0);els.notificationSummary.textContent=alerts?`${alerts} alerta${alerts===1?'':'s'} clínico${alerts===1?'':'s'} aguardando revisão.`:'Nenhum alerta clínico pendente.';renderActivities(data);renderAnalytics(data.analytics||{})}
+async function init(){setDate();hideError();els.activityList.setAttribute('aria-busy','true');let me;try{me=await fetch('/api/me',{cache:'no-store'})}catch{showError('Sem conexão com o NutriOS. Verifique sua internet e tente novamente.');els.activityList.setAttribute('aria-busy','false');return}if(me.status===401||me.status===403){location='/login';return}if(!me.ok){showError('Não foi possível validar sua sessão agora. Tente novamente em instantes.');els.activityList.setAttribute('aria-busy','false');return}let user;try{user=await me.json()}catch{showError('A resposta da sessão veio inválida. Tente novamente.');els.activityList.setAttribute('aria-busy','false');return}currentUser=user;const name=user.name||'Nutricionista';els.profileName.textContent=name;els.avatarInitial.textContent=name.trim().charAt(0).toUpperCase()||'N';els.hello.textContent=`Bem-vindo de volta, ${name.split(' ')[0]}!`;const cached=getCachedDashboard(user);if(cached){renderDashboard(cached.data);setFreshness(cached.savedAt,{stale:cached.stale})}let r;try{r=await fetch('/app/api/dashboard-clinico',{cache:'no-store'})}catch{showError(cached?'Mostrando o último resumo salvo. Não foi possível atualizar os dados agora.':'Não foi possível carregar o dashboard. Verifique sua conexão e tente novamente.');els.activityList.setAttribute('aria-busy','false');return}if(r.status===401||r.status===403){location='/login';return}if(!r.ok){showError(cached?'Mostrando o último resumo salvo. A atualização falhou.':'Não foi possível carregar o resumo agora. Tente novamente.');els.activityList.setAttribute('aria-busy','false');return}try{const data=await r.json(),now=Date.now();renderDashboard(data);setCachedDashboard(user,data);setFreshness(now,{live:true});hideError()}catch{showError(cached?'Mostrando o último resumo salvo. A atualização retornou dados inválidos.':'Não foi possível interpretar os dados do dashboard. Tente novamente.');els.activityList.setAttribute('aria-busy','false')}}
 function filterQuickCards(q){document.querySelectorAll('.os-quick-card').forEach(card=>{card.hidden=Boolean(q)&&!card.dataset.search.includes(q)&&!card.innerText.toLowerCase().includes(q)})}
+function resetQuickCards(){filterQuickCards('')}
 function closeSearchResults(){els.searchResults.hidden=true;els.searchResults.innerHTML='';els.moduleSearch.setAttribute('aria-expanded','false');activeSearchIndex=-1}
-function renderPatientResults(patients,q){
-  if(!q){closeSearchResults();return}const normalized=q.toLowerCase(),list=(Array.isArray(patients)?patients:(patients?.items||patients?.patients||[])).filter(p=>[p.name,p.identifier,p.phone,p.email].some(v=>String(v||'').toLowerCase().includes(normalized))).slice(0,8);
-  els.searchResults.innerHTML=list.length?list.map(p=>{const name=p.name||'Paciente',meta=p.identifier||p.phone||p.email||'Paciente cadastrado',id=encodeURIComponent(String(p.id||''));return `<a class="os-search-result" role="option" href="/app/pacientes/${id}"><span class="os-search-result-avatar">${esc(name.charAt(0).toUpperCase())}</span><span class="os-search-result-copy"><strong>${esc(name)}</strong><small>${esc(meta)}</small></span><span class="os-search-result-type">Paciente</span></a>`}).join(''):'<div class="os-search-status">Nenhum paciente encontrado.</div>';els.searchResults.hidden=false;els.moduleSearch.setAttribute('aria-expanded','true');activeSearchIndex=-1
-}
-async function searchPatients(q){
-  if(searchController)searchController.abort();searchController=new AbortController();els.searchResults.hidden=false;els.searchResults.innerHTML='<div class="os-search-status">Buscando pacientes...</div>';els.moduleSearch.setAttribute('aria-expanded','true');
-  try{const r=await fetch(`/app/api/pacientes?q=${encodeURIComponent(q)}`,{signal:searchController.signal,cache:'no-store'});if(!r.ok)throw new Error('search');renderPatientResults(await r.json(),q)}catch(err){if(err.name==='AbortError')return;els.searchResults.innerHTML='<div class="os-search-status">Não foi possível buscar pacientes agora.</div>'}
-}
-els.moduleSearch.addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();filterQuickCards(q);clearTimeout(searchTimer);if(q.length<2){closeSearchResults();return}searchTimer=setTimeout(()=>searchPatients(q),300)});
-els.moduleSearch.addEventListener('keydown',e=>{const options=[...els.searchResults.querySelectorAll('.os-search-result')];if(e.key==='Escape'){closeSearchResults();return}if(!options.length)return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();activeSearchIndex=e.key==='ArrowDown'?Math.min(activeSearchIndex+1,options.length-1):Math.max(activeSearchIndex-1,0);options.forEach((x,i)=>x.classList.toggle('is-active',i===activeSearchIndex));options[activeSearchIndex]?.scrollIntoView({block:'nearest'})}else if(e.key==='Enter'&&activeSearchIndex>=0){e.preventDefault();options[activeSearchIndex].click()}});
+function renderPatientResults(patients,q){if(!q){closeSearchResults();resetQuickCards();return}const normalized=q.toLowerCase(),list=(Array.isArray(patients)?patients:(patients?.items||patients?.patients||[])).filter(p=>[p.name,p.identifier,p.phone,p.email].some(v=>String(v||'').toLowerCase().includes(normalized))).slice(0,8);if(list.length){resetQuickCards();els.searchResults.innerHTML=list.map(p=>{const name=p.name||'Paciente',meta=p.identifier||p.phone||p.email||'Paciente cadastrado',href=safeHref(`/app/pacientes/${encodeURIComponent(String(p.id||''))}`);return `<a class="os-search-result" role="option" href="${href}"><span class="os-search-result-avatar">${esc(name.charAt(0).toUpperCase())}</span><span class="os-search-result-copy"><strong>${esc(name)}</strong><small>${esc(meta)}</small></span><span class="os-search-result-type">Paciente</span></a>`}).join('');els.searchResults.hidden=false;els.moduleSearch.setAttribute('aria-expanded','true')}else{closeSearchResults();filterQuickCards(q)}activeSearchIndex=-1}
+async function searchPatients(q){if(searchController)searchController.abort();searchController=new AbortController();resetQuickCards();els.searchResults.hidden=false;els.searchResults.innerHTML='<div class="os-search-status">Buscando pacientes...</div>';els.moduleSearch.setAttribute('aria-expanded','true');try{const r=await fetch(`/app/api/pacientes?q=${encodeURIComponent(q)}`,{signal:searchController.signal,cache:'no-store'});if(r.status===401||r.status===403){location='/login';return}if(!r.ok)throw new Error('search');renderPatientResults(await r.json(),q)}catch(err){if(err.name==='AbortError')return;els.searchResults.innerHTML='<div class="os-search-status">Não foi possível buscar pacientes agora.</div>'}}
+els.moduleSearch.addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();clearTimeout(searchTimer);if(q.length<2){closeSearchResults();filterQuickCards(q);return}resetQuickCards();searchTimer=setTimeout(()=>searchPatients(q),300)});
+els.moduleSearch.addEventListener('keydown',e=>{const options=[...els.searchResults.querySelectorAll('.os-search-result')];if(e.key==='Escape'){closeSearchResults();resetQuickCards();return}if(!options.length)return;if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();activeSearchIndex=e.key==='ArrowDown'?Math.min(activeSearchIndex+1,options.length-1):Math.max(activeSearchIndex-1,0);options.forEach((x,i)=>x.classList.toggle('is-active',i===activeSearchIndex));options[activeSearchIndex]?.scrollIntoView({block:'nearest'})}else if(e.key==='Enter'&&activeSearchIndex>=0){e.preventDefault();options[activeSearchIndex].click()}});
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();els.moduleSearch.focus();els.moduleSearch.select()}else if(e.key==='Escape'&&!els.notificationPopover.hidden){els.notificationPopover.hidden=true;els.notificationButton.setAttribute('aria-expanded','false')}});
 document.addEventListener('click',e=>{if(!e.target.closest('.os-search-wrap'))closeSearchResults();if(!e.target.closest('.os-top-actions')){els.notificationPopover.hidden=true;els.notificationButton.setAttribute('aria-expanded','false')}});
 els.notificationButton.addEventListener('click',()=>{const willOpen=els.notificationPopover.hidden;els.notificationPopover.hidden=!willOpen;els.notificationButton.setAttribute('aria-expanded',String(willOpen))});
 els.retryDashboard.addEventListener('click',()=>init());
 els.logout.addEventListener('click',()=>fetch('/auth/logout',{method:'POST'}).finally(()=>{location='/login'}));
-init();
+document.addEventListener('DOMContentLoaded',init,{once:true});
 </script>
 <script defer src="/static/nutrios-v24-theme.js?v=24"></script>
 <script defer src="/static/nutrios-datetime.js?v=26"></script>
