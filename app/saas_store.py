@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime, timezone
 from typing import Any
 
@@ -19,12 +20,27 @@ def _headers(prefer: str | None = None) -> dict[str, str]:
     return value
 
 
+def _record_call(table: str, method: str, started: float, ok: bool, detail: str | None = None) -> None:
+    try:
+        from app import observability
+        observability.record_external_call("supabase", f"{method.upper()} {table}", (time.perf_counter() - started) * 1000, ok, detail)
+    except Exception:
+        # Observabilidade nunca pode derrubar a persistência principal.
+        pass
+
+
 def _request(method: str, table: str, *, params=None, payload=None, prefer=None) -> Any:
     if not ATIVO:
         raise RuntimeError("Supabase não configurado")
-    response = requests.request(method, f"{SUPABASE_URL}/rest/v1/{table}", headers=_headers(prefer), params=params, json=payload, timeout=8)
-    response.raise_for_status()
-    return response.json() if response.content else None
+    started = time.perf_counter()
+    try:
+        response = requests.request(method, f"{SUPABASE_URL}/rest/v1/{table}", headers=_headers(prefer), params=params, json=payload, timeout=8)
+        response.raise_for_status()
+        _record_call(table, method, started, True)
+        return response.json() if response.content else None
+    except Exception as exc:
+        _record_call(table, method, started, False, f"{type(exc).__name__}: {exc}")
+        raise
 
 
 def upload_public_asset(bucket: str, object_path: str, content: bytes, content_type: str) -> str:
