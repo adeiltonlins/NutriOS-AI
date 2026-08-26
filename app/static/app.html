@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="NutriOS">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/nutrios-dashboard-v6.css?v=20260813">
-  <link rel="stylesheet" href="/static/nutrios-dashboard-v7.css?v=7">
+<link rel="stylesheet" href="/static/nutrios-dashboard-v7.css?v=7">
 <link rel="stylesheet" href="/static/nutrios-analytics-v14.css?v=14">
 <link rel="stylesheet" href="/static/nutrios-v22-unified.css?v=22">
 <link rel="stylesheet" href="/static/nutrios-v23-polish.css?v=23">
@@ -22,16 +22,13 @@
 <link rel="stylesheet" href="/static/nutrios-v27-polish.css?v=27">
 <link rel="stylesheet" href="/static/nutrios-v28-clinical-flow.css?v=28">
 <link rel="stylesheet" href="/static/nutrios-design-system-v1.css?v=4">
+<script src="/static/nutrios-dashboard-bootstrap-fix.js?v=1"></script>
 </head>
 <body>
 <a class="ui-skip-link" href="#dashboardContent">Ir para o conteúdo</a>
 <div class="os-shell">
   <aside class="os-sidebar">
-    <a class="os-brand" href="/app" aria-label="NutriOS">
-      <span class="os-brand-mark" aria-hidden="true"></span>
-      <span class="os-brand-name">NutriOS</span>
-    </a>
-
+    <a class="os-brand" href="/app" aria-label="NutriOS"><span class="os-brand-mark" aria-hidden="true"></span><span class="os-brand-name">NutriOS</span></a>
     <nav class="os-nav" aria-label="Navegação principal">
       <a class="os-nav-item active" href="/app"><span class="os-nav-icon">⌂</span><span>Início</span></a>
       <a class="os-nav-item" href="/app/pacientes"><span class="os-nav-icon">♙</span><span>Pacientes</span></a>
@@ -47,298 +44,63 @@
       <a class="os-nav-item" href="/app/metricas"><span class="os-nav-icon">▥</span><span>Captação e vendas</span></a>
       <a class="os-nav-item" href="/app/configuracoes"><span class="os-nav-icon">⚙</span><span>Configurações</span></a>
     </nav>
-
-    <div class="os-sidebar-footer">
-      <a class="os-help" href="/app/onboarding"><span>?</span> Central de ajuda</a>
-    </div>
+    <div class="os-sidebar-footer"><a class="os-help" href="/app/onboarding"><span>?</span> Central de ajuda</a></div>
   </aside>
-
   <section class="os-workspace">
     <header class="os-topbar">
-      <div class="os-search-wrap">
-        <span class="os-search-icon">⌕</span>
-        <input id="moduleSearch" class="os-search" type="search" placeholder="Buscar módulo ou recurso..." autocomplete="off">
-        <kbd>Ctrl + K</kbd>
-      </div>
-      <div class="os-top-actions">
-        <button class="os-icon-btn" type="button" title="Notificações" aria-label="Abrir notificações">♢<span class="os-notification-dot" id="alertCount">0</span></button>
-        <a class="os-icon-btn" href="/app/conversas" title="Conversas" aria-label="Abrir conversas">○</a>
-        <div class="os-profile">
-          <div class="os-avatar" id="avatarInitial">N</div>
-          <div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div>
-        </div>
-        <button class="os-logout" id="logout" type="button">Sair</button>
-      </div>
+      <div class="os-search-wrap"><span class="os-search-icon">⌕</span><input id="moduleSearch" class="os-search" type="search" placeholder="Buscar módulo ou recurso..." autocomplete="off"><kbd>Ctrl + K</kbd></div>
+      <div class="os-top-actions"><button class="os-icon-btn" type="button" title="Notificações" aria-label="Abrir notificações">♢<span class="os-notification-dot" id="alertCount">0</span></button><a class="os-icon-btn" href="/app/conversas" title="Conversas" aria-label="Abrir conversas">○</a><div class="os-profile"><div class="os-avatar" id="avatarInitial">N</div><div class="os-profile-copy"><strong id="profileName">Nutricionista</strong><span>Profissional</span></div></div><button class="os-logout" id="logout" type="button">Sair</button></div>
     </header>
-
     <main class="os-main" id="dashboardContent">
-      <section class="os-heading-row">
-        <div>
-          <h1 id="hello">Bem-vindo de volta!</h1>
-          <p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p>
-          <p class="os-platform-line">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência, com você no controle.</p>
-        </div>
-        <div class="os-heading-actions"><a class="os-primary-action" href="/app/pacientes?novo=1">+ Novo paciente</a><a class="os-secondary-action" href="/app/configuracoes#acessos">Compartilhar acessos</a><div class="os-date-card"><span>□</span><strong id="todayDate">—</strong></div></div>
-      </section>
-
+      <section class="os-heading-row"><div><h1 id="hello">Bem-vindo de volta!</h1><p class="os-subtitle">Aqui está o resumo da sua operação hoje.</p><p class="os-platform-line">Pacientes, agenda, financeiro, evolução, documentos e inteligência clínica trabalhando em uma única experiência, com você no controle.</p></div><div class="os-heading-actions"><a class="os-primary-action" href="/app/pacientes?novo=1">+ Novo paciente</a><a class="os-secondary-action" href="/app/configuracoes#acessos">Compartilhar acessos</a><div class="os-date-card"><span>□</span><strong id="todayDate">—</strong></div></div></section>
       <section class="os-metrics" aria-label="Indicadores principais">
-        <a class="os-metric-card" href="/app/pacientes">
-          <span class="os-metric-icon blue">♙</span>
-          <div><span>Pacientes ativos</span><strong id="metricPatients">—</strong><small>Ver pacientes →</small></div>
-        </a>
-        <a class="os-metric-card" href="/app/gestao">
-          <span class="os-metric-icon green">□</span>
-          <div><span>Próximas consultas</span><strong id="metricAppointments">—</strong><small>Ver agenda →</small></div>
-        </a>
-        <a class="os-metric-card" href="/app/financeiro">
-          <span class="os-metric-icon orange">$</span>
-          <div><span>Receita do mês</span><strong id="metricIncome">—</strong><small>Ver financeiro →</small></div>
-        </a>
-        <a class="os-metric-card" href="/app/clinica">
-          <span class="os-metric-icon purple">↗</span>
-          <div><span>Alertas clínicos</span><strong id="metricAlerts">—</strong><small>Ver central clínica →</small></div>
-        </a>
+        <a class="os-metric-card" href="/app/pacientes"><span class="os-metric-icon blue">♙</span><div><span>Pacientes ativos</span><strong id="metricPatients">—</strong><small>Ver pacientes →</small></div></a>
+        <a class="os-metric-card" href="/app/gestao"><span class="os-metric-icon green">□</span><div><span>Próximas consultas</span><strong id="metricAppointments">—</strong><small>Ver agenda →</small></div></a>
+        <a class="os-metric-card" href="/app/financeiro"><span class="os-metric-icon orange">$</span><div><span>Receita do mês</span><strong id="metricIncome">—</strong><small>Ver financeiro →</small></div></a>
+        <a class="os-metric-card" href="/app/clinica"><span class="os-metric-icon purple">↗</span><div><span>Alertas clínicos</span><strong id="metricAlerts">—</strong><small>Ver central clínica →</small></div></a>
       </section>
-
-      <section class="os-section os-analytics-section" aria-labelledby="analyticsTitle">
-        <div class="os-section-head os-analytics-head">
-          <div>
-            <h2 id="analyticsTitle">Visão analítica</h2>
-            <p>Indicadores calculados com os dados reais da sua operação.</p>
-          </div>
-          <span class="os-live-badge">Dados reais</span>
-        </div>
-
-        <div class="os-analytics-grid">
-          <article class="os-chart-card os-chart-wide">
-            <div class="os-chart-head">
-              <div><h3>Receita e despesas</h3><p>Últimos 12 meses</p></div>
-              <div class="os-chart-legend"><span><i class="income"></i>Receita</span><span><i class="expense"></i>Despesas</span></div>
-            </div>
-            <div id="financeChart" class="os-chart-stage" aria-label="Gráfico de receita e despesas"></div>
-          </article>
-
-          <article class="os-chart-card">
-            <div class="os-chart-head"><div><h3>Distribuição de pacientes</h3><p>Ativos e inativos</p></div></div>
-            <div id="patientDonut" class="os-donut-wrap" aria-label="Distribuição de pacientes"></div>
-          </article>
-
-          <article class="os-chart-card">
-            <div class="os-chart-head"><div><h3>Consultas</h3><p>Volume mensal</p></div><strong id="appointmentsTotal" class="os-chart-total">—</strong></div>
-            <div id="appointmentsChart" class="os-chart-stage compact" aria-label="Consultas por mês"></div>
-          </article>
-
-          <article class="os-chart-card">
-            <div class="os-chart-head"><div><h3>Adesão nos check-ins</h3><p>Média mensal de 0 a 10</p></div><strong id="adherenceAverage" class="os-chart-total">—</strong></div>
-            <div id="adherenceChart" class="os-chart-stage compact" aria-label="Adesão média dos check-ins"></div>
-          </article>
-
-          <article class="os-chart-card">
-            <div class="os-chart-head"><div><h3>Evolução clínica registrada</h3><p>Avaliações corporais por mês</p></div><strong id="assessmentTotal" class="os-chart-total">—</strong></div>
-            <div id="assessmentChart" class="os-chart-stage compact" aria-label="Avaliações corporais por mês"></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="os-section">
-        <div class="os-section-head"><div><h2>Acesso rápido</h2></div></div>
-        <div class="os-quick-grid" id="quickGrid">
-          <a class="os-quick-card" data-search="dashboard clinico prioridades consultas check-ins evolucao" href="/app/clinica">
-            <span class="os-quick-icon blue">▥</span><div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></div><span class="os-arrow">›</span>
-          </a>
-          <a class="os-quick-card" data-search="treinos opcional series repeticoes carga descanso" href="/app/treinos">
-            <span class="os-quick-icon purple">↔</span><div><h3>Treinos opcionais</h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></div><span class="os-arrow">›</span>
-          </a>
-          <a class="os-quick-card" data-search="planos alimentares dieta acompanhamento" href="/app/planos">
-            <span class="os-quick-icon green">◫</span><div><h3>Planos alimentares</h3><p>Crie, edite e acompanhe planos alimentares personalizados.</p></div><span class="os-arrow">›</span>
-          </a>
-          <a class="os-quick-card" data-search="analise corporal avaliacao medidas fotos body visual" href="/app/analise-corporal">
-            <span class="os-quick-icon cyan">♧</span><div><h3>Análise corporal</h3><p>Registre avaliações e acompanhe medidas e fotos.</p></div><span class="os-arrow">›</span>
-          </a>
-          <a class="os-quick-card" data-search="conversas tempo real pacientes oportunidades" href="/app/conversas">
-            <span class="os-quick-icon pink">○</span><div><h3>Conversas em tempo real</h3><p>Acompanhe conversas e oportunidades em uma única tela.</p></div><span class="os-arrow">›</span>
-          </a>
-          <a class="os-quick-card" data-search="relatorios evolucao graficos metricas indicadores" href="/app/clinica">
-            <span class="os-quick-icon indigo">↗</span><div><h3>Relatórios e evolução</h3><p>Visualize indicadores, gráficos e evolução da operação.</p></div><span class="os-arrow">›</span>
-          </a>
-        </div>
-      </section>
-
-      <section class="os-section os-activity-section">
-        <div class="os-section-head"><div><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div>
-        <div id="activityList" class="os-activity-list"><div class="os-empty">Carregando atividades...</div></div>
-      </section>
+      <section class="os-section os-analytics-section" aria-labelledby="analyticsTitle"><div class="os-section-head os-analytics-head"><div><h2 id="analyticsTitle">Visão analítica</h2><p>Indicadores calculados com os dados reais da sua operação.</p></div><span class="os-live-badge">Dados reais</span></div><div class="os-analytics-grid">
+        <article class="os-chart-card os-chart-wide"><div class="os-chart-head"><div><h3>Receita e despesas</h3><p>Últimos 12 meses</p></div><div class="os-chart-legend"><span><i class="income"></i>Receita</span><span><i class="expense"></i>Despesas</span></div></div><div id="financeChart" class="os-chart-stage" aria-label="Gráfico de receita e despesas"></div></article>
+        <article class="os-chart-card"><div class="os-chart-head"><div><h3>Distribuição de pacientes</h3><p>Ativos e inativos</p></div></div><div id="patientDonut" class="os-donut-wrap" aria-label="Distribuição de pacientes"></div></article>
+        <article class="os-chart-card"><div class="os-chart-head"><div><h3>Consultas</h3><p>Volume mensal</p></div><strong id="appointmentsTotal" class="os-chart-total">—</strong></div><div id="appointmentsChart" class="os-chart-stage compact" aria-label="Consultas por mês"></div></article>
+        <article class="os-chart-card"><div class="os-chart-head"><div><h3>Adesão nos check-ins</h3><p>Média mensal de 0 a 10</p></div><strong id="adherenceAverage" class="os-chart-total">—</strong></div><div id="adherenceChart" class="os-chart-stage compact" aria-label="Adesão média dos check-ins"></div></article>
+        <article class="os-chart-card"><div class="os-chart-head"><div><h3>Evolução clínica registrada</h3><p>Avaliações corporais por mês</p></div><strong id="assessmentTotal" class="os-chart-total">—</strong></div><div id="assessmentChart" class="os-chart-stage compact" aria-label="Avaliações corporais por mês"></div></article>
+      </div></section>
+      <section class="os-section"><div class="os-section-head"><div><h2>Acesso rápido</h2></div></div><div class="os-quick-grid" id="quickGrid">
+        <a class="os-quick-card" data-search="dashboard clinico prioridades consultas check-ins evolucao" href="/app/clinica"><span class="os-quick-icon blue">▥</span><div><h3>Dashboard clínico</h3><p>Prioridades, consultas, check-ins e evolução.</p></div><span class="os-arrow">›</span></a>
+        <a class="os-quick-card" data-search="treinos opcional series repeticoes carga descanso" href="/app/treinos"><span class="os-quick-icon purple">↔</span><div><h3>Treinos opcionais</h3><p>Séries, repetições, carga e descanso quando fizer sentido.</p></div><span class="os-arrow">›</span></a>
+        <a class="os-quick-card" data-search="planos alimentares dieta acompanhamento" href="/app/planos"><span class="os-quick-icon green">◫</span><div><h3>Planos alimentares</h3><p>Crie, edite e acompanhe planos alimentares personalizados.</p></div><span class="os-arrow">›</span></a>
+        <a class="os-quick-card" data-search="analise corporal avaliacao medidas fotos body visual" href="/app/analise-corporal"><span class="os-quick-icon cyan">♧</span><div><h3>Análise corporal</h3><p>Registre avaliações e acompanhe medidas e fotos.</p></div><span class="os-arrow">›</span></a>
+        <a class="os-quick-card" data-search="conversas tempo real pacientes oportunidades" href="/app/conversas"><span class="os-quick-icon pink">○</span><div><h3>Conversas em tempo real</h3><p>Acompanhe conversas e oportunidades em uma única tela.</p></div><span class="os-arrow">›</span></a>
+        <a class="os-quick-card" data-search="relatorios evolucao graficos metricas indicadores" href="/app/clinica"><span class="os-quick-icon indigo">↗</span><div><h3>Relatórios e evolução</h3><p>Visualize indicadores, gráficos e evolução da operação.</p></div><span class="os-arrow">›</span></a>
+      </div></section>
+      <section class="os-section os-activity-section"><div class="os-section-head"><div><h2>Atividades recentes</h2></div><a href="/app/clinica">Ver todas</a></div><div id="activityList" class="os-activity-list"><div class="os-empty">Carregando atividades...</div></div></section>
     </main>
   </section>
 </div>
-
 <script>
 const qs=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"']/g,'');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtDate=v=>{try{return new Date(v).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch{return '—'}};
-
-function setDate(){
-  todayDate.textContent=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(new Date());
-}
-
-function renderActivities(data){
-  const items=[];
-  (data.checkins||[]).slice(0,3).forEach(x=>items.push({
-    title:`${x.patient_name||'Paciente'} · Check-in respondido`,
-    meta:`Adesão: ${x.adherence??'—'} · Energia: ${x.energy??'—'} · ${fmtDate(x.created_at)}`,
-    status:'Concluído',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#diary`:'/app/pacientes'
-  }));
-  (data.appointments||[]).slice(0,2).forEach(x=>items.push({
-    title:`${x.patient_name||'Paciente'} · Consulta agendada`,
-    meta:`${fmtDate(x.starts_at)}`,
-    status:'Agendado',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#schedule`:'/app/agenda'
-  }));
-  activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${x.href}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`;
-}
-
-
+const $=id=>document.getElementById(id);
+const todayDate=$('todayDate'),activityList=$('activityList'),profileName=$('profileName'),avatarInitial=$('avatarInitial'),hello=$('hello'),metricPatients=$('metricPatients'),metricAppointments=$('metricAppointments'),metricIncome=$('metricIncome'),metricAlerts=$('metricAlerts'),alertCount=$('alertCount'),appointmentsTotal=$('appointmentsTotal'),adherenceAverage=$('adherenceAverage'),assessmentTotal=$('assessmentTotal'),moduleSearch=$('moduleSearch'),logout=$('logout');
+function setDate(){todayDate.textContent=new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'long',year:'numeric'}).format(new Date())}
+function renderActivities(data){const items=[];(data.checkins||[]).slice(0,3).forEach(x=>items.push({title:`${x.patient_name||'Paciente'} · Check-in respondido`,meta:`Adesão: ${x.adherence??'—'} · Energia: ${x.energy??'—'} · ${fmtDate(x.created_at)}`,status:'Concluído',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#diary`:'/app/pacientes'}));(data.appointments||[]).slice(0,2).forEach(x=>items.push({title:`${x.patient_name||'Paciente'} · Consulta agendada`,meta:`${fmtDate(x.starts_at)}`,status:'Agendado',href:x.patient_id?`/app/pacientes/${encodeURIComponent(x.patient_id)}#schedule`:'/app/agenda'}));activityList.innerHTML=items.length?items.slice(0,4).map(x=>`<a class="os-activity" href="${x.href}"><span class="os-activity-avatar">${esc((x.title||'P').charAt(0))}</span><div class="os-activity-main"><div class="os-activity-title"><strong>${esc(x.title)}</strong><span>${esc(x.status)}</span></div><p>${esc(x.meta)}</p></div><span class="os-activity-more">›</span></a>`).join(''):`<div class="os-empty"><strong>Sem atividades recentes.</strong><span>Novos check-ins e consultas aparecerão aqui.</span></div>`}
 const monthLabel=m=>{const [y,mo]=String(m).split('-');return new Intl.DateTimeFormat('pt-BR',{month:'short'}).format(new Date(Number(y),Number(mo)-1,1)).replace('.','')};
-const hasPositive=arr=>arr.some(v=>Number(v)>0);
-const compactMoney=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',notation:'compact',maximumFractionDigits:1}).format(Number(v||0));
-const chartEmpty=msg=>`<div class="os-chart-empty"><strong>Ainda sem dados suficientes</strong><span>${msg}</span></div>`;
-
-function lineChart(target, series, opts={}){
-  const el=typeof target==='string'?qs(target):target;
-  if(!el)return;
-  const values=series.flatMap(s=>s.values.filter(v=>v!==null&&v!==undefined).map(Number));
-  if(!values.length || !hasPositive(values.map(Math.abs))){el.innerHTML=chartEmpty(opts.empty||'Os dados aparecerão conforme você usar o NutriOS.');return;}
-  const W=760,H=250,p={l:42,r:18,t:20,b:38};
-  const min=opts.min??0,max=Math.max(opts.max??0,...values,1);
-  const x=i=>p.l+(i*(W-p.l-p.r)/Math.max(1,(series[0].values.length-1)));
-  const y=v=>p.t+(max-Number(v||0))*(H-p.t-p.b)/Math.max(1,max-min);
-  const grid=[0,.25,.5,.75,1].map(k=>{const yy=p.t+k*(H-p.t-p.b);const val=max*(1-k);return `<line x1="${p.l}" y1="${yy}" x2="${W-p.r}" y2="${yy}" class="grid"/><text x="${p.l-8}" y="${yy+4}" text-anchor="end" class="axis-y">${opts.money?compactMoney(val):Math.round(val)}</text>`}).join('');
-  const labels=series[0].labels.map((lab,i)=>`<text x="${x(i)}" y="${H-12}" text-anchor="middle" class="axis-x">${esc(monthLabel(lab))}</text>`).join('');
-  const paths=series.map((s,idx)=>{
-    const pts=s.values.map((v,i)=>`${x(i)},${y(v??0)}`).join(' ');
-    const circles=s.values.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v??0)}" r="3.2" class="series-dot s${idx}"/>`).join('');
-    return `<polyline points="${pts}" class="series-line s${idx}"/>${circles}`;
-  }).join('');
-  el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico')}">${grid}${paths}${labels}</svg>`;
-}
-
-function barChart(target, labels, values, opts={}){
-  const el=typeof target==='string'?qs(target):target;if(!el)return;
-  if(!values.length||!hasPositive(values)){el.innerHTML=chartEmpty(opts.empty||'Nenhum registro no período.');return;}
-  const W=760,H=220,p={l:28,r:16,t:16,b:38},max=Math.max(...values,1),slot=(W-p.l-p.r)/values.length,bw=Math.min(34,slot*.55);
-  const bars=values.map((v,i)=>{const h=(Number(v)/max)*(H-p.t-p.b),xx=p.l+i*slot+(slot-bw)/2,yy=H-p.b-h;return `<rect x="${xx}" y="${yy}" width="${bw}" height="${h}" rx="7" class="bar"/><text x="${xx+bw/2}" y="${Math.max(13,yy-7)}" text-anchor="middle" class="bar-value">${Number(v)}</text><text x="${xx+bw/2}" y="${H-12}" text-anchor="middle" class="axis-x">${esc(monthLabel(labels[i]))}</text>`}).join('');
-  el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico de barras')}">${bars}</svg>`;
-}
-
-function donutChart(target, active, inactive){
-  const el=typeof target==='string'?qs(target):target;if(!el)return;
-  const total=Number(active||0)+Number(inactive||0);
-  if(!total){el.innerHTML=chartEmpty('Cadastre pacientes para visualizar a distribuição.');return;}
-  const pct=active/total, r=55,c=2*Math.PI*r,dash=c*pct;
-  el.innerHTML=`<div class="os-donut-layout"><svg viewBox="0 0 150 150" class="os-donut-svg" role="img" aria-label="${active} pacientes ativos e ${inactive} inativos"><circle cx="75" cy="75" r="55" class="donut-track"/><circle cx="75" cy="75" r="55" class="donut-value" stroke-dasharray="${dash} ${c-dash}" transform="rotate(-90 75 75)"/><text x="75" y="70" text-anchor="middle" class="donut-pct">${Math.round(pct*100)}%</text><text x="75" y="91" text-anchor="middle" class="donut-label">ativos</text></svg><div class="os-donut-legend"><div><span class="dot active"></span><span>Ativos</span><strong>${active}</strong></div><div><span class="dot inactive"></span><span>Inativos</span><strong>${inactive}</strong></div><div class="total"><span>Total</span><strong>${total}</strong></div></div></div>`;
-}
-
-function renderAnalytics(analytics){
-  const a=analytics||{};
-  const finance=a.finance||[];
-  lineChart('#financeChart',[
-    {labels:finance.map(x=>x.month),values:finance.map(x=>x.income)},
-    {labels:finance.map(x=>x.month),values:finance.map(x=>x.expense)}
-  ],{money:true,label:'Receita e despesas dos últimos 12 meses',empty:'Registre pagamentos no Financeiro para formar a série histórica.'});
-
-  const ps=a.patient_status||{};donutChart('#patientDonut',ps.active||0,ps.inactive||0);
-  const ap=a.appointments||[];barChart('#appointmentsChart',ap.map(x=>x.month),ap.map(x=>x.total),{label:'Consultas por mês',empty:'Consultas agendadas aparecerão aqui.'});
-  appointmentsTotal.textContent=(a.totals?.appointments??0).toLocaleString('pt-BR');
-
-  const adh=a.checkin_adherence||[];const valid=adh.filter(x=>x.value!==null&&Number(x.count||0)>0);
-  lineChart('#adherenceChart',[{labels:valid.map(x=>x.month),values:valid.map(x=>x.value)}],{max:10,label:'Adesão média dos check-ins',empty:'A média será calculada após os pacientes responderem check-ins.'});
-  const adhCount=valid.reduce((sum,x)=>sum+Number(x.count||0),0);
-  const adhWeighted=valid.reduce((sum,x)=>sum+Number(x.value||0)*Number(x.count||0),0);
-  adherenceAverage.textContent=adhCount?`${(adhWeighted/adhCount).toFixed(1)}/10`:'—';
-
-  const ass=a.assessments||[];barChart('#assessmentChart',ass.map(x=>x.month),ass.map(x=>x.value),{label:'Avaliações corporais por mês',empty:'Avaliações corporais registradas aparecerão aqui.'});
-  assessmentTotal.textContent=(a.totals?.assessments??0).toLocaleString('pt-BR');
-}
-
-async function init(){
-  setDate();
-  const me=await fetch('/api/me');
-  if(!me.ok){location='/login';return}
-  const user=await me.json();
-  const name=user.name||'Nutricionista';
-  profileName.textContent=name;
-  avatarInitial.textContent=name.trim().charAt(0).toUpperCase()||'N';
-  hello.textContent=`Bem-vindo de volta, ${name.split(' ')[0]}!`;
-
-  const r=await fetch('/app/api/dashboard-clinico');
-  if(r.ok){
-    const data=await r.json(),m=data.metrics||{};
-    metricPatients.textContent=m.active??m.patients??0;
-    metricAppointments.textContent=String(m.upcoming_appointments??0).padStart(2,'0');
-    metricIncome.textContent=money(m.monthly_income);
-    metricAlerts.textContent=String(m.open_alerts??0).padStart(2,'0');
-    alertCount.textContent=m.open_alerts??0;
-    alertCount.hidden=!(m.open_alerts>0);
-    renderActivities(data);
-    renderAnalytics(data.analytics||{});
-  }else{
-    activityList.innerHTML='<div class="os-empty">Não foi possível carregar o resumo agora.</div>';
-  }
-}
-
-moduleSearch.addEventListener('input',e=>{
-  const q=e.target.value.trim().toLowerCase();
-  document.querySelectorAll('.os-quick-card').forEach(card=>{
-    card.hidden=q && !card.dataset.search.includes(q) && !card.innerText.toLowerCase().includes(q);
-  });
-});
-
-document.addEventListener('keydown',e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();moduleSearch.focus()}
-});
-logout.onclick=()=>fetch('/auth/logout',{method:'POST'}).then(()=>location='/login');
-init().catch(()=>location='/login');
+const hasPositive=arr=>arr.some(v=>Number(v)>0);const compactMoney=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',notation:'compact',maximumFractionDigits:1}).format(Number(v||0));const chartEmpty=msg=>`<div class="os-chart-empty"><strong>Ainda sem dados suficientes</strong><span>${msg}</span></div>`;
+function lineChart(target,series,opts={}){const el=typeof target==='string'?qs(target):target;if(!el)return;const values=series.flatMap(s=>s.values.filter(v=>v!==null&&v!==undefined).map(Number));if(!values.length||!hasPositive(values.map(Math.abs))){el.innerHTML=chartEmpty(opts.empty||'Os dados aparecerão conforme você usar o NutriOS.');return}const W=760,H=250,p={l:42,r:18,t:20,b:38},min=opts.min??0,max=Math.max(opts.max??0,...values,1),x=i=>p.l+(i*(W-p.l-p.r)/Math.max(1,(series[0].values.length-1))),y=v=>p.t+(max-Number(v||0))*(H-p.t-p.b)/Math.max(1,max-min),grid=[0,.25,.5,.75,1].map(k=>{const yy=p.t+k*(H-p.t-p.b),val=max*(1-k);return `<line x1="${p.l}" y1="${yy}" x2="${W-p.r}" y2="${yy}" class="grid"/><text x="${p.l-8}" y="${yy+4}" text-anchor="end" class="axis-y">${opts.money?compactMoney(val):Math.round(val)}</text>`}).join(''),labels=series[0].labels.map((lab,i)=>`<text x="${x(i)}" y="${H-12}" text-anchor="middle" class="axis-x">${esc(monthLabel(lab))}</text>`).join(''),paths=series.map((s,idx)=>{const pts=s.values.map((v,i)=>`${x(i)},${y(v??0)}`).join(' '),circles=s.values.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v??0)}" r="3.2" class="series-dot s${idx}"/>`).join('');return `<polyline points="${pts}" class="series-line s${idx}"/>${circles}`}).join('');el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico')}">${grid}${paths}${labels}</svg>`}
+function barChart(target,labels,values,opts={}){const el=typeof target==='string'?qs(target):target;if(!el)return;if(!values.length||!hasPositive(values)){el.innerHTML=chartEmpty(opts.empty||'Nenhum registro no período.');return}const W=760,H=220,p={l:28,r:16,t:16,b:38},max=Math.max(...values,1),slot=(W-p.l-p.r)/values.length,bw=Math.min(34,slot*.55),bars=values.map((v,i)=>{const h=(Number(v)/max)*(H-p.t-p.b),xx=p.l+i*slot+(slot-bw)/2,yy=H-p.b-h;return `<rect x="${xx}" y="${yy}" width="${bw}" height="${h}" rx="7" class="bar"/><text x="${xx+bw/2}" y="${Math.max(13,yy-7)}" text-anchor="middle" class="bar-value">${Number(v)}</text><text x="${xx+bw/2}" y="${H-12}" text-anchor="middle" class="axis-x">${esc(monthLabel(labels[i]))}</text>`}).join('');el.innerHTML=`<svg class="os-chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||'Gráfico de barras')}">${bars}</svg>`}
+function donutChart(target,active,inactive){const el=typeof target==='string'?qs(target):target;if(!el)return;const total=Number(active||0)+Number(inactive||0);if(!total){el.innerHTML=chartEmpty('Cadastre pacientes para visualizar a distribuição.');return}const pct=active/total,r=55,c=2*Math.PI*r,dash=c*pct;el.innerHTML=`<div class="os-donut-layout"><svg viewBox="0 0 150 150" class="os-donut-svg" role="img" aria-label="${active} pacientes ativos e ${inactive} inativos"><circle cx="75" cy="75" r="55" class="donut-track"/><circle cx="75" cy="75" r="55" class="donut-value" stroke-dasharray="${dash} ${c-dash}" transform="rotate(-90 75 75)"/><text x="75" y="70" text-anchor="middle" class="donut-pct">${Math.round(pct*100)}%</text><text x="75" y="91" text-anchor="middle" class="donut-label">ativos</text></svg><div class="os-donut-legend"><div><span class="dot active"></span><span>Ativos</span><strong>${active}</strong></div><div><span class="dot inactive"></span><span>Inativos</span><strong>${inactive}</strong></div><div class="total"><span>Total</span><strong>${total}</strong></div></div></div>`}
+function renderAnalytics(analytics){const a=analytics||{},finance=a.finance||[];lineChart('#financeChart',[{labels:finance.map(x=>x.month),values:finance.map(x=>x.income)},{labels:finance.map(x=>x.month),values:finance.map(x=>x.expense)}],{money:true,label:'Receita e despesas dos últimos 12 meses',empty:'Registre pagamentos no Financeiro para formar a série histórica.'});const ps=a.patient_status||{};donutChart('#patientDonut',ps.active||0,ps.inactive||0);const ap=a.appointments||[];barChart('#appointmentsChart',ap.map(x=>x.month),ap.map(x=>x.total),{label:'Consultas por mês',empty:'Consultas agendadas aparecerão aqui.'});appointmentsTotal.textContent=(a.totals?.appointments??0).toLocaleString('pt-BR');const adh=a.checkin_adherence||[],valid=adh.filter(x=>x.value!==null&&Number(x.count||0)>0);lineChart('#adherenceChart',[{labels:valid.map(x=>x.month),values:valid.map(x=>x.value)}],{max:10,label:'Adesão média dos check-ins',empty:'A média será calculada após os pacientes responderem check-ins.'});const adhCount=valid.reduce((sum,x)=>sum+Number(x.count||0),0),adhWeighted=valid.reduce((sum,x)=>sum+Number(x.value||0)*Number(x.count||0),0);adherenceAverage.textContent=adhCount?`${(adhWeighted/adhCount).toFixed(1)}/10`:'—';const ass=a.assessments||[];barChart('#assessmentChart',ass.map(x=>x.month),ass.map(x=>x.value),{label:'Avaliações corporais por mês',empty:'Avaliações corporais registradas aparecerão aqui.'});assessmentTotal.textContent=(a.totals?.assessments??0).toLocaleString('pt-BR')}
+async function init(){setDate();const me=await fetch('/api/me');if(me.status===401||me.status===403){location='/login';return}if(!me.ok)throw new Error('session-check');const user=await me.json(),name=user.name||'Nutricionista';profileName.textContent=name;avatarInitial.textContent=name.trim().charAt(0).toUpperCase()||'N';hello.textContent=`Bem-vindo de volta, ${name.split(' ')[0]}!`;const r=await fetch('/app/api/dashboard-clinico');if(r.ok){const data=await r.json(),m=data.metrics||{};metricPatients.textContent=m.active??m.patients??0;metricAppointments.textContent=String(m.upcoming_appointments??0).padStart(2,'0');metricIncome.textContent=money(m.monthly_income);metricAlerts.textContent=String(m.open_alerts??0).padStart(2,'0');alertCount.textContent=m.open_alerts??0;alertCount.hidden=!(m.open_alerts>0);renderActivities(data);renderAnalytics(data.analytics||{})}else{activityList.innerHTML='<div class="os-empty">Não foi possível carregar o resumo agora.</div>'}}
+moduleSearch.addEventListener('input',e=>{const q=e.target.value.trim().toLowerCase();document.querySelectorAll('.os-quick-card').forEach(card=>{card.hidden=q&&!card.dataset.search.includes(q)&&!card.innerText.toLowerCase().includes(q)})});document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();moduleSearch.focus()}});logout.onclick=()=>fetch('/auth/logout',{method:'POST'}).then(()=>location='/login');init().catch(err=>{console.error('[Dashboard] Falha de inicialização:',err);const retry=document.getElementById('dashboardNetworkError');if(!retry&&window.dispatchEvent)window.dispatchEvent(new Event('dashboard-init-error'))});
 </script>
-<script src="/static/nutrios-v24-theme.js?v=24"></script>
-<script src="/static/nutrios-datetime.js?v=26"></script>
+<script src="/static/nutrios-v24-theme.js?v=24"></script><script src="/static/nutrios-datetime.js?v=26"></script>
 <meta name="vapid-public-key" content="BJj-1ef6-JzSPPc6NNNQnOQl_I0uvLtDCh7XuwfrjIIPfAGx7DfxIc5CPHyvyy3xVrfUaDvmUCm6V5D0IF_IT3s">
 <script>
-// PWA Service Worker registration + Push subscription
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('/static/sw.js');
-      console.log('[SW] Registrado:', reg.scope);
-      
-      // Subscribe to push if not already subscribed
-      const existing = await reg.pushManager.getSubscription();
-      if (!existing) {
-        const vapidKey = document.querySelector('meta[name=vapid-public-key]')?.content;
-        if (vapidKey) {
-          const sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidKey)
-          });
-          await fetch('/api/push/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(sub)
-          });
-          console.log('[Push] Subscribed');
-        }
-      }
-    } catch (err) {
-      console.error('[SW] Falha:', err);
-    }
-  });
-}
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
-}
+if('serviceWorker' in navigator){window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('/static/sw.js');const existing=await reg.pushManager.getSubscription();if(!existing){const vapidKey=document.querySelector('meta[name=vapid-public-key]')?.content;if(vapidKey){const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(vapidKey)});await fetch('/api/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sub)})}}}catch(err){console.error('[SW] Falha:',err)}})}
+function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4),base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/'),rawData=window.atob(base64);return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)))}
 </script>
 </body>
 </html>
