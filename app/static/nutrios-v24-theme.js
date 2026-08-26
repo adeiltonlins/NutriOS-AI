@@ -16,7 +16,7 @@
     if(p==='/app'){
       addStylesheet('/static/nutrios-dashboard-premium.css?v=3','dashboard-premium');
       addStylesheet('/static/nutrios-dashboard-priority.css?v=3','dashboard-priority');
-      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=1','dashboard-layout-fix');
+      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=2','dashboard-layout-fix');
       addScript('/static/nutrios-dashboard-premium.js?v=1','dashboard-premium');
       return;
     }
