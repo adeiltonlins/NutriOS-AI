@@ -1,54 +1,6 @@
-/* NutriOS shared application shell — persistent navigation for professional modules. */
-:root{
-  --shell-sidebar:264px;
-  --shell-bg:var(--ui-bg,#f5f8f6);
-  --shell-surface:var(--ui-surface,#fff);
-  --shell-line:var(--ui-line,#dce7df);
-  --shell-text:var(--ui-text,#15251b);
-  --shell-muted:var(--ui-muted,#63756a);
-  --shell-brand:var(--ui-brand,#168f43);
-}
-html,body{min-height:100%;}
-body.nutrios-shell-ready{margin:0!important;background:var(--shell-bg)!important;color:var(--shell-text)!important;}
-.nutrios-app-shell{min-height:100vh;display:grid;grid-template-columns:var(--shell-sidebar) minmax(0,1fr);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;}
-.nutrios-shell-sidebar{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:22px 16px;border-right:1px solid var(--shell-line);background:color-mix(in srgb,var(--shell-surface) 97%,transparent);z-index:30;overflow:auto;}
-.nutrios-shell-brand{display:flex;align-items:center;gap:11px;padding:8px 10px 20px;color:var(--shell-text);text-decoration:none;font-weight:900;font-size:18px;letter-spacing:-.02em;}
-.nutrios-shell-mark{width:16px;height:16px;border-radius:6px 6px 6px 2px;background:linear-gradient(135deg,var(--shell-brand),#51d879);box-shadow:0 0 0 6px color-mix(in srgb,var(--shell-brand) 13%,transparent);}
-.nutrios-shell-group{margin:12px 0 4px;padding:0 10px;color:var(--shell-muted);font-size:11px;font-weight:850;letter-spacing:.09em;text-transform:uppercase;}
-.nutrios-shell-nav{display:grid;gap:4px;}
-.nutrios-shell-link{display:flex;align-items:center;gap:11px;min-height:44px;padding:10px 12px;border:1px solid transparent;border-radius:12px;color:var(--shell-muted);text-decoration:none;font-weight:730;transition:background .16s,border-color .16s,color .16s,transform .16s;}
-.nutrios-shell-link:hover{background:var(--ui-brand-soft,#eaf8ef);color:var(--shell-brand);transform:translateX(2px);}
-.nutrios-shell-link[aria-current="page"]{background:var(--ui-brand-soft,#eaf8ef);border-color:color-mix(in srgb,var(--shell-brand) 24%,var(--shell-line));color:var(--shell-brand);}
-.nutrios-shell-icon{width:22px;display:grid;place-items:center;font-size:17px;}
-.nutrios-shell-footer{margin-top:auto;padding-top:18px;}
-.nutrios-shell-workspace{min-width:0;}
-.nutrios-shell-topbar{position:sticky;top:0;z-index:25;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px clamp(18px,3vw,34px);border-bottom:1px solid var(--shell-line);background:color-mix(in srgb,var(--shell-surface) 90%,transparent);backdrop-filter:blur(16px);}
-.nutrios-shell-title{min-width:0;}
-.nutrios-shell-title strong{display:block;color:var(--shell-text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.nutrios-shell-title span{display:block;margin-top:2px;color:var(--shell-muted);font-size:12px;}
-.nutrios-shell-home{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:9px 12px;border:1px solid var(--shell-line);border-radius:11px;background:var(--shell-surface);color:var(--shell-text);text-decoration:none;font-weight:760;}
-.nutrios-shell-content{min-width:0;padding:0;}
-.nutrios-shell-content>main,.nutrios-shell-content>.wrap,.nutrios-shell-content>.page{max-width:1380px!important;margin:0 auto!important;padding:clamp(20px,3vw,34px)!important;}
-.nutrios-shell-error{position:sticky;top:68px;z-index:24;display:none;align-items:center;justify-content:space-between;gap:14px;margin:0;padding:12px clamp(18px,3vw,34px);border-bottom:1px solid #e4c27b;background:#fff7df;color:#6d4a00;}
-.nutrios-shell-error.show{display:flex;}
-.nutrios-shell-error button{min-height:38px;padding:8px 12px;border:1px solid #d6a84c;border-radius:10px;background:#fff;color:#6d4a00;font-weight:800;cursor:pointer;}
-body.nutrios-shell-ready .back{display:none!important;}
-@media(max-width:980px){
-  .nutrios-app-shell{grid-template-columns:86px minmax(0,1fr);}
-  .nutrios-shell-sidebar{padding:18px 10px;}
-  .nutrios-shell-brand{justify-content:center;padding-inline:0;}
-  .nutrios-shell-brand span:last-child,.nutrios-shell-link span:last-child,.nutrios-shell-group{display:none;}
-  .nutrios-shell-link{justify-content:center;padding-inline:8px;}
-  .nutrios-shell-icon{width:auto;}
-}
-@media(max-width:700px){
-  .nutrios-app-shell{display:block;padding-bottom:76px;}
-  .nutrios-shell-sidebar{position:fixed;inset:auto 0 0 0;width:auto;height:auto;padding:8px 10px;border-right:0;border-top:1px solid var(--shell-line);overflow-x:auto;overflow-y:hidden;display:block;background:var(--shell-surface);}
-  .nutrios-shell-brand,.nutrios-shell-group,.nutrios-shell-footer{display:none;}
-  .nutrios-shell-nav{display:flex;gap:4px;min-width:max-content;}
-  .nutrios-shell-link{min-width:68px;min-height:56px;flex-direction:column;gap:3px;padding:7px 8px;font-size:10px;}
-  .nutrios-shell-link span:last-child{display:block;}
-  .nutrios-shell-topbar{min-height:60px;padding:8px 14px;}
-  .nutrios-shell-error{top:60px;padding:10px 14px;}
-  .nutrios-shell-content>main,.nutrios-shell-content>.wrap,.nutrios-shell-content>.page{padding:18px 14px!important;}
-}
+/* NutriOS shared application shell — canonical professional navigation. */
+:root{--shell-sidebar:256px;--shell-bg:var(--ui-bg,#F8FAFC);--shell-surface:var(--ui-surface,#fff);--shell-line:var(--ui-line,#E4EAE6);--shell-text:var(--ui-text,#111827);--shell-muted:var(--ui-muted,#667085);--shell-brand:#0F5132;--shell-action:#22C55E;--shell-soft:#D1FAE5;--shell-radius:12px;--shell-shadow:0 8px 28px rgba(15,81,50,.07)}
+html,body{min-height:100%}body.nutrios-shell-ready{margin:0!important;background:var(--shell-bg)!important;color:var(--shell-text)!important}.nutrios-app-shell{min-height:100vh;display:grid;grid-template-columns:var(--shell-sidebar) minmax(0,1fr);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}.nutrios-shell-sidebar{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;padding:20px 14px;border-right:1px solid var(--shell-line);background:var(--shell-surface);z-index:30;overflow:auto}.nutrios-shell-brand{display:flex;align-items:center;gap:12px;padding:8px 10px 20px;color:var(--shell-text);text-decoration:none;font-weight:900;font-size:19px;letter-spacing:-.03em}.nutrios-shell-mark{width:16px;height:16px;border-radius:6px 6px 6px 2px;background:var(--shell-brand);box-shadow:0 0 0 6px color-mix(in srgb,var(--shell-action) 15%,transparent)}.nutrios-shell-group{margin:14px 0 5px;padding:0 11px;color:var(--shell-muted);font-size:10px;font-weight:850;letter-spacing:.11em;text-transform:uppercase}.nutrios-shell-nav{display:grid;gap:3px}.nutrios-shell-link{display:flex;align-items:center;gap:10px;min-height:43px;padding:9px 11px;border:1px solid transparent;border-radius:11px;color:var(--shell-muted);text-decoration:none;font-weight:720;transition:background .16s,border-color .16s,color .16s}.nutrios-shell-link:hover{background:var(--shell-soft);color:var(--shell-brand)}.nutrios-shell-link[aria-current="page"]{background:var(--shell-soft);border-color:color-mix(in srgb,var(--shell-action) 24%,var(--shell-line));color:var(--shell-brand)}.nutrios-shell-icon{width:22px;display:grid;place-items:center;font-size:16px}.nutrios-shell-footer{margin-top:auto;padding-top:14px;border-top:1px solid var(--shell-line)}.nutrios-shell-workspace{min-width:0;background:var(--shell-bg)}.nutrios-shell-topbar{position:sticky;top:0;z-index:25;min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px clamp(20px,3vw,38px);border-bottom:1px solid var(--shell-line);background:color-mix(in srgb,var(--shell-surface) 94%,transparent);backdrop-filter:blur(14px)}.nutrios-shell-title{min-width:0}.nutrios-shell-title strong{display:block;color:var(--shell-text);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nutrios-shell-title span{display:block;margin-top:2px;color:var(--shell-muted);font-size:12px}.nutrios-shell-home{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:9px 12px;border:1px solid var(--shell-line);border-radius:11px;background:var(--shell-surface);color:var(--shell-text);text-decoration:none;font-weight:760}.nutrios-shell-home:hover{border-color:color-mix(in srgb,var(--shell-action) 32%,var(--shell-line));color:var(--shell-brand)}.nutrios-shell-content{min-width:0}.nutrios-shell-content>main,.nutrios-shell-content>.wrap,.nutrios-shell-content>.page{max-width:1440px!important;margin:0 auto!important;padding:clamp(24px,3vw,40px)!important}.nutrios-shell-error{position:sticky;top:68px;z-index:24;display:none;align-items:center;justify-content:space-between;gap:14px;margin:0;padding:12px clamp(20px,3vw,38px);border-bottom:1px solid #E8C56A;background:#FFF8E7;color:#6B4A00}.nutrios-shell-error.show{display:flex}.nutrios-shell-error button{min-height:38px;padding:8px 12px;border:1px solid #D9B14E;border-radius:10px;background:#fff;color:#6B4A00;font-weight:800;cursor:pointer}body.nutrios-shell-ready .back{display:none!important}
+@media(max-width:980px){.nutrios-app-shell{grid-template-columns:82px minmax(0,1fr)}.nutrios-shell-sidebar{padding:18px 10px}.nutrios-shell-brand{justify-content:center;padding-inline:0}.nutrios-shell-brand span:last-child,.nutrios-shell-link span:last-child,.nutrios-shell-group{display:none}.nutrios-shell-link{justify-content:center;padding-inline:8px}.nutrios-shell-icon{width:auto}}
+@media(max-width:700px){.nutrios-app-shell{display:block;padding-bottom:72px}.nutrios-shell-sidebar{position:fixed;inset:auto 0 0 0;width:auto;height:auto;padding:7px 8px;border-right:0;border-top:1px solid var(--shell-line);overflow-x:auto;overflow-y:hidden;display:block;background:var(--shell-surface);box-shadow:0 -6px 20px rgba(17,24,39,.05)}.nutrios-shell-brand,.nutrios-shell-group,.nutrios-shell-footer{display:none}.nutrios-shell-nav{display:flex;gap:3px;min-width:max-content}.nutrios-shell-link{min-width:68px;min-height:56px;flex-direction:column;gap:3px;padding:7px 8px;font-size:10px}.nutrios-shell-link span:last-child{display:block}.nutrios-shell-topbar{min-height:60px;padding:8px 12px}.nutrios-shell-error{top:60px;padding:10px 14px}.nutrios-shell-content>main,.nutrios-shell-content>.wrap,.nutrios-shell-content>.page{padding:20px 14px 28px!important}}
+@media(prefers-reduced-motion:reduce){.nutrios-shell-link{transition:none}}
