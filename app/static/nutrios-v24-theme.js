@@ -18,14 +18,21 @@
   window.NutriOSTheme={apply,get:current,toggle:()=>apply(root.getAttribute('data-theme')==='dark'?'light':'dark')};
   apply(current());
 
+  function addStylesheet(href,key){
+    if(document.querySelector(`link[data-nutrios-style="${key}"]`))return;
+    const css=document.createElement('link');css.rel='stylesheet';css.href=href;css.dataset.nutriosStyle=key;document.head.appendChild(css);
+  }
+
   function setupProfessionalShell(){
     const p=location.pathname.replace(/\/$/,'')||'/';
-    if(!p.startsWith('/app/')||p.startsWith('/app/api/'))return;
-    if(!document.querySelector('link[data-nutrios-app-shell]')){
-      const css=document.createElement('link');css.rel='stylesheet';css.href='/static/nutrios-app-shell.css?v=2';css.dataset.nutriosAppShell='1';document.head.appendChild(css);
+    if(p==='/app'){
+      addStylesheet('/static/nutrios-dashboard-premium.css?v=1','dashboard-premium');
+      return;
     }
+    if(!p.startsWith('/app/')||p.startsWith('/app/api/'))return;
+    addStylesheet('/static/nutrios-app-shell.css?v=3','app-shell');
     if(!window.NutriOSUI&&!document.querySelector('script[data-nutrios-app-shell]')){
-      const js=document.createElement('script');js.src='/static/nutrios-app-shell.js?v=2';js.defer=true;js.dataset.nutriosAppShell='1';document.head.appendChild(js);
+      const js=document.createElement('script');js.src='/static/nutrios-app-shell.js?v=3';js.defer=true;js.dataset.nutriosAppShell='1';document.head.appendChild(js);
     }
   }
   setupProfessionalShell();
