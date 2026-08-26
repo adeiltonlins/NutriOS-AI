@@ -22,11 +22,17 @@
     if(document.querySelector(`link[data-nutrios-style="${key}"]`))return;
     const css=document.createElement('link');css.rel='stylesheet';css.href=href;css.dataset.nutriosStyle=key;document.head.appendChild(css);
   }
+  function addScript(src,key){
+    if(document.querySelector(`script[data-nutrios-script="${key}"]`))return;
+    const js=document.createElement('script');js.src=src;js.defer=true;js.dataset.nutriosScript=key;document.head.appendChild(js);
+  }
 
   function setupProfessionalShell(){
     const p=location.pathname.replace(/\/$/,'')||'/';
     if(p==='/app'){
       addStylesheet('/static/nutrios-dashboard-premium.css?v=1','dashboard-premium');
+      addStylesheet('/static/nutrios-dashboard-priority.css?v=1','dashboard-priority');
+      addScript('/static/nutrios-dashboard-premium.js?v=1','dashboard-premium');
       return;
     }
     if(!p.startsWith('/app/')||p.startsWith('/app/api/'))return;
