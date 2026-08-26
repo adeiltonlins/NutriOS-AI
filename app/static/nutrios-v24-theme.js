@@ -13,7 +13,13 @@
   function setupProfessionalShell(){
     const p=location.pathname.replace(/\/$/,'')||'/';if(!p.startsWith('/app')||p.startsWith('/app/api/'))return;
     addStylesheet('/static/nutrios-universal-light.css?v=3','universal-light');
-    if(p==='/app'){addStylesheet('/static/nutrios-dashboard-premium.css?v=3','dashboard-premium');addStylesheet('/static/nutrios-dashboard-priority.css?v=3','dashboard-priority');addScript('/static/nutrios-dashboard-premium.js?v=1','dashboard-premium');return}
+    if(p==='/app'){
+      addStylesheet('/static/nutrios-dashboard-premium.css?v=3','dashboard-premium');
+      addStylesheet('/static/nutrios-dashboard-priority.css?v=3','dashboard-priority');
+      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=1','dashboard-layout-fix');
+      addScript('/static/nutrios-dashboard-premium.js?v=1','dashboard-premium');
+      return;
+    }
     addStylesheet('/static/nutrios-app-shell.css?v=5','app-shell');
     if(!window.NutriOSUI&&!document.querySelector('script[data-nutrios-app-shell]')){const js=document.createElement('script');js.src='/static/nutrios-app-shell.js?v=4';js.defer=true;js.dataset.nutriosAppShell='1';document.head.appendChild(js)}
   }
