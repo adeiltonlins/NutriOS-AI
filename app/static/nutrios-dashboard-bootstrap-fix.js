@@ -1,70 +1,22 @@
-/* NutriOS dashboard bootstrap resilience.
-   Loaded before the legacy dashboard bootstrap so transient network/server
-   failures never masquerade as an expired session. */
+/* NutriOS dashboard bootstrap resilience + approved reference composition. */
 (function(){
   const nativeFetch=window.fetch.bind(window);
   let meRequestFailed=false;
+  function banner(message){let el=document.getElementById('dashboardNetworkError');if(!el){el=document.createElement('div');el.id='dashboardNetworkError';el.setAttribute('role','alert');el.style.cssText='position:sticky;top:68px;z-index:70;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px clamp(18px,3vw,38px);border-bottom:1px solid #e4c27b;background:#fff7df;color:#6d4a00;font:700 14px Inter,system-ui,sans-serif';const text=document.createElement('span');text.id='dashboardNetworkErrorText';const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.style.cssText='min-height:38px;padding:8px 12px;border:1px solid #d6a84c;border-radius:8px;background:#fff;color:#6d4a00;font-weight:800;cursor:pointer';retry.addEventListener('click',()=>location.reload());el.append(text,retry);const workspace=document.querySelector('.os-workspace'),topbar=document.querySelector('.os-topbar');if(workspace&&topbar)topbar.insertAdjacentElement('afterend',el);else document.body.prepend(el)}const text=document.getElementById('dashboardNetworkErrorText');if(text)text.textContent=message}
+  window.fetch=async function(input,init){const url=typeof input==='string'?input:(input&&input.url)||'';try{const response=await nativeFetch(input,init);if(url==='/api/me'){if(response.status===401||response.status===403)return response;if(!response.ok){meRequestFailed=true;banner('Não foi possível confirmar sua sessão agora. Sua tela foi mantida.');return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}})}}if(url==='/app/api/dashboard-clinico'&&!response.ok)banner('Não foi possível atualizar o dashboard. Verifique sua conexão e tente novamente.');return response}catch(error){if(url==='/api/me'){meRequestFailed=true;banner('Falha de conexão. O NutriOS não vai encerrar sua sessão por causa disso.');return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}})}if(url==='/app/api/dashboard-clinico'){banner('Falha de conexão ao carregar o dashboard. Tente novamente quando a conexão estabilizar.');return new Response(JSON.stringify({metrics:{},analytics:{},checkins:[],appointments:[]}),{status:503,headers:{'Content-Type':'application/json'}})}throw error}};
+  window.addEventListener('unhandledrejection',event=>{if(meRequestFailed){event.preventDefault();banner('Falha temporária de conexão. Sua sessão foi preservada.')}});
 
-  function banner(message){
-    let el=document.getElementById('dashboardNetworkError');
-    if(!el){
-      el=document.createElement('div');
-      el.id='dashboardNetworkError';
-      el.setAttribute('role','alert');
-      el.style.cssText='position:sticky;top:68px;z-index:70;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px clamp(18px,3vw,38px);border-bottom:1px solid #e4c27b;background:#fff7df;color:#6d4a00;font:700 14px Inter,system-ui,sans-serif';
-      const text=document.createElement('span');
-      text.id='dashboardNetworkErrorText';
-      const retry=document.createElement('button');
-      retry.type='button';
-      retry.textContent='Tentar novamente';
-      retry.style.cssText='min-height:38px;padding:8px 12px;border:1px solid #d6a84c;border-radius:10px;background:#fff;color:#6d4a00;font-weight:800;cursor:pointer';
-      retry.addEventListener('click',()=>location.reload());
-      el.append(text,retry);
-      const workspace=document.querySelector('.os-workspace');
-      const topbar=document.querySelector('.os-topbar');
-      if(workspace&&topbar)topbar.insertAdjacentElement('afterend',el);else document.body.prepend(el);
-    }
-    const text=document.getElementById('dashboardNetworkErrorText');
-    if(text)text.textContent=message;
+  function installReferenceUI(){
+    if(document.getElementById('nutriosReferenceV2'))return;
+    const css=document.createElement('link');css.id='nutriosReferenceV2';css.rel='stylesheet';css.href='/static/nutrios-dashboard-reference-v2.css?v=1';document.head.appendChild(css);
+    const main=document.getElementById('dashboardContent'),metrics=document.querySelector('.os-metrics');if(!main||!metrics)return;
+    const board=document.createElement('section');board.className='os-attention-board';board.setAttribute('aria-label','Prioridades do dia');
+    board.innerHTML=`<div class="os-attention-summary"><h2>Precisa da sua atenção hoje</h2><div class="os-attention-item"><span>Consultas próximas</span><b id="refAppointments">—</b></div><div class="os-attention-item"><span>Alertas clínicos</span><b id="refAlerts">—</b></div><div class="os-attention-item"><span>Check-ins recentes</span><b id="refCheckins">—</b></div><div class="os-attention-item"><span>Conversas</span><b>↗</b></div></div><div class="os-today-list"><h2>Hoje</h2><div id="refTodayRows"><div class="os-today-row"><strong>Agenda</strong><span>Carregando consultas...</span><span></span><a href="/app/gestao">Abrir agenda</a></div></div></div><aside class="os-ai-panel"><h2>Assistente IA <small>Beta</small></h2><div class="os-ai-row"><strong>Prioridades clínicas em um só lugar</strong><span>Use os alertas e check-ins para preparar seus atendimentos.</span></div><div class="os-ai-row"><strong>Planos alimentares para revisar</strong><span>A IA permanece como apoio; você mantém o controle clínico.</span></div><div class="os-ai-row"><strong>Resumo de evolução</strong><span>Abra a central clínica para analisar cada paciente.</span></div></aside>`;
+    metrics.insertAdjacentElement('beforebegin',board);
+    const originalFetch=window.fetch; // observe dashboard payload without changing its contract
+    window.fetch=async function(input,init){const response=await originalFetch(input,init);const url=typeof input==='string'?input:(input&&input.url)||'';if(url==='/app/api/dashboard-clinico'&&response.ok){response.clone().json().then(data=>renderReferenceData(data)).catch(()=>{})}return response};
+    const sync=()=>{const a=document.getElementById('metricAppointments'),al=document.getElementById('metricAlerts');if(a)document.getElementById('refAppointments').textContent=a.textContent||'0';if(al)document.getElementById('refAlerts').textContent=al.textContent||'0'};new MutationObserver(sync).observe(metrics,{subtree:true,childList:true,characterData:true});sync();
   }
-
-  window.fetch=async function(input,init){
-    const url=typeof input==='string'?input:(input&&input.url)||'';
-    try{
-      const response=await nativeFetch(input,init);
-      if(url==='/api/me'){
-        // Only 401/403 mean the user must authenticate again. Server errors
-        // are converted into a successful placeholder response so the legacy
-        // bootstrap does not redirect to /login.
-        if(response.status===401||response.status===403)return response;
-        if(!response.ok){
-          meRequestFailed=true;
-          banner('Não foi possível confirmar sua sessão agora. Sua tela foi mantida.');
-          return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}});
-        }
-      }
-      if(url==='/app/api/dashboard-clinico'&&!response.ok){
-        banner('Não foi possível atualizar o dashboard. Verifique sua conexão e tente novamente.');
-      }
-      return response;
-    }catch(error){
-      if(url==='/api/me'){
-        meRequestFailed=true;
-        banner('Falha de conexão. O NutriOS não vai encerrar sua sessão por causa disso.');
-        return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}});
-      }
-      if(url==='/app/api/dashboard-clinico'){
-        banner('Falha de conexão ao carregar o dashboard. Tente novamente quando a conexão estabilizar.');
-        return new Response(JSON.stringify({metrics:{},analytics:{},checkins:[],appointments:[]}),{status:503,headers:{'Content-Type':'application/json'}});
-      }
-      throw error;
-    }
-  };
-
-  window.addEventListener('unhandledrejection',event=>{
-    if(meRequestFailed){
-      event.preventDefault();
-      banner('Falha temporária de conexão. Sua sessão foi preservada.');
-    }
-  });
+  function renderReferenceData(data){const checkins=(data.checkins||[]),appointments=(data.appointments||[]);const c=document.getElementById('refCheckins');if(c)c.textContent=checkins.length;const rows=document.getElementById('refTodayRows');if(!rows)return;const upcoming=appointments.slice(0,3);rows.innerHTML=upcoming.length?upcoming.map(x=>{const d=x.starts_at?new Date(x.starts_at):null,time=d&&!Number.isNaN(d.valueOf())?d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';const name=String(x.patient_name||'Paciente').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));const href=x.patient_id?'/app/pacientes/'+encodeURIComponent(x.patient_id)+'#schedule':'/app/gestao';return `<div class="os-today-row"><strong>${time}</strong><span>${name}</span><span>Consulta</span><a href="${href}">Ver prontuário →</a></div>`}).join(''):`<div class="os-today-row"><strong>Hoje</strong><span>Nenhuma consulta próxima.</span><span></span><a href="/app/gestao">Ver agenda →</a></div>`}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installReferenceUI);else installReferenceUI();
 })();
