@@ -22,19 +22,21 @@
   }
   function setupProfessionalShell(){
     const p=location.pathname.replace(/\/$/,'')||'/';if(!p.startsWith('/app')||p.startsWith('/app/api/'))return;
-    addStylesheet('/static/nutrios-universal-light.css?v=6','universal-light');
+    addStylesheet('/static/nutrios-universal-light.css?v=7','universal-light');
     if(p==='/app'){
-      addStylesheet('/static/nutrios-dashboard-premium.css?v=6','dashboard-premium');
-      addStylesheet('/static/nutrios-dashboard-priority.css?v=6','dashboard-priority');
-      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=6','dashboard-layout-fix');
-      addScript('/static/nutrios-dashboard-premium.js?v=4','dashboard-premium');
+      addStylesheet('/static/nutrios-dashboard-premium.css?v=7','dashboard-premium');
+      addStylesheet('/static/nutrios-dashboard-priority.css?v=7','dashboard-priority');
+      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=7','dashboard-layout-fix');
+      addScript('/static/nutrios-dashboard-premium.js?v=5','dashboard-premium');
       return;
     }
     document.documentElement.dataset.nutriosModule=moduleName(p);
     document.body?.setAttribute('data-nutrios-module',moduleName(p));
-    addStylesheet('/static/nutrios-app-shell.css?v=8','app-shell');
-    addStylesheet('/static/nutrios-zip-modules.css?v=1','zip-modules');
-    addScript('/static/nutrios-app-shell.js?v=7','app-shell');
+    addStylesheet('/static/nutrios-app-shell.css?v=9','app-shell');
+    addStylesheet('/static/nutrios-zip-modules.css?v=2','zip-modules');
+    addStylesheet('/static/nutrios-zip-clinical-v3.css?v=1','zip-clinical-v3');
+    addScript('/static/nutrios-app-shell.js?v=8','app-shell');
+    addScript('/static/nutrios-zip-clinical-v3.js?v=1','zip-clinical-v3');
   }
   setupProfessionalShell();
   async function setupTenantPWA(){
