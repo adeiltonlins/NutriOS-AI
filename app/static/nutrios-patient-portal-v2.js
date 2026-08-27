@@ -90,3 +90,12 @@
   window.addEventListener('nutrios:checkin-saved',refresh);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
 })();
+
+(()=>{
+  if(document.querySelector('script[data-patient-clinical-readonly]'))return;
+  const script=document.createElement('script');
+  script.src='/static/nutrios-patient-clinical-readonly-v2.js?v=1';
+  script.defer=true;
+  script.dataset.patientClinicalReadonly='1';
+  document.head.appendChild(script);
+})();
