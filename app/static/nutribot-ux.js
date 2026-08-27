@@ -1,4 +1,11 @@
 (() => {
+  if (!document.querySelector('link[data-nutrios-v2-suite]')) {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = '/static/nutrios-v2-suite.css?v=1';
+    css.dataset.nutriosV2Suite = '1';
+    document.head.appendChild(css);
+  }
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const host = document.createElement('div');
   host.className = 'nutri-toast-host';
