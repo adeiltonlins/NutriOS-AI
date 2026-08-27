@@ -1,0 +1,96 @@
+/* NutriOS V2 modules — visual language adapted from the uploaded ZIP.
+   Presentation only: no endpoint, auth, storage or business-rule changes. */
+:root{--zip-bg:#f8fafc;--zip-surface:#fff;--zip-surface-soft:#f8faf9;--zip-line:#e2e8f0;--zip-line-2:#d8e1dc;--zip-text:#0f172a;--zip-muted:#64748b;--zip-green:#059669;--zip-green-2:#10b981;--zip-green-soft:#ecfdf5;--zip-teal:#0f766e;--zip-amber:#d97706;--zip-red:#dc2626;--zip-radius:16px;--zip-shadow:0 1px 2px rgba(15,23,42,.03),0 8px 24px rgba(15,23,42,.035)}
+
+body.nutrios-shell-ready{background:var(--zip-bg)!important;color:var(--zip-text)!important}
+body.nutrios-shell-ready .nutrios-shell-content{background:var(--zip-bg)!important}
+body.nutrios-shell-ready .wrap,body.nutrios-shell-ready .page,body.nutrios-shell-ready main{color:var(--zip-text)!important}
+body.nutrios-shell-ready .wrap>h1,body.nutrios-shell-ready .page>h1,body.nutrios-shell-ready main>h1{font-size:26px!important;line-height:1.15!important;letter-spacing:-.035em!important;font-weight:850!important;color:var(--zip-text)!important;margin:0 0 7px!important}
+body.nutrios-shell-ready .sub,body.nutrios-shell-ready .muted{color:var(--zip-muted)!important}
+body.nutrios-shell-ready a{color:inherit}
+body.nutrios-shell-ready .back{display:none!important}
+
+/* Page headers */
+body.nutrios-shell-ready .top{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:18px!important;margin-bottom:20px!important}
+body.nutrios-shell-ready .top h1{font-size:26px!important;line-height:1.15!important;letter-spacing:-.035em!important;font-weight:850!important;color:var(--zip-text)!important;margin:0 0 6px!important}
+body.nutrios-shell-ready .top .sub{font-size:12px!important;line-height:1.55!important;max-width:760px!important}
+
+/* Buttons */
+body.nutrios-shell-ready button,body.nutrios-shell-ready .btn{font-family:inherit!important;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease!important}
+body.nutrios-shell-ready .primary,body.nutrios-shell-ready button.primary,body.nutrios-shell-ready .btn.primary{background:linear-gradient(135deg,var(--zip-green),var(--zip-green-2))!important;color:#fff!important;border:1px solid transparent!important;border-radius:12px!important;box-shadow:0 8px 18px rgba(5,150,105,.14)!important;font-weight:780!important;padding:10px 15px!important}
+body.nutrios-shell-ready .primary:hover,body.nutrios-shell-ready button.primary:hover,body.nutrios-shell-ready .btn.primary:hover{transform:translateY(-1px)!important;box-shadow:0 10px 22px rgba(5,150,105,.18)!important}
+body.nutrios-shell-ready .ghost,body.nutrios-shell-ready .btn:not(.primary),body.nutrios-shell-ready .tabs button{background:#fff!important;color:#334155!important;border:1px solid var(--zip-line)!important;border-radius:11px!important;box-shadow:none!important}
+body.nutrios-shell-ready .ghost:hover,body.nutrios-shell-ready .btn:not(.primary):hover,body.nutrios-shell-ready .tabs button:hover{background:#f8fafc!important;border-color:#cfd8d3!important}
+body.nutrios-shell-ready .danger{background:#fff1f2!important;color:#be123c!important;border:1px solid #fecdd3!important;border-radius:11px!important}
+
+/* Tabs from ZIP */
+body.nutrios-shell-ready .tabs{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;flex-wrap:wrap!important;margin:18px 0 20px!important;padding:6px!important;background:#fff!important;border:1px solid var(--zip-line)!important;border-radius:15px!important;box-shadow:0 1px 2px rgba(15,23,42,.025)!important;width:max-content!important;max-width:100%!important}
+body.nutrios-shell-ready .tabs button{min-height:38px!important;padding:0 13px!important;font-size:12px!important;font-weight:680!important;color:#64748b!important}
+body.nutrios-shell-ready .tabs button.active,body.nutrios-shell-ready .tabs button.on{background:var(--zip-green)!important;color:#fff!important;border-color:var(--zip-green)!important;box-shadow:0 5px 12px rgba(5,150,105,.12)!important}
+
+/* KPI blocks */
+body.nutrios-shell-ready .stats{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;margin:20px 0!important}
+body.nutrios-shell-ready .stat{background:#fff!important;border:1px solid var(--zip-line)!important;border-radius:16px!important;padding:18px!important;box-shadow:var(--zip-shadow)!important;color:var(--zip-text)!important;min-height:104px!important}
+body.nutrios-shell-ready .stat:before{content:"";display:block;width:34px;height:5px;border-radius:999px;background:linear-gradient(90deg,var(--zip-green),#34d399);margin-bottom:14px;opacity:.9}
+body.nutrios-shell-ready .stat b{font-size:26px!important;line-height:1!important;letter-spacing:-.04em!important;color:var(--zip-text)!important;margin-top:6px!important}
+body.nutrios-shell-ready .stat .sub{font-size:11px!important;font-weight:650!important}
+
+/* Panels/cards */
+body.nutrios-shell-ready .panel{background:#fff!important;color:var(--zip-text)!important;border:1px solid var(--zip-line)!important;border-radius:18px!important;box-shadow:var(--zip-shadow)!important;padding:20px!important;overflow:hidden!important}
+body.nutrios-shell-ready .panel-head,body.nutrios-shell-ready .management-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:16px!important;flex-wrap:wrap!important;padding:0!important;margin-bottom:16px!important}
+body.nutrios-shell-ready .panel h2,body.nutrios-shell-ready .panel-head h2,body.nutrios-shell-ready .management-head h2{color:var(--zip-text)!important;font-size:16px!important;letter-spacing:-.02em!important;margin:0!important;font-weight:800!important}
+body.nutrios-shell-ready .grid{gap:14px!important}
+body.nutrios-shell-ready .card{background:#fff!important;color:var(--zip-text)!important;border:1px solid var(--zip-line)!important;border-radius:15px!important;padding:16px!important;box-shadow:0 1px 2px rgba(15,23,42,.025)!important}
+body.nutrios-shell-ready .card:hover{border-color:#cfd8d3!important;box-shadow:0 7px 20px rgba(15,23,42,.045)!important}
+body.nutrios-shell-ready .card b,body.nutrios-shell-ready .card strong{color:var(--zip-text)!important}
+body.nutrios-shell-ready .card p{color:#64748b!important;line-height:1.5!important}
+body.nutrios-shell-ready .module-context{background:linear-gradient(135deg,#f0fdf4,#ecfdf5)!important;border:1px solid #bbf7d0!important;border-radius:16px!important;color:var(--zip-text)!important;box-shadow:none!important}
+body.nutrios-shell-ready .context-kicker{color:var(--zip-green)!important}
+body.nutrios-shell-ready .module-context p{color:#64748b!important}
+
+/* Patients table */
+body.nutrios-shell-ready .table{border:1px solid var(--zip-line)!important;border-radius:14px!important;overflow:auto!important;background:#fff!important}
+body.nutrios-shell-ready table{background:#fff!important;color:var(--zip-text)!important;border-collapse:separate!important;border-spacing:0!important}
+body.nutrios-shell-ready thead{background:#f8fafc!important}
+body.nutrios-shell-ready th{padding:13px 15px!important;border-top:0!important;border-bottom:1px solid var(--zip-line)!important;color:#64748b!important;font-size:10px!important;font-weight:800!important;letter-spacing:.06em!important;text-transform:uppercase!important;white-space:nowrap!important}
+body.nutrios-shell-ready td{padding:14px 15px!important;border-top:0!important;border-bottom:1px solid #eef2f7!important;color:#334155!important;vertical-align:middle!important}
+body.nutrios-shell-ready tbody tr:last-child td{border-bottom:0!important}
+body.nutrios-shell-ready tbody tr:hover{background:#fbfdfc!important}
+body.nutrios-shell-ready td b{color:#0f172a!important;font-weight:760!important}
+body.nutrios-shell-ready td small{font-size:11px!important}
+body.nutrios-shell-ready .badge,body.nutrios-shell-ready .status-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:5px 9px!important;border-radius:999px!important;background:#ecfdf5!important;color:#047857!important;border:1px solid #d1fae5!important;font-size:10px!important;font-weight:760!important}
+body.nutrios-shell-ready .badge.off{background:#fff7ed!important;color:#c2410c!important;border-color:#fed7aa!important}
+body.nutrios-shell-ready .usage{height:6px!important;background:#eef2f7!important;border-radius:999px!important;overflow:hidden!important;margin-top:5px!important}
+body.nutrios-shell-ready .usage i{background:linear-gradient(90deg,var(--zip-green),#34d399)!important}
+body.nutrios-shell-ready .actions{gap:6px!important}
+body.nutrios-shell-ready .actions button{font-size:10px!important;padding:7px 9px!important;border-radius:9px!important;box-shadow:none!important}
+
+/* Forms */
+body.nutrios-shell-ready label{color:#334155!important;font-size:11px!important;font-weight:680!important}
+body.nutrios-shell-ready input,body.nutrios-shell-ready textarea,body.nutrios-shell-ready select{width:100%!important;box-sizing:border-box!important;background:#fff!important;color:#0f172a!important;border:1px solid #dbe3df!important;border-radius:11px!important;padding:10px 12px!important;outline:0!important;box-shadow:none!important;font-family:inherit!important;font-size:12px!important}
+body.nutrios-shell-ready input:focus,body.nutrios-shell-ready textarea:focus,body.nutrios-shell-ready select:focus{border-color:#6ee7b7!important;box-shadow:0 0 0 3px rgba(16,185,129,.09)!important}
+body.nutrios-shell-ready textarea{min-height:100px!important;resize:vertical!important}
+body.nutrios-shell-ready .appointment-form{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;margin:14px 0 18px!important;padding:16px!important;background:#f8fafc!important;border:1px solid var(--zip-line)!important;border-radius:15px!important}
+body.nutrios-shell-ready .appointment-form .wide{grid-column:1/-1!important}
+
+/* Dialogs */
+body.nutrios-shell-ready dialog{width:min(94vw,650px)!important;background:#fff!important;color:var(--zip-text)!important;border:1px solid var(--zip-line)!important;border-radius:22px!important;box-shadow:0 28px 70px rgba(15,23,42,.22)!important;padding:0!important}
+body.nutrios-shell-ready dialog::backdrop{background:rgba(15,23,42,.46)!important;backdrop-filter:blur(4px)!important}
+body.nutrios-shell-ready dialog .modal,body.nutrios-shell-ready dialog form{background:#fff!important;color:var(--zip-text)!important;padding:24px!important}
+body.nutrios-shell-ready dialog h2{font-size:18px!important;color:var(--zip-text)!important;letter-spacing:-.02em!important;margin-top:0!important}
+body.nutrios-shell-ready .code{background:#f0fdf4!important;color:#047857!important;border:1px dashed #86efac!important}
+
+/* Empty states */
+body.nutrios-shell-ready .empty-state{padding:30px!important;border:1px dashed #cbd5e1!important;border-radius:15px!important;background:#f8fafc!important;text-align:center!important;color:#64748b!important}
+body.nutrios-shell-ready .empty-state b{display:block!important;color:#334155!important;margin-bottom:5px!important}
+
+/* Page-specific refinements inspired by ZIP */
+body.patient-page.nutrios-shell-ready .top{padding-bottom:2px!important}
+body.patient-page.nutrios-shell-ready .panel{padding:18px!important}
+body.patient-page.nutrios-shell-ready .panel-head{padding:2px 2px 0!important}
+body.patient-page.nutrios-shell-ready .table{margin-top:4px!important}
+body.nutrios-shell-ready[data-nutrios-module="agenda"] .panel{min-height:180px!important}
+
+@media(max-width:1100px){body.nutrios-shell-ready .stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}.appointment-form{grid-template-columns:1fr 1fr!important}}
+@media(max-width:760px){body.nutrios-shell-ready .top{display:block!important}body.nutrios-shell-ready .top .primary{margin-top:14px!important}body.nutrios-shell-ready .stats{grid-template-columns:1fr 1fr!important}body.nutrios-shell-ready .panel{padding:14px!important}body.nutrios-shell-ready .tabs{width:100%!important;overflow:auto!important;flex-wrap:nowrap!important}.appointment-form{grid-template-columns:1fr!important}.appointment-form .wide{grid-column:auto!important}}
+@media(max-width:480px){body.nutrios-shell-ready .stats{grid-template-columns:1fr!important}}
