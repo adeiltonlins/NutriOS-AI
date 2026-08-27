@@ -1,0 +1,20 @@
+/* Exact ZIP frame alignment for wide screens. */
+:root{--zip-frame:1500px;--zip-gutter:max(0px,calc((100vw - var(--zip-frame))/2))}
+@media(min-width:1501px){
+  body.nutrios-shell-ready{padding-left:calc(var(--zip-gutter) + var(--zip-side))!important;padding-right:var(--zip-gutter)!important}
+  .nutrios-shell-topbar{left:var(--zip-gutter)!important;right:var(--zip-gutter)!important;padding-left:0!important;padding-right:0!important}
+  .nutrios-shell-sidebar{left:var(--zip-gutter)!important}
+  .nutrios-shell-search-row{left:calc(var(--zip-gutter) + var(--zip-side))!important;right:var(--zip-gutter)!important}
+  .nutrios-shell-search-results{left:calc(var(--zip-gutter) + var(--zip-side) + 26px)!important}
+  .nutrios-shell-error{left:calc(var(--zip-gutter) + var(--zip-side) + 26px)!important;right:calc(var(--zip-gutter) + 24px)!important}
+}
+/* Match the prototype's calm white/mint surfaces rather than legacy green blocks. */
+body.nutrios-shell-ready .module-context{background:#fff!important;border:1px solid #e2e8f0!important;border-radius:18px!important;box-shadow:0 2px 10px rgba(15,23,42,.04)!important}
+body.nutrios-shell-ready .context-kicker{color:#059669!important}
+body.nutrios-shell-ready .usage{background:#e7efe9!important}
+body.nutrios-shell-ready .usage i{background:linear-gradient(90deg,#059669,#0d9488)!important}
+body.nutrios-shell-ready dialog{background:#fff!important;color:#0f172a!important;border:1px solid #e2e8f0!important;border-radius:18px!important;box-shadow:0 24px 70px rgba(15,23,42,.2)!important}
+body.nutrios-shell-ready dialog::backdrop{background:rgba(15,23,42,.36)!important}
+body.nutrios-shell-ready .code{background:#f8fafc!important;border-color:#a7f3d0!important;color:#047857!important}
+body.nutrios-shell-ready .badge{background:#ecfdf5!important;color:#047857!important}
+body.nutrios-shell-ready .badge.off{background:#fff1f2!important;color:#be123c!important}
