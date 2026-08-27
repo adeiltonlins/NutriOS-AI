@@ -10,6 +10,7 @@
   window.NutriOSTheme={apply,get:()=> 'light',toggle:apply};apply();
   function addStylesheet(href,key){if(document.querySelector(`link[data-nutrios-style="${key}"]`))return;const css=document.createElement('link');css.rel='stylesheet';css.href=href;css.dataset.nutriosStyle=key;document.head.appendChild(css)}
   function addScript(src,key){if(document.querySelector(`script[data-nutrios-script="${key}"]`))return;const js=document.createElement('script');js.src=src;js.defer=true;js.dataset.nutriosScript=key;document.head.appendChild(js)}
+  function addClinicalV2(){addStylesheet('/static/nutrios-v2-clinical.css?v=1','v2-clinical');addStylesheet('/static/nutrios-v2-clinical-modules.css?v=1','v2-clinical-modules');addScript('/static/nutrios-v2-clinical.js?v=1','v2-clinical')}
   function setupProfessionalShell(){
     const p=location.pathname.replace(/\/$/,'')||'/';if(!p.startsWith('/app')||p.startsWith('/app/api/'))return;
     addStylesheet('/static/nutrios-universal-light.css?v=3','universal-light');
@@ -23,13 +24,13 @@
       return;
     }
     addStylesheet('/static/nutrios-app-shell.css?v=5','app-shell');
-    addStylesheet('/static/nutrios-v2-clinical.css?v=1','v2-clinical');
+    addClinicalV2();
     if(!window.NutriOSUI&&!document.querySelector('script[data-nutrios-app-shell]')){const js=document.createElement('script');js.src='/static/nutrios-app-shell.js?v=4';js.defer=true;js.dataset.nutriosAppShell='1';document.head.appendChild(js)}
   }
   function setupPatientExperience(){
     const p=location.pathname.replace(/\/$/,'')||'/';
     if(!p.startsWith('/paciente'))return;
-    addStylesheet('/static/nutrios-v2-clinical.css?v=1','v2-clinical');
+    addClinicalV2();
   }
   setupProfessionalShell();setupPatientExperience();
   async function setupTenantPWA(){
