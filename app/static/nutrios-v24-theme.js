@@ -37,6 +37,10 @@
     addStylesheet('/static/nutrios-zip-clinical-v3.css?v=1','zip-clinical-v3');
     addScript('/static/nutrios-app-shell.js?v=8','app-shell');
     addScript('/static/nutrios-zip-clinical-v3.js?v=1','zip-clinical-v3');
+    if(p.startsWith('/app/pacientes/')){
+      addStylesheet('/static/nutrios-v2-clinical-modules.css?v=2','v2-clinical-modules');
+      addScript('/static/nutrios-v2-clinical.js?v=2','v2-clinical');
+    }
   }
   setupProfessionalShell();
   async function setupTenantPWA(){
