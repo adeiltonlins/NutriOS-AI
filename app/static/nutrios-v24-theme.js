@@ -40,6 +40,8 @@
     if(p.startsWith('/app/pacientes/')){
       addStylesheet('/static/nutrios-v2-clinical-modules.css?v=2','v2-clinical-modules');
       addScript('/static/nutrios-v2-clinical.js?v=2','v2-clinical');
+      addStylesheet('/static/nutrios-anthropometry-v2.css?v=1','anthropometry-v2');
+      addScript('/static/nutrios-anthropometry-v2.js?v=1','anthropometry-v2');
     }
   }
   setupProfessionalShell();
