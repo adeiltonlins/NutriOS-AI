@@ -1,46 +1,71 @@
-/* NutriOS dashboard bootstrap resilience + approved reference composition. */
+/* NutriOS dashboard bootstrap resilience + approved light reference loader. */
 (function(){
   const nativeFetch=window.fetch.bind(window);
   let meRequestFailed=false;
 
-  function installLayoutAuthority(){
-    document.documentElement.dataset.nutriosLayout='20260827a';
-    if(document.getElementById('nutriosLayoutAuthority'))return;
-    const style=document.createElement('style');
-    style.id='nutriosLayoutAuthority';
-    style.textContent=`
-      html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important}
-      body{margin:0!important}
-      .os-shell{display:grid!important;grid-template-columns:232px minmax(0,1fr)!important;grid-template-rows:auto!important;gap:0!important;width:100%!important;max-width:100vw!important;margin:0!important;padding:0!important;transform:none!important}
-      .os-sidebar{grid-column:1!important;grid-row:1!important;width:232px!important;min-width:232px!important;max-width:232px!important;margin:0!important;transform:none!important}
-      .os-workspace{grid-column:2!important;grid-row:1!important;display:block!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;margin-left:0!important;padding:0!important;transform:none!important;translate:none!important;position:relative!important;left:0!important;right:auto!important;inset:auto!important;overflow-x:hidden!important}
-      .os-topbar{display:flex!important;width:100%!important;max-width:none!important;margin:0!important;padding-left:16px!important;padding-right:18px!important;transform:none!important;translate:none!important;left:0!important;right:auto!important;justify-content:space-between!important}
-      .os-search-wrap{margin-left:0!important;margin-right:auto!important;transform:none!important;translate:none!important}
-      .os-main{display:block!important;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;padding-left:16px!important;padding-right:18px!important;transform:none!important;translate:none!important;position:relative!important;left:0!important;right:auto!important;inset:auto!important;overflow:visible!important}
-      .os-main>*{max-width:none!important;margin-left:0!important;margin-right:0!important;transform:none!important;translate:none!important}
-      @media(max-width:900px){.os-shell{grid-template-columns:78px minmax(0,1fr)!important}.os-sidebar{width:78px!important;min-width:78px!important;max-width:78px!important}}
-      @media(max-width:700px){.os-shell{display:block!important}.os-sidebar{width:auto!important;min-width:0!important;max-width:none!important}.os-workspace{width:100%!important}.os-main{padding-left:14px!important;padding-right:14px!important}}
-    `;
-    document.head.appendChild(style);
+  document.documentElement.dataset.nutriosLayout='reference-light-20260827b';
+
+  function ensureReferenceCSS(){
+    const existing=document.getElementById('nutriosReferenceV2');
+    if(existing){existing.href='/static/nutrios-dashboard-reference-v2.css?v=20260827b';return;}
+    const css=document.createElement('link');
+    css.id='nutriosReferenceV2';
+    css.rel='stylesheet';
+    css.href='/static/nutrios-dashboard-reference-v2.css?v=20260827b';
+    document.head.appendChild(css);
+  }
+  ensureReferenceCSS();
+
+  function banner(message){
+    let el=document.getElementById('dashboardNetworkError');
+    if(!el){
+      el=document.createElement('div');
+      el.id='dashboardNetworkError';
+      el.setAttribute('role','alert');
+      el.style.cssText='position:sticky;top:80px;z-index:70;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 28px;border-bottom:1px solid #e4c27b;background:#fff7df;color:#6d4a00;font:700 13px Inter,system-ui,sans-serif';
+      const text=document.createElement('span');text.id='dashboardNetworkErrorText';
+      const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.style.cssText='min-height:36px;padding:7px 11px;border:1px solid #d6a84c;border-radius:8px;background:#fff;color:#6d4a00;font-weight:800;cursor:pointer';retry.addEventListener('click',()=>location.reload());
+      el.append(text,retry);
+      const workspace=document.querySelector('.os-workspace'),topbar=document.querySelector('.os-topbar');
+      if(workspace&&topbar)topbar.insertAdjacentElement('afterend',el);else document.body.prepend(el);
+    }
+    const text=document.getElementById('dashboardNetworkErrorText');if(text)text.textContent=message;
   }
 
-  function banner(message){let el=document.getElementById('dashboardNetworkError');if(!el){el=document.createElement('div');el.id='dashboardNetworkError';el.setAttribute('role','alert');el.style.cssText='position:sticky;top:68px;z-index:70;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px clamp(18px,3vw,38px);border-bottom:1px solid #e4c27b;background:#fff7df;color:#6d4a00;font:700 14px Inter,system-ui,sans-serif';const text=document.createElement('span');text.id='dashboardNetworkErrorText';const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.style.cssText='min-height:38px;padding:8px 12px;border:1px solid #d6a84c;border-radius:8px;background:#fff;color:#6d4a00;font-weight:800;cursor:pointer';retry.addEventListener('click',()=>location.reload());el.append(text,retry);const workspace=document.querySelector('.os-workspace'),topbar=document.querySelector('.os-topbar');if(workspace&&topbar)topbar.insertAdjacentElement('afterend',el);else document.body.prepend(el)}const text=document.getElementById('dashboardNetworkErrorText');if(text)text.textContent=message}
-  window.fetch=async function(input,init){const url=typeof input==='string'?input:(input&&input.url)||'';try{const response=await nativeFetch(input,init);if(url==='/api/me'){if(response.status===401||response.status===403)return response;if(!response.ok){meRequestFailed=true;banner('Não foi possível confirmar sua sessão agora. Sua tela foi mantida.');return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}})}}if(url==='/app/api/dashboard-clinico'&&!response.ok)banner('Não foi possível atualizar o dashboard. Verifique sua conexão e tente novamente.');return response}catch(error){if(url==='/api/me'){meRequestFailed=true;banner('Falha de conexão. O NutriOS não vai encerrar sua sessão por causa disso.');return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}})}if(url==='/app/api/dashboard-clinico'){banner('Falha de conexão ao carregar o dashboard. Tente novamente quando a conexão estabilizar.');return new Response(JSON.stringify({metrics:{},analytics:{},checkins:[],appointments:[]}),{status:503,headers:{'Content-Type':'application/json'}})}throw error}};
-  window.addEventListener('unhandledrejection',event=>{if(meRequestFailed){event.preventDefault();banner('Falha temporária de conexão. Sua sessão foi preservada.')}});
+  window.fetch=async function(input,init){
+    const url=typeof input==='string'?input:(input&&input.url)||'';
+    try{
+      const response=await nativeFetch(input,init);
+      if(url==='/api/me'){
+        if(response.status===401||response.status===403)return response;
+        if(!response.ok){
+          meRequestFailed=true;
+          banner('Não foi possível confirmar sua sessão agora. Sua tela foi mantida.');
+          return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}});
+        }
+      }
+      if(url==='/app/api/dashboard-clinico'&&!response.ok)banner('Não foi possível atualizar o dashboard. Verifique sua conexão e tente novamente.');
+      return response;
+    }catch(error){
+      if(url==='/api/me'){
+        meRequestFailed=true;
+        banner('Falha de conexão. O NutriOS não vai encerrar sua sessão por causa disso.');
+        return new Response(JSON.stringify({name:'Nutricionista',_degraded:true}),{status:200,headers:{'Content-Type':'application/json'}});
+      }
+      if(url==='/app/api/dashboard-clinico'){
+        banner('Falha de conexão ao carregar o dashboard. Tente novamente quando a conexão estabilizar.');
+        return new Response(JSON.stringify({metrics:{},analytics:{},checkins:[],appointments:[]}),{status:503,headers:{'Content-Type':'application/json'}});
+      }
+      throw error;
+    }
+  };
 
-  function installReferenceUI(){
-    if(document.getElementById('nutriosReferenceV2'))return;
-    const css=document.createElement('link');css.id='nutriosReferenceV2';css.rel='stylesheet';css.href='/static/nutrios-dashboard-reference-v2.css?v=2';document.head.appendChild(css);
-    const main=document.getElementById('dashboardContent'),metrics=document.querySelector('.os-metrics');if(!main||!metrics)return;
-    const board=document.createElement('section');board.className='os-attention-board';board.setAttribute('aria-label','Prioridades do dia');
-    board.innerHTML=`<div class="os-attention-summary"><h2>Precisa da sua atenção hoje</h2><div class="os-attention-item"><span>Consultas próximas</span><b id="refAppointments">—</b></div><div class="os-attention-item"><span>Alertas clínicos</span><b id="refAlerts">—</b></div><div class="os-attention-item"><span>Check-ins recentes</span><b id="refCheckins">—</b></div><div class="os-attention-item"><span>Conversas</span><b>↗</b></div></div><div class="os-today-list"><h2>Hoje</h2><div id="refTodayRows"><div class="os-today-row"><strong>Agenda</strong><span>Carregando consultas...</span><span></span><a href="/app/gestao">Abrir agenda</a></div></div></div><aside class="os-ai-panel"><h2>Assistente IA <small>Beta</small></h2><div class="os-ai-row"><strong>Prioridades clínicas em um só lugar</strong><span>Use os alertas e check-ins para preparar seus atendimentos.</span></div><div class="os-ai-row"><strong>Planos alimentares para revisar</strong><span>A IA permanece como apoio; você mantém o controle clínico.</span></div><div class="os-ai-row"><strong>Resumo de evolução</strong><span>Abra a central clínica para analisar cada paciente.</span></div></aside>`;
-    metrics.insertAdjacentElement('beforebegin',board);
-    const originalFetch=window.fetch;
-    window.fetch=async function(input,init){const response=await originalFetch(input,init);const url=typeof input==='string'?input:(input&&input.url)||'';if(url==='/app/api/dashboard-clinico'&&response.ok){response.clone().json().then(data=>renderReferenceData(data)).catch(()=>{})}return response};
-    const sync=()=>{const a=document.getElementById('metricAppointments'),al=document.getElementById('metricAlerts');if(a)document.getElementById('refAppointments').textContent=a.textContent||'0';if(al)document.getElementById('refAlerts').textContent=al.textContent||'0'};new MutationObserver(sync).observe(metrics,{subtree:true,childList:true,characterData:true});sync();
+  window.addEventListener('unhandledrejection',event=>{
+    if(meRequestFailed){event.preventDefault();banner('Falha temporária de conexão. Sua sessão foi preservada.');}
+  });
+
+  function cleanupLegacyInjection(){
+    document.querySelectorAll('.os-attention-board,#nutriosLayoutAuthority').forEach(el=>el.remove());
   }
-  function renderReferenceData(data){const checkins=(data.checkins||[]),appointments=(data.appointments||[]);const c=document.getElementById('refCheckins');if(c)c.textContent=checkins.length;const rows=document.getElementById('refTodayRows');if(!rows)return;const upcoming=appointments.slice(0,3);rows.innerHTML=upcoming.length?upcoming.map(x=>{const d=x.starts_at?new Date(x.starts_at):null,time=d&&!Number.isNaN(d.valueOf())?d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'—';const name=String(x.patient_name||'Paciente').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[s]));const href=x.patient_id?'/app/pacientes/'+encodeURIComponent(x.patient_id)+'#schedule':'/app/gestao';return `<div class="os-today-row"><strong>${time}</strong><span>${name}</span><span>Consulta</span><a href="${href}">Ver prontuário →</a></div>`}).join(''):`<div class="os-today-row"><strong>Hoje</strong><span>Nenhuma consulta próxima.</span><span></span><a href="/app/gestao">Ver agenda →</a></div>`}
-
-  function mount(){installLayoutAuthority();installReferenceUI()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',cleanupLegacyInjection,{once:true});else cleanupLegacyInjection();
 })();
