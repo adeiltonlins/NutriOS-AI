@@ -1,4 +1,7 @@
 (()=>{
+  if(!document.querySelector('link[data-nutrios-v2-suite]')){
+    const css=document.createElement('link');css.rel='stylesheet';css.href='/static/nutrios-v2-suite.css?v=1';css.dataset.nutriosV2Suite='1';document.head.appendChild(css);
+  }
   const path=location.pathname.replace(/\/$/,'')||'/';
   const nav=[
     ['Início','⌂','/app'],['Pacientes','♙','/app/pacientes'],['Agenda','□','/app/gestao'],['Atendimentos','◇','/app/clinica'],['Planos alimentares','◫','/app/planos'],['Evolução','↗','/app/evolucao'],['Análise corporal','♧','/app/analise-corporal'],['Financeiro','R$','/app/financeiro'],
