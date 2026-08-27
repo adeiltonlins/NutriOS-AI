@@ -1,4 +1,29 @@
 (() => {
+  /* Early professional-shell bootstrap: prevent the legacy page from flashing
+     before the ZIP shell is mounted. This runs from <head> on professional pages. */
+  const currentPath = location.pathname.replace(/\/$/, '') || '/';
+  const shouldBootShell = currentPath.startsWith('/app/') && !currentPath.startsWith('/app/api/');
+  if (shouldBootShell) {
+    document.documentElement.classList.add('nutrios-shell-booting');
+    const bootStyle = document.createElement('style');
+    bootStyle.id = 'nutrios-shell-boot-style';
+    bootStyle.textContent = 'html.nutrios-shell-booting body{visibility:hidden!important}html.nutrios-shell-booting body.nutrios-shell-ready{visibility:visible!important}';
+    document.head.appendChild(bootStyle);
+    if (!document.querySelector('link[data-nutrios-style="app-shell"]')) {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet'; css.href = '/static/nutrios-app-shell.css?v=11'; css.dataset.nutriosStyle = 'app-shell';
+      document.head.appendChild(css);
+    }
+    if (!document.querySelector('script[data-nutrios-script="app-shell"]')) {
+      const js = document.createElement('script');
+      js.src = '/static/nutrios-app-shell.js?v=11'; js.defer = true; js.dataset.nutriosScript = 'app-shell';
+      document.head.appendChild(js);
+    }
+    const reveal = () => document.documentElement.classList.remove('nutrios-shell-booting');
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(() => requestAnimationFrame(reveal)), { once:true });
+    setTimeout(reveal, 1800);
+  }
+
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const host = document.createElement('div');
   host.className = 'nutri-toast-host';
@@ -67,8 +92,6 @@
   document.documentElement.classList.add('nutri-loading');
   document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(tip); enrichActions(); new MutationObserver(enrichActions).observe(document.body,{childList:true,subtree:true});
-    // NutriOS v6: módulos clínicos são renderizados pelas próprias telas.
-    // Não injetar cards/links legados no DOM.
   }, { once:true });
   document.addEventListener('submit', event => setBusy(event.submitter || event.target.querySelector('[type="submit"]'), true, event.submitter?.dataset.loadingLabel || 'Processando...'), true);
   const nativeFetch = window.fetch.bind(window);
