@@ -10,18 +10,31 @@
   window.NutriOSTheme={apply,get:()=> 'light',toggle:apply};apply();
   function addStylesheet(href,key){if(document.querySelector(`link[data-nutrios-style="${key}"]`))return;const css=document.createElement('link');css.rel='stylesheet';css.href=href;css.dataset.nutriosStyle=key;document.head.appendChild(css)}
   function addScript(src,key){if(document.querySelector(`script[data-nutrios-script="${key}"]`))return;const js=document.createElement('script');js.src=src;js.defer=true;js.dataset.nutriosScript=key;document.head.appendChild(js)}
+  function moduleName(p){
+    if(p==='/app/pacientes'||p.startsWith('/app/pacientes/'))return 'pacientes';
+    if(p==='/app/gestao')return 'agenda';
+    if(p==='/app/planos')return 'planos';
+    if(p==='/app/clinica'||p.startsWith('/app/consulta'))return 'clinica';
+    if(p==='/app/analise-corporal')return 'antropometria';
+    if(p==='/app/treinos')return 'treinos';
+    if(p==='/app/financeiro')return 'financeiro';
+    return 'operacao';
+  }
   function setupProfessionalShell(){
     const p=location.pathname.replace(/\/$/,'')||'/';if(!p.startsWith('/app')||p.startsWith('/app/api/'))return;
-    addStylesheet('/static/nutrios-universal-light.css?v=5','universal-light');
+    addStylesheet('/static/nutrios-universal-light.css?v=6','universal-light');
     if(p==='/app'){
-      addStylesheet('/static/nutrios-dashboard-premium.css?v=5','dashboard-premium');
-      addStylesheet('/static/nutrios-dashboard-priority.css?v=5','dashboard-priority');
-      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=5','dashboard-layout-fix');
-      addScript('/static/nutrios-dashboard-premium.js?v=3','dashboard-premium');
+      addStylesheet('/static/nutrios-dashboard-premium.css?v=6','dashboard-premium');
+      addStylesheet('/static/nutrios-dashboard-priority.css?v=6','dashboard-priority');
+      addStylesheet('/static/nutrios-dashboard-layout-fix.css?v=6','dashboard-layout-fix');
+      addScript('/static/nutrios-dashboard-premium.js?v=4','dashboard-premium');
       return;
     }
-    addStylesheet('/static/nutrios-app-shell.css?v=7','app-shell');
-    addScript('/static/nutrios-app-shell.js?v=6','app-shell');
+    document.documentElement.dataset.nutriosModule=moduleName(p);
+    document.body?.setAttribute('data-nutrios-module',moduleName(p));
+    addStylesheet('/static/nutrios-app-shell.css?v=8','app-shell');
+    addStylesheet('/static/nutrios-zip-modules.css?v=1','zip-modules');
+    addScript('/static/nutrios-app-shell.js?v=7','app-shell');
   }
   setupProfessionalShell();
   async function setupTenantPWA(){
@@ -30,5 +43,5 @@
     catch(_){let link=document.querySelector('link[rel="manifest"]');if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link)}link.href='/static/manifest.json'}
   }
   function mount(){document.querySelectorAll('#nutrios-theme-toggle,#themeToggle,[data-theme-toggle]').forEach(el=>el.remove());apply();setupTenantPWA()}
-  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',mount):mount();
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>{document.body?.setAttribute('data-nutrios-module',document.documentElement.dataset.nutriosModule||'');mount()}):mount();
 })();
