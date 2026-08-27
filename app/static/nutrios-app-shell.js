@@ -1,37 +1,58 @@
 (()=>{
   const path=location.pathname.replace(/\/$/,'')||'/';
   const groups=[
-    ['GERAL',[
-      ['Início','⌂','/app'],['Pacientes','♙','/app/pacientes'],['Agenda','□','/app/gestao'],['Atendimentos','◇','/app/clinica'],['Planos alimentares','◫','/app/planos'],['Evolução','↗','/app/evolucao'],['Análise corporal','♧','/app/analise-corporal'],['Financeiro','R$','/app/financeiro']
+    ['ATENDIMENTO CLÍNICO',[
+      ['Visão Geral','⌂','/app'],
+      ['Pacientes & Prontuários','♙','/app/pacientes'],
+      ['Agenda & Consultas','□','/app/gestao'],
+      ['Atendimentos','◇','/app/clinica'],
+      ['Prescrição & Cardápios','◫','/app/planos'],
+      ['Evolução','↗','/app/evolucao'],
+      ['Antropometria & Análise','♧','/app/analise-corporal'],
+      ['Financeiro clínico','R$','/app/financeiro']
     ]],
     ['IA & AUTOMAÇÃO',[
-      ['Conversas','○','/app/conversas'],['Indicações','◎','/app/leads'],['Captação e vendas','▥','/app/metricas'],['Treinos','↔','/app/treinos']
+      ['Conversas','○','/app/conversas'],
+      ['Indicações','◎','/app/leads'],
+      ['Captação e vendas','▥','/app/metricas'],
+      ['Prescrição de Treinos','↔','/app/treinos']
     ]],
     ['CONFIGURAÇÕES',[
       ['Configurações','⚙','/app/configuracoes']
     ]]
   ];
-  const current=(href)=> href==='/app'?path==='/app':path===href||path.startsWith(href+'/');
+  const current=(href)=>href==='/app'?path==='/app':path===href||path.startsWith(href+'/');
   const escapeHtml=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const link=([label,icon,href])=>`<a class="nutrios-shell-link" href="${href}" ${current(href)?'aria-current="page"':''}><span class="nutrios-shell-icon" aria-hidden="true">${icon}</span><span>${escapeHtml(label)}</span></a>`;
+  const link=([label,icon,href])=>`<a class="nutrios-shell-link" href="${href}" ${current(href)?'aria-current="page"':''}><span class="nutrios-shell-icon" aria-hidden="true">${icon}</span><span class="nutrios-shell-label">${escapeHtml(label)}</span></a>`;
 
   function mount(){
-    if(document.body.classList.contains('nutrios-shell-ready'))return;
-    const original=[...document.body.children].filter(el=>el.tagName!=='SCRIPT'&&el.tagName!=='LINK');
-    if(!original.length)return;
-    const content=document.createElement('div');content.className='nutrios-shell-content';
-    original.forEach(el=>content.appendChild(el));
-    const shell=document.createElement('div');shell.className='nutrios-app-shell';
-    const aside=document.createElement('aside');aside.className='nutrios-shell-sidebar';aside.setAttribute('aria-label','Navegação principal');
+    if(document.body.classList.contains('nutrios-shell-ready')||path==='/app')return;
+    const aside=document.createElement('aside');
+    aside.className='nutrios-shell-sidebar';
+    aside.setAttribute('aria-label','Navegação principal');
     const navHtml=groups.map(([name,items])=>`<div class="nutrios-shell-group">${name}</div>${items.map(link).join('')}`).join('');
-    aside.innerHTML=`<a class="nutrios-shell-brand" href="/app"><span class="nutrios-shell-mark" aria-hidden="true"></span><span>NutriOS</span></a><nav class="nutrios-shell-nav">${navHtml}</nav><div class="nutrios-shell-footer"><a class="nutrios-shell-link" href="/app/onboarding"><span class="nutrios-shell-icon">?</span><span>Ajuda</span></a></div>`;
-    const workspace=document.createElement('section');workspace.className='nutrios-shell-workspace';
-    const title=(document.querySelector('h1')?.textContent||document.title.split('—')[0]||'NutriOS').trim();
-    workspace.innerHTML=`<header class="nutrios-shell-topbar"><div class="nutrios-shell-title"><strong>${escapeHtml(title)}</strong><span>NutriOS · ambiente profissional</span></div><a class="nutrios-shell-home" href="/app">⌂ Visão geral</a></header><div class="nutrios-shell-error" id="nutriosShellError" role="status" aria-live="polite"><span id="nutriosShellErrorText">Não foi possível carregar os dados.</span><button type="button" id="nutriosShellRetry">Tentar novamente</button></div>`;
-    workspace.appendChild(content);shell.append(aside,workspace);document.body.prepend(shell);document.body.classList.add('nutrios-shell-ready');
+    aside.innerHTML=`
+      <a class="nutrios-shell-brand" href="/app" aria-label="NutriOS">
+        <span class="nutrios-shell-mark" aria-hidden="true">🌿</span>
+        <span class="nutrios-shell-brand-copy"><strong>Nutri<span>OS</span></strong><small>Clínica & Gestão</small></span>
+      </a>
+      <nav class="nutrios-shell-nav">${navHtml}</nav>
+      <div class="nutrios-shell-footer">
+        <a class="nutrios-shell-copilot" href="/app/conversas"><span>✦</span><span>Copiloto NutriOS</span></a>
+        <a class="nutrios-shell-link nutrios-shell-help" href="/app/onboarding"><span class="nutrios-shell-icon">?</span><span class="nutrios-shell-label">Central de ajuda</span></a>
+      </div>`;
+    document.body.prepend(aside);
+    document.body.classList.add('nutrios-shell-ready');
+    document.documentElement.dataset.nutriosShell='zip-visual-v2';
   }
+
   function showError(message,retry){
-    const box=document.getElementById('nutriosShellError');if(!box)return;
+    let box=document.getElementById('nutriosShellError');
+    if(!box){
+      box=document.createElement('div');box.id='nutriosShellError';box.className='nutrios-shell-error';
+      box.innerHTML='<span id="nutriosShellErrorText"></span><button type="button" id="nutriosShellRetry">Tentar novamente</button>';
+      document.body.appendChild(box);
+    }
     const text=document.getElementById('nutriosShellErrorText');if(text)text.textContent=message||'Não foi possível carregar os dados agora.';
     const btn=document.getElementById('nutriosShellRetry');if(btn)btn.onclick=()=>{box.classList.remove('show');if(typeof retry==='function')retry();};
     box.classList.add('show');
