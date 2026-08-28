@@ -1,0 +1,26 @@
+name: Validate NutriOS React integration
+
+on:
+  push:
+    branches:
+      - feature/ai-studio-ui-integration
+    paths:
+      - 'app/react_ui_api.py'
+      - 'app/react_ui_routes.py'
+      - 'app/__init__.py'
+      - '.github/workflows/react-ui-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate integration syntax
+        run: python -m py_compile app/react_ui_api.py app/react_ui_routes.py app/__init__.py
