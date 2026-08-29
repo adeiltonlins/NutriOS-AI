@@ -11,7 +11,17 @@ ARCHIVE_XZ="$FRONTEND/full-ui.tar.xz"
 # Render/GitHub Actions consigam reconstruir o mesmo fonte de forma determinística.
 if compgen -G "$FRONTEND/full-ui.xz.b64.*" > /dev/null; then
   cat "$FRONTEND"/full-ui.xz.b64.* > "$ARCHIVE_B64"
-  base64 --decode "$ARCHIVE_B64" > "$ARCHIVE_XZ"
+  python - "$ARCHIVE_B64" "$ARCHIVE_XZ" <<'PY'
+import base64, re, sys
+from pathlib import Path
+src = Path(sys.argv[1]).read_text(encoding='utf-8', errors='ignore')
+clean = re.sub(r'[^A-Za-z0-9+/=]', '', src)
+try:
+    data = base64.b64decode(clean, validate=False)
+except Exception as exc:
+    raise SystemExit(f'Falha ao decodificar frontend base64: {exc}')
+Path(sys.argv[2]).write_bytes(data)
+PY
   tar -xJf "$ARCHIVE_XZ" -C "$FRONTEND"
   rm -f "$ARCHIVE_B64" "$ARCHIVE_XZ"
 fi
