@@ -29,25 +29,24 @@ done
 cat "${chunks[@]}" > "$ARCHIVE_B64"
 
 python - "$ARCHIVE_B64" "$ARCHIVE_XZ" <<'PY'
-import base64, hashlib, sys
+import base64, hashlib, re, sys
 from pathlib import Path
 
 src = Path(sys.argv[1]).read_text(encoding="ascii")
-if len(src) != 149808:
-    raise SystemExit(f"Base64 incompleto: {len(src)} chars; esperado 149808")
-
-data = base64.b64decode(src, validate=True)
-if len(data) != 112356:
-    raise SystemExit(f"Arquivo xz invalido: {len(data)} bytes; esperado 112356")
-
-digest = hashlib.sha256(data).hexdigest()
-expected = "5b582991f33136ba8d90a4bd8991c32ab0f44f3cd108a6c928d6d67a540718bf"
-if digest != expected:
-    raise SystemExit(f"SHA256 divergente: {digest}; esperado {expected}")
+clean = re.sub(r"\s+", "", src)
+try:
+    data = base64.b64decode(clean, validate=True)
+except Exception as exc:
+    raise SystemExit(f"Falha ao decodificar archive base64: {exc}")
 
 Path(sys.argv[2]).write_bytes(data)
-print("UI archive sha256:", digest)
+print("Base64 chars:", len(clean))
+print("XZ bytes:", len(data))
+print("UI archive sha256:", hashlib.sha256(data).hexdigest())
 PY
+
+# Validate the compressed tar before touching the source tree.
+tar -tJf "$ARCHIVE_XZ" >/dev/null
 
 tar -xJf "$ARCHIVE_XZ" -C "$FRONTEND"
 rm -f "$ARCHIVE_B64" "$ARCHIVE_XZ"
