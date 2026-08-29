@@ -34,3 +34,5 @@ jobs:
         run: bash scripts/build-react-ui.sh
       - name: Verify build output
         run: test -f app/static/react-ui/index.html
+
+# staging validation trigger: canonical UI archive assembled
