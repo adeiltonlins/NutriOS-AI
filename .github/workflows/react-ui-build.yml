@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/ai-studio-ui-integration
+      - staging/ai-studio-ui-complete
     paths:
       - 'frontend/**'
       - 'scripts/build-react-ui.sh'
