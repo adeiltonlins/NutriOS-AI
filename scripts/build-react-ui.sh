@@ -3,53 +3,21 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND="$ROOT/frontend"
-ARCHIVE_B64="$FRONTEND/verified-final.b64"
-ARCHIVE_XZ="$FRONTEND/verified-final.tar.xz"
+ARCHIVE="$FRONTEND/nutrios-ui-canonical.tar.xz"
+EXPECTED_SHA="3aa86112ec408a1440e19e440a4b3d1edf134080bc040a3d59e93c343d672f3e"
 
-chunks=(
-  "$FRONTEND/verified-final.b64.00"
-  "$FRONTEND/verified-final.b64.01"
-  "$FRONTEND/verified-final.b64.02"
-  "$FRONTEND/verified-final.b64.03"
-  "$FRONTEND/verified-final.b64.04"
-  "$FRONTEND/verified-final.b64.05"
-  "$FRONTEND/verified-final.b64.06"
-  "$FRONTEND/verified-final.b64.07"
-  "$FRONTEND/verified-final.b64.080"
-  "$FRONTEND/verified-final.b64.081"
-  "$FRONTEND/verified-final.b64.082"
-  "$FRONTEND/verified-final.b64.083"
-  "$FRONTEND/verified-final.b64.09"
-)
+[[ -f "$ARCHIVE" ]] || { echo "Archive canonico ausente: $ARCHIVE" >&2; exit 1; }
 
-for chunk in "${chunks[@]}"; do
-  [[ -f "$chunk" ]] || { echo "Chunk ausente: $chunk" >&2; exit 1; }
-done
+ACTUAL_SHA="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
+[[ "$ACTUAL_SHA" == "$EXPECTED_SHA" ]] || {
+  echo "SHA256 divergente: $ACTUAL_SHA; esperado $EXPECTED_SHA" >&2
+  exit 1
+}
 
-cat "${chunks[@]}" > "$ARCHIVE_B64"
+tar -tJf "$ARCHIVE" >/dev/null
 
-python - "$ARCHIVE_B64" "$ARCHIVE_XZ" <<'PY'
-import base64, hashlib, re, sys
-from pathlib import Path
-
-src = Path(sys.argv[1]).read_text(encoding="ascii")
-clean = re.sub(r"\s+", "", src)
-try:
-    data = base64.b64decode(clean, validate=True)
-except Exception as exc:
-    raise SystemExit(f"Falha ao decodificar archive base64: {exc}")
-
-Path(sys.argv[2]).write_bytes(data)
-print("Base64 chars:", len(clean))
-print("XZ bytes:", len(data))
-print("UI archive sha256:", hashlib.sha256(data).hexdigest())
-PY
-
-# Validate the compressed tar before touching the source tree.
-tar -tJf "$ARCHIVE_XZ" >/dev/null
-
-tar -xJf "$ARCHIVE_XZ" -C "$FRONTEND"
-rm -f "$ARCHIVE_B64" "$ARCHIVE_XZ"
+tar -xJf "$ARCHIVE" -C "$FRONTEND"
+rm -f "$FRONTEND/src/components/PresentationBar.tsx" "$FRONTEND/server.ts"
 
 if [[ ! -f "$FRONTEND/package.json" || ! -f "$FRONTEND/src/App.tsx" ]]; then
   echo "Frontend React completo nao foi materializado." >&2
@@ -63,5 +31,3 @@ npm run build
 
 test -f "$ROOT/app/static/react-ui/index.html"
 echo "React UI completa gerada em app/static/react-ui"
-
-# Re-run staging validation after canonical archive repair.
