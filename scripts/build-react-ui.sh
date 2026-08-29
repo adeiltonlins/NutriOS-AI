@@ -63,3 +63,5 @@ npm run build
 
 test -f "$ROOT/app/static/react-ui/index.html"
 echo "React UI completa gerada em app/static/react-ui"
+
+# Re-run staging validation after canonical archive repair.
