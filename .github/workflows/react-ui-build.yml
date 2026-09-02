@@ -1,4 +1,4 @@
-name: Validate NutriOS React integration
+name: Build and publish NutriOS React integration
 
 on:
   push:
@@ -10,18 +10,24 @@ on:
       - 'scripts/build-react-ui.sh'
       - 'app/react_ui_api.py'
       - 'app/react_ui_routes.py'
+      - 'app/meal_template_library_v2.py'
+      - 'app/static/nutrios-diet-models-fix.js'
       - 'app/__init__.py'
       - '.github/workflows/react-ui-build.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  validate:
+  build-publish:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -29,10 +35,23 @@ jobs:
         with:
           node-version: '20'
       - name: Validate Python integration syntax
-        run: python -m py_compile app/react_ui_api.py app/react_ui_routes.py app/__init__.py
+        run: python -m py_compile app/react_ui_api.py app/react_ui_routes.py app/meal_template_library_v2.py app/__init__.py
       - name: Materialize, typecheck and build full AI Studio frontend
         run: bash scripts/build-react-ui.sh
-      - name: Verify build output
-        run: test -f app/static/react-ui/index.html
-
-# staging validation trigger: canonical UI archive assembled
+      - name: Verify real diet-library patch is in build
+        run: |
+          test -f app/static/react-ui/index.html
+          grep -q 'nutrios-diet-models-fix.js' app/static/react-ui/index.html
+          test -f app/static/nutrios-diet-models-fix.js
+      - name: Publish generated React bundle to branch
+        shell: bash
+        run: |
+          if git diff --quiet -- app/static/react-ui; then
+            echo 'React bundle unchanged.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f app/static/react-ui
+          git commit -m 'build: publish React UI with live diet categories'
+          git push origin HEAD:${{ github.ref_name }}
