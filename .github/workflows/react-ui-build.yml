@@ -11,8 +11,11 @@ on:
       - 'app/react_ui_api.py'
       - 'app/react_ui_routes.py'
       - 'app/meal_template_library_v2.py'
+      - 'app/workout_media_v2.py'
       - 'app/static/nutrios-diet-models-fix.js'
+      - 'app/static/nutrios-library-workout-v3.js'
       - 'app/__init__.py'
+      - 'migrations/025_workout_exercise_media.sql'
       - '.github/workflows/react-ui-build.yml'
   workflow_dispatch:
 
@@ -35,14 +38,16 @@ jobs:
         with:
           node-version: '20'
       - name: Validate Python integration syntax
-        run: python -m py_compile app/react_ui_api.py app/react_ui_routes.py app/meal_template_library_v2.py app/__init__.py
+        run: python -m py_compile app/react_ui_api.py app/react_ui_routes.py app/meal_template_library_v2.py app/workout_media_v2.py app/__init__.py
       - name: Materialize, typecheck and build full AI Studio frontend
         run: bash scripts/build-react-ui.sh
-      - name: Verify real diet-library patch is in build
+      - name: Verify library and workout media patches are in build
         run: |
           test -f app/static/react-ui/index.html
-          grep -q 'nutrios-diet-models-fix.js' app/static/react-ui/index.html
+          grep -q 'nutrios-diet-models-fix.js?v=20260902g' app/static/react-ui/index.html
+          grep -q 'nutrios-library-workout-v3.js?v=20260902g' app/static/react-ui/index.html
           test -f app/static/nutrios-diet-models-fix.js
+          test -f app/static/nutrios-library-workout-v3.js
       - name: Publish generated React bundle to branch
         shell: bash
         run: |
@@ -53,5 +58,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -f app/static/react-ui
-          git commit -m 'build: publish React UI with live diet categories'
+          git commit -m 'build: publish React UI with diet library and workout media'
           git push origin HEAD:${{ github.ref_name }}
