@@ -13,7 +13,7 @@ from app import auth, clinical_extensions, patient_auth
 router = clinical_extensions.router
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 UI_INDEX = STATIC_DIR / "react-ui" / "index.html"
-DIET_MODELS_FIX = "/static/nutrios-diet-models-fix.js?v=20260902c"
+DIET_MODELS_FIX = "/static/nutrios-diet-models-fix.js?v=20260902d"
 
 
 def _ui():
@@ -22,7 +22,6 @@ def _ui():
     if "nutrios-diet-models-fix.js" not in html:
         html = html.replace("</body>", f"{tag}</body>")
     else:
-        # Troca versões antigas do patch para evitar cache de navegador/service worker.
         import re
         html = re.sub(
             r'<script[^>]+src=["\'][^"\']*nutrios-diet-models-fix\.js[^"\']*["\'][^>]*></script>',
