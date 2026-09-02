@@ -12,7 +12,6 @@ is_valid_archive(){
   [[ -s "$f" ]] && tar -tJf "$f" >/dev/null 2>&1
 }
 
-# 1) tenta os arquivos xz diretos já versionados.
 for f in \
   "$FRONTEND/nutrios-ui-canonical.tar.xz" \
   "$FRONTEND/frontend-direct-v2.tar.xz" \
@@ -24,8 +23,6 @@ for f in \
   fi
 done
 
-# 2) tenta todas as famílias fragmentadas em base64. Isso evita ficar preso a
-# uma cópia truncada e documenta no CI qual backup ainda é íntegro.
 if [[ -z "$SOURCE_ARCHIVE" ]]; then
   shopt -s nullglob
   families=(
@@ -80,6 +77,8 @@ npm run lint
 npm run build
 
 test -f "$ROOT/app/static/react-ui/index.html"
+test -f "$ROOT/app/static/nutrios-diet-models-fix.js"
+test -f "$ROOT/app/static/nutrios-library-workout-v3.js"
 
 python - "$ROOT/app/static/react-ui/index.html" <<'PY'
 from pathlib import Path
@@ -88,16 +87,26 @@ import sys
 
 index = Path(sys.argv[1])
 html = index.read_text(encoding="utf-8")
-tag = '<script src="/static/nutrios-diet-models-fix.js?v=20260902f" defer></script>'
-html = re.sub(
-    r'<script[^>]+src=["\'][^"\']*nutrios-diet-models-fix\.js[^"\']*["\'][^>]*></script>',
-    '',
-    html,
-    flags=re.IGNORECASE,
+
+# Remove versões antigas dos patches para evitar duplicação/cache.
+for script_name in ("nutrios-diet-models-fix.js", "nutrios-library-workout-v3.js"):
+    html = re.sub(
+        rf'<script[^>]+src=["\'][^"\']*{re.escape(script_name)}[^"\']*["\'][^>]*></script>',
+        '',
+        html,
+        flags=re.IGNORECASE,
+    )
+
+# O patch v3 implementa o novo fluxo: botão Biblioteca -> categoria -> sugestões
+# e a mídia dos exercícios no painel profissional/portal do paciente.
+tags = (
+    '<script src="/static/nutrios-diet-models-fix.js?v=20260902g" defer></script>'
+    '<script src="/static/nutrios-library-workout-v3.js?v=20260902g" defer></script>'
 )
-html = html.replace("</body>", f"{tag}</body>")
+html = html.replace("</body>", f"{tags}</body>")
 index.write_text(html, encoding="utf-8")
 PY
 
-grep -q 'nutrios-diet-models-fix.js?v=20260902f' "$ROOT/app/static/react-ui/index.html"
-echo "React UI completa gerada em app/static/react-ui"
+grep -q 'nutrios-diet-models-fix.js?v=20260902g' "$ROOT/app/static/react-ui/index.html"
+grep -q 'nutrios-library-workout-v3.js?v=20260902g' "$ROOT/app/static/react-ui/index.html"
+echo "React UI completa gerada com Biblioteca e mídia de exercícios em app/static/react-ui"
