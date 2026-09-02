@@ -4,100 +4,14 @@
   const patientId=decodeURIComponent(match[1]);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let library=[],rendering=false;
-
-  async function api(url){
-    const r=await fetch(url,{credentials:'same-origin',cache:'no-store'});
-    const x=await r.json().catch(()=>[]);
-    if(!r.ok)throw new Error(x?.detail||'Não foi possível carregar a biblioteca de cardápios');
-    return x;
-  }
-
-  function mealDefaults(names=[]){
-    const defaultTimes=['07:00','10:00','12:30','16:00','19:30','21:30','22:30'];
-    return names.map((name,index)=>({name,time:defaultTimes[index]||'',items:[]}));
-  }
-
-  function showLoadedNotice(plan){
-    let notice=document.getElementById('mealLibraryLoadedNotice');
-    if(!notice){
-      notice=document.createElement('div');
-      notice.id='mealLibraryLoadedNotice';
-      notice.className='meal-library-loaded-notice';
-      const builder=document.getElementById('mealTabs')?.closest('.panel');
-      if(builder)builder.insertBefore(notice,builder.firstChild);
-    }
-    if(!notice)return;
-    notice.innerHTML=`<div><b>✓ Modelo “${esc(plan.title)}” carregado no construtor</b><p>A Biblioteca não publica uma dieta pronta. Ela trouxe a estrutura-base para este paciente. Agora ajuste alimentos, quantidades, horários e orientações antes de salvar e publicar.</p></div><button type="button" data-close-library-notice aria-label="Fechar">×</button>`;
-    notice.hidden=false;
-    notice.querySelector('[data-close-library-notice]').onclick=()=>notice.hidden=true;
-  }
-
-  function focusBuilder(){
-    const builder=document.getElementById('mealTabs')?.closest('.panel');
-    if(!builder)return;
-    builder.classList.remove('meal-library-focus');
-    void builder.offsetWidth;
-    builder.classList.add('meal-library-focus');
-    builder.scrollIntoView({behavior:'smooth',block:'start'});
-    setTimeout(()=>builder.classList.remove('meal-library-focus'),2600);
-  }
-
-  function useLibraryPlan(key){
-    const plan=library.find(x=>String(x.key)===String(key));if(!plan)return;
-    try{
-      meals=mealDefaults(plan.meals||[]);
-      if(!meals.length)meals=[{name:'Café da manhã',time:'07:00',items:[]}];
-      activeMeal=0;
-      if(typeof planTitle!=='undefined')planTitle.value=plan.title||'Plano alimentar';
-      if(typeof planObjective!=='undefined')planObjective.value=plan.objective||'';
-      if(typeof drawMeals==='function')drawMeals();
-      showLoadedNotice(plan);
-      focusBuilder();
-      if(typeof notify==='function')notify(`Modelo ${plan.title} carregado. Personalize antes de salvar.`);
-    }catch(err){console.error('[meal-library]',err)}
-  }
-
-  function savedTemplates(){
-    try{return (data?.meal_plans||[]).filter(x=>x.is_template)}catch(_){return []}
-  }
-
-  function renderTemplates(){
-    const host=document.getElementById('templates');if(!host||rendering)return;
-    rendering=true;
-    const mine=savedTemplates();
-    host.innerHTML=`
-      <div class="meal-library-explainer">
-        <b>Como funciona a Biblioteca de cardápios?</b>
-        <p>Escolher um modelo <strong>não cria nem publica uma dieta automaticamente</strong>. O NutriOS carrega a estrutura no Construtor de refeições para o nutricionista adequar ao paciente.</p>
-        <span>1. Escolha o modelo → 2. Personalize no construtor → 3. Salve o rascunho → 4. Revise e publique</span>
-      </div>
-      <div class="meal-library-section-title"><div><small>BIBLIOTECA NUTRIOS</small><b>Modelos de cardápio</b></div><em>Mesma ordem da Biblioteca</em></div>
-      <div class="meal-library-cards">${library.map((x,i)=>`<article class="meal-library-card"><span class="meal-library-order">${i+1}</span><div><b>${esc(x.title)}</b><p>${esc(x.objective||'Estrutura-base para personalização profissional.')}</p><small>${(x.meals||[]).map(esc).join(' · ')}</small></div><button type="button" data-library-plan="${esc(x.key)}">Usar modelo</button></article>`).join('')||'<div class="empty">Biblioteca indisponível no momento.</div>'}</div>
-      ${mine.length?`<div class="meal-library-section-title mine"><div><small>MINHA BIBLIOTECA</small><b>Modelos salvos por você</b></div></div><div class="meal-library-cards saved">${mine.map(x=>`<article class="meal-library-card"><div><b>${esc(x.template_name||x.title)}</b><p>Modelo reutilizável da sua conta</p><small>${x.content?.length||0} refeições</small></div><button type="button" data-saved-template="${esc(x.id)}">Usar modelo</button></article>`).join('')}</div>`:''}`;
-    host.querySelectorAll('[data-library-plan]').forEach(b=>b.onclick=()=>useLibraryPlan(b.dataset.libraryPlan));
-    host.querySelectorAll('[data-saved-template]').forEach(b=>b.onclick=()=>{
-      if(typeof useTemplate==='function')useTemplate(b.dataset.savedTemplate);
-      const p=mine.find(x=>String(x.id)===String(b.dataset.savedTemplate));
-      showLoadedNotice({title:p?.template_name||p?.title||'Modelo salvo'});focusBuilder();
-      if(typeof notify==='function')notify('Modelo salvo carregado no construtor. Personalize antes de salvar.');
-    });
-    host.dataset.libraryRendered='1';rendering=false;
-  }
-
-  async function init(){
-    try{library=await api('/app/api/biblioteca-planos')}catch(err){console.warn(err.message);library=[]}
-    const host=document.getElementById('templates');if(!host)return;
-    renderTemplates();
-    const observer=new MutationObserver(()=>{
-      if(rendering)return;
-      if(host.dataset.libraryRendered==='1'&&host.querySelector('.meal-library-explainer'))return;
-      renderTemplates();
-    });
-    observer.observe(host,{childList:true,subtree:false});
-    document.addEventListener('click',e=>{
-      const tab=e.target.closest('[data-v="mealplan"]');if(tab)setTimeout(renderTemplates,80);
-    });
-  }
-
+  function installStyles(){if(document.getElementById('mealLibraryV2Styles'))return;const s=document.createElement('style');s.id='mealLibraryV2Styles';s.textContent=`#templates{display:grid;gap:12px;margin-bottom:18px}.meal-library-explainer{padding:14px;border:1px solid #b9ddc5;border-radius:14px;background:linear-gradient(180deg,#f5fcf7,#fff)}.meal-library-explainer>b{display:block;color:#075c2b;font-size:13px}.meal-library-explainer p{margin:6px 0;color:#4b6354;font-size:11px;line-height:1.5}.meal-library-explainer span{display:block;padding-top:8px;border-top:1px solid #e3eee7;color:#087333;font-size:10px;font-weight:800}.meal-library-section-title{display:flex;justify-content:space-between;align-items:end;gap:12px;margin-top:4px}.meal-library-section-title small{display:block;color:#178344;font-size:9px;font-weight:900;letter-spacing:.1em}.meal-library-section-title b{display:block;margin-top:2px;color:#0f172a;font-size:14px}.meal-library-section-title em{font-size:9px;color:#64748b;font-style:normal}.meal-library-section-title.mine{margin-top:8px;padding-top:14px;border-top:1px solid #e7eee9}.meal-library-cards{display:grid;gap:8px}.meal-library-card{position:relative;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:12px;border:1px solid #dce8e0;border-radius:14px;background:#fff}.meal-library-card>div{min-width:0}.meal-library-card b{display:block;color:#17251d;font-size:12px}.meal-library-card p{margin:3px 0;color:#64748b;font-size:10px}.meal-library-card small{display:block;color:#65796d;font-size:9px;line-height:1.4}.meal-library-card button{white-space:nowrap}.meal-library-order{position:absolute;left:-8px;top:-7px;display:grid;place-items:center;width:21px;height:21px;border-radius:999px;background:#178344;color:#fff;font-size:9px;font-weight:900}.meal-library-loaded-notice{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px;padding:14px 16px;border:1px solid #83c69a;border-radius:14px;background:#edf9f1}.meal-library-loaded-notice b{color:#075c2b}.meal-library-loaded-notice p{margin:5px 0 0;color:#435a4b;font-size:11px;line-height:1.5}.meal-library-loaded-notice button{border:0;background:transparent;font-size:18px;color:#45624f;cursor:pointer}.meal-library-focus{animation:mealLibraryPulse 2.4s ease}@keyframes mealLibraryPulse{0%,100%{box-shadow:inherit}20%,55%{box-shadow:0 0 0 4px rgba(22,143,67,.16),0 18px 45px rgba(22,143,67,.12)}}@media(max-width:700px){.meal-library-card{grid-template-columns:1fr}.meal-library-card button{width:100%}.meal-library-section-title{align-items:flex-start;flex-direction:column}}`;document.head.appendChild(s)}
+  async function api(url){const r=await fetch(url,{credentials:'same-origin',cache:'no-store'}),x=await r.json().catch(()=>[]);if(!r.ok)throw new Error(x?.detail||'Não foi possível carregar a biblioteca de cardápios');return x}
+  function mealDefaults(names=[]){const defaultTimes=['07:00','10:00','12:30','16:00','19:30','21:30','22:30'];return names.map((name,index)=>({name,time:defaultTimes[index]||'',items:[]}))}
+  function showLoadedNotice(plan){let notice=document.getElementById('mealLibraryLoadedNotice');if(!notice){notice=document.createElement('div');notice.id='mealLibraryLoadedNotice';notice.className='meal-library-loaded-notice';const builder=document.getElementById('mealTabs')?.closest('.panel');if(builder)builder.insertBefore(notice,builder.firstChild)}if(!notice)return;notice.innerHTML=`<div><b>✓ Modelo “${esc(plan.title)}” carregado no construtor</b><p>A Biblioteca não publica uma dieta pronta. Ela trouxe a estrutura-base para este paciente. Agora ajuste alimentos, quantidades, horários e orientações antes de salvar e publicar.</p></div><button type="button" data-close-library-notice aria-label="Fechar">×</button>`;notice.hidden=false;notice.querySelector('[data-close-library-notice]').onclick=()=>notice.hidden=true}
+  function focusBuilder(){const builder=document.getElementById('mealTabs')?.closest('.panel');if(!builder)return;builder.classList.remove('meal-library-focus');void builder.offsetWidth;builder.classList.add('meal-library-focus');builder.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>builder.classList.remove('meal-library-focus'),2600)}
+  function useLibraryPlan(key){const plan=library.find(x=>String(x.key)===String(key));if(!plan)return;try{meals=mealDefaults(plan.meals||[]);if(!meals.length)meals=[{name:'Café da manhã',time:'07:00',items:[]}];activeMeal=0;if(typeof planTitle!=='undefined')planTitle.value=plan.title||'Plano alimentar';if(typeof planObjective!=='undefined')planObjective.value=plan.objective||'';if(typeof drawMeals==='function')drawMeals();showLoadedNotice(plan);focusBuilder();if(typeof notify==='function')notify(`Modelo ${plan.title} carregado. Personalize antes de salvar.`)}catch(err){console.error('[meal-library]',err)}}
+  function savedTemplates(){try{return(data?.meal_plans||[]).filter(x=>x.is_template)}catch(_){return[]}}
+  function renderTemplates(){const host=document.getElementById('templates');if(!host||rendering)return;rendering=true;const mine=savedTemplates();host.innerHTML=`<div class="meal-library-explainer"><b>Como funciona a Biblioteca de cardápios?</b><p>Escolher um modelo <strong>não cria nem publica uma dieta automaticamente</strong>. O NutriOS carrega a estrutura no Construtor de refeições para o nutricionista adequar ao paciente.</p><span>1. Escolha o modelo → 2. Personalize no construtor → 3. Salve o rascunho → 4. Revise e publique</span></div><div class="meal-library-section-title"><div><small>BIBLIOTECA NUTRIOS</small><b>Modelos de cardápio</b></div><em>Mesma ordem da Biblioteca</em></div><div class="meal-library-cards">${library.map((x,i)=>`<article class="meal-library-card"><span class="meal-library-order">${i+1}</span><div><b>${esc(x.title)}</b><p>${esc(x.objective||'Estrutura-base para personalização profissional.')}</p><small>${(x.meals||[]).map(esc).join(' · ')}</small></div><button type="button" data-library-plan="${esc(x.key)}">Usar modelo</button></article>`).join('')||'<div class="empty">Biblioteca indisponível no momento.</div>'}</div>${mine.length?`<div class="meal-library-section-title mine"><div><small>MINHA BIBLIOTECA</small><b>Modelos salvos por você</b></div></div><div class="meal-library-cards saved">${mine.map(x=>`<article class="meal-library-card"><div><b>${esc(x.template_name||x.title)}</b><p>Modelo reutilizável da sua conta</p><small>${x.content?.length||0} refeições</small></div><button type="button" data-saved-template="${esc(x.id)}">Usar modelo</button></article>`).join('')}</div>`:''}`;host.querySelectorAll('[data-library-plan]').forEach(b=>b.onclick=()=>useLibraryPlan(b.dataset.libraryPlan));host.querySelectorAll('[data-saved-template]').forEach(b=>b.onclick=()=>{if(typeof useTemplate==='function')useTemplate(b.dataset.savedTemplate);const p=mine.find(x=>String(x.id)===String(b.dataset.savedTemplate));showLoadedNotice({title:p?.template_name||p?.title||'Modelo salvo'});focusBuilder();if(typeof notify==='function')notify('Modelo salvo carregado no construtor. Personalize antes de salvar.')});host.dataset.libraryRendered='1';rendering=false}
+  async function init(){installStyles();try{library=await api('/app/api/biblioteca-planos')}catch(err){console.warn(err.message);library=[]}const host=document.getElementById('templates');if(!host)return;renderTemplates();const observer=new MutationObserver(()=>{if(rendering)return;if(host.dataset.libraryRendered==='1'&&host.querySelector('.meal-library-explainer'))return;renderTemplates()});observer.observe(host,{childList:true,subtree:false});document.addEventListener('click',e=>{const tab=e.target.closest('[data-v="mealplan"]');if(tab)setTimeout(renderTemplates,80)})}
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init,{once:true}):init();
 })();
