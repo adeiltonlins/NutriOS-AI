@@ -13,7 +13,7 @@ from app import auth, clinical_extensions, patient_auth
 router = clinical_extensions.router
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 UI_INDEX = STATIC_DIR / "react-ui" / "index.html"
-DIET_MODELS_FIX = "/static/nutrios-diet-models-fix.js?v=20260902b"
+DIET_MODELS_FIX = "/static/nutrios-diet-models-fix.js?v=20260902c"
 
 
 def _ui():
@@ -68,7 +68,6 @@ if UI_INDEX.exists():
 
     @router.get("/app/pacientes/{patient_id}")
     def react_patient_record(patient_id: str, user: dict = Depends(auth.current_user)):
-        # O carregamento dos dados continua pelas APIs autenticadas e filtradas por tenant.
         clinical_extensions.owned_patient(patient_id, user["id"])
         return _ui()
 
