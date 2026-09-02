@@ -14,21 +14,25 @@ router = clinical_extensions.router
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 UI_INDEX = STATIC_DIR / "react-ui" / "index.html"
 DIET_MODELS_FIX = "/static/nutrios-diet-models-fix.js?v=20260902d"
+LIBRARY_WORKOUT_V3 = "/static/nutrios-library-workout-v3.js?v=20260902a"
 
 
 def _ui():
     html = UI_INDEX.read_text(encoding="utf-8")
-    tag = f'<script src="{DIET_MODELS_FIX}" defer></script>'
-    if "nutrios-diet-models-fix.js" not in html:
-        html = html.replace("</body>", f"{tag}</body>")
-    else:
-        import re
-        html = re.sub(
-            r'<script[^>]+src=["\'][^"\']*nutrios-diet-models-fix\.js[^"\']*["\'][^>]*></script>',
-            tag,
-            html,
-            flags=re.IGNORECASE,
-        )
+    import re
+    html = re.sub(
+        r'<script[^>]+src=["\'][^"\']*nutrios-diet-models-fix\.js[^"\']*["\'][^>]*></script>',
+        '', html, flags=re.IGNORECASE,
+    )
+    html = re.sub(
+        r'<script[^>]+src=["\'][^"\']*nutrios-library-workout-v3\.js[^"\']*["\'][^>]*></script>',
+        '', html, flags=re.IGNORECASE,
+    )
+    tags = (
+        f'<script src="{DIET_MODELS_FIX}" defer></script>'
+        f'<script src="{LIBRARY_WORKOUT_V3}" defer></script>'
+    )
+    html = html.replace("</body>", f"{tags}</body>")
     return HTMLResponse(
         html,
         headers={
