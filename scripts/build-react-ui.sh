@@ -3,24 +3,57 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND="$ROOT/frontend"
-ARCHIVE="$FRONTEND/nutrios-ui-canonical.tar.xz"
-RECOVERED="$RUNNER_TEMP/nutrios-ui-recovered.tar.xz"
-SOURCE_ARCHIVE="$ARCHIVE"
+WORKDIR="${RUNNER_TEMP:-/tmp}/nutrios-ui-recovery"
+mkdir -p "$WORKDIR"
+SOURCE_ARCHIVE=""
 
-[[ -f "$ARCHIVE" ]] || { echo "Archive canonico ausente: $ARCHIVE" >&2; exit 1; }
+is_valid_archive(){
+  local f="$1"
+  [[ -s "$f" ]] && tar -tJf "$f" >/dev/null 2>&1
+}
 
-# O arquivo canônico ficou truncado em uma revisão anterior. Quando isso ocorrer,
-# reconstrói a cópia verificada versionada em fragmentos base64, em vez de servir
-# indefinidamente o bundle React antigo.
-if ! tar -tJf "$ARCHIVE" >/dev/null 2>&1; then
-  echo "Archive canônico inválido; reconstruindo a partir de verified-final.b64.*"
+# 1) tenta os arquivos xz diretos já versionados.
+for f in \
+  "$FRONTEND/nutrios-ui-canonical.tar.xz" \
+  "$FRONTEND/frontend-direct-v2.tar.xz" \
+  "$FRONTEND/frontend-direct.tar.xz"; do
+  if is_valid_archive "$f"; then
+    SOURCE_ARCHIVE="$f"
+    echo "Fonte React íntegra: $(basename "$f")"
+    break
+  fi
+done
+
+# 2) tenta todas as famílias fragmentadas em base64. Isso evita ficar preso a
+# uma cópia truncada e documenta no CI qual backup ainda é íntegro.
+if [[ -z "$SOURCE_ARCHIVE" ]]; then
   shopt -s nullglob
-  parts=("$FRONTEND"/verified-final.b64.*)
-  ((${#parts[@]} > 0)) || { echo "Fragmentos de recuperação ausentes" >&2; exit 1; }
-  printf '%s\n' "${parts[@]}" | sort -V | xargs cat | tr -d '\r\n' | base64 --decode > "$RECOVERED"
-  tar -tJf "$RECOVERED" >/dev/null
-  SOURCE_ARCHIVE="$RECOVERED"
+  families=(
+    "full-ui.xz.b64.*"
+    "verified-final.b64.*"
+    "integrated-ui.b64.*"
+    "integrated-ui-v2.part*"
+    "ai-studio-source.b64.part*"
+  )
+  for pattern in "${families[@]}"; do
+    parts=("$FRONTEND"/$pattern)
+    ((${#parts[@]} > 0)) || continue
+    out="$WORKDIR/${pattern//\*/parts}.tar.xz"
+    echo "Testando recuperação: $pattern (${#parts[@]} partes)"
+    if printf '%s\n' "${parts[@]}" | sort -V | xargs cat | tr -d '\r\n' | base64 --decode > "$out" 2>/dev/null; then
+      if is_valid_archive "$out"; then
+        SOURCE_ARCHIVE="$out"
+        echo "Recuperação íntegra encontrada: $pattern"
+        break
+      fi
+    fi
+  done
 fi
+
+[[ -n "$SOURCE_ARCHIVE" ]] || {
+  echo "Nenhuma cópia íntegra do frontend React foi encontrada." >&2
+  exit 1
+}
 
 tar -xJf "$SOURCE_ARCHIVE" -C "$FRONTEND"
 rm -f "$FRONTEND/src/components/PresentationBar.tsx" "$FRONTEND/server.ts"
@@ -48,8 +81,6 @@ npm run build
 
 test -f "$ROOT/app/static/react-ui/index.html"
 
-# Mantém a biblioteca real de modelos fora do pacote legado e injeta o conector
-# depois do Vite. A versão força navegador/service worker a buscar o arquivo novo.
 python - "$ROOT/app/static/react-ui/index.html" <<'PY'
 from pathlib import Path
 import re
@@ -57,7 +88,7 @@ import sys
 
 index = Path(sys.argv[1])
 html = index.read_text(encoding="utf-8")
-tag = '<script src="/static/nutrios-diet-models-fix.js?v=20260902e" defer></script>'
+tag = '<script src="/static/nutrios-diet-models-fix.js?v=20260902f" defer></script>'
 html = re.sub(
     r'<script[^>]+src=["\'][^"\']*nutrios-diet-models-fix\.js[^"\']*["\'][^>]*></script>',
     '',
@@ -68,5 +99,5 @@ html = html.replace("</body>", f"{tag}</body>")
 index.write_text(html, encoding="utf-8")
 PY
 
-grep -q 'nutrios-diet-models-fix.js?v=20260902e' "$ROOT/app/static/react-ui/index.html"
+grep -q 'nutrios-diet-models-fix.js?v=20260902f' "$ROOT/app/static/react-ui/index.html"
 echo "React UI completa gerada em app/static/react-ui"
