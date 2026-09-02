@@ -2,6 +2,7 @@
   'use strict';
   const norm=v=>String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const text=el=>norm(el?.textContent||'');
+  const isAll=v=>!v||/^(todos|todas|all|qualquer|selecione|categoria)$/.test(norm(v));
   let applying=false;
 
   function installStyles(){
@@ -16,15 +17,16 @@
       .nutrios-model-result.show{display:block;animation:nutriosResultIn .2s ease}
       .nutrios-model-result b{display:block;font-size:13px;margin-bottom:3px}
       .nutrios-model-destination{animation:nutriosModelFocus 2.6s ease!important;scroll-margin-top:90px}
+      .nutrios-model-filtered-out,.nutrios-model-duplicate{display:none!important}
+      .nutrios-model-empty{display:none;margin:10px 0;padding:14px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#64748b;font-size:12px;text-align:center}
+      .nutrios-model-empty.show{display:block}
       @keyframes nutriosResultIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
       @keyframes nutriosModelFocus{0%,100%{box-shadow:inherit}15%,65%{box-shadow:0 0 0 4px rgba(16,185,129,.28),0 18px 45px rgba(16,185,129,.12)}}
     `;
     document.head.appendChild(style);
   }
 
-  function heading(){
-    return [...document.querySelectorAll('h1,h2,h3,h4,b,strong')].find(el=>text(el)==='modelos de dieta')||null;
-  }
+  function heading(){return [...document.querySelectorAll('h1,h2,h3,h4,b,strong')].find(el=>text(el)==='modelos de dieta')||null}
 
   function modelPanel(){
     const h=heading();if(!h)return null;
@@ -39,7 +41,7 @@
   function categorySelect(panel){
     if(!panel)return null;
     const selects=[...panel.querySelectorAll('select')];
-    return selects.find(s=>[...s.options].some(o=>/hipertrof|manutenc|emagrec|veget|vegan|gesta|performance/i.test(norm(o.textContent+' '+o.value))))||selects[0]||null;
+    return selects.find(s=>[...s.options].some(o=>/hipertrof|manutenc|emagrec|veget|vegan|gesta|performance|tradicional|basico/i.test(norm(o.textContent+' '+o.value))))||selects[0]||null;
   }
 
   function modelCards(panel){
@@ -50,29 +52,38 @@
       let node=btn.parentElement;
       for(let i=0;i<5&&node;i++,node=node.parentElement){
         const buttons=[...node.querySelectorAll('button')].map(text);
-        if(buttons.includes('aplicar')&&buttons.includes('duplicar')&&buttons.includes('arquivar')){cards.push(node);break;}
+        if(buttons.includes('aplicar')&&buttons.includes('duplicar')&&buttons.includes('arquivar')){cards.push(node);break}
       }
     }
     return [...new Set(cards)].filter(c=>!cards.some(other=>other!==c&&c.contains(other)));
   }
 
   function optionMap(select){
-    const list=[...select.options].map((o,i)=>({i,value:norm(o.value),label:norm(o.textContent),display:String(o.textContent||o.value).trim()}));
-    return list.filter(x=>x.value||x.label);
+    return [...select.options].map((o,i)=>({i,value:norm(o.value),label:norm(o.textContent),display:String(o.textContent||o.value).trim()})).filter(x=>x.value||x.label);
   }
 
   function cardCategory(card,options){
     const raw=text(card);
-    const exactLeaves=[...card.querySelectorAll('small,span,p,em')].map(x=>norm(x.textContent));
+    const leaves=[...card.querySelectorAll('small,span,p,em')].map(x=>norm(x.textContent));
     for(const op of options){
-      if(exactLeaves.some(v=>v===op.value||v===op.label))return op;
+      if(isAll(op.value)||isAll(op.label))continue;
+      if(leaves.some(v=>v===op.value||v===op.label))return op;
     }
-    return options.find(op=>(op.value&&raw.includes(op.value))||(op.label&&raw.includes(op.label)))||null;
+    return options.find(op=>!isAll(op.value)&&!isAll(op.label)&&((op.value&&raw.includes(op.value))||(op.label&&raw.includes(op.label))))||null;
   }
 
-  function mealCount(card){
-    const m=(card.textContent||'').match(/(\d+)\s*refei/i);return m?Number(m[1]):999;
+  function selectedCategory(select){
+    const option=select?.selectedOptions?.[0];
+    return {value:norm(select?.value),label:norm(option?.textContent),display:String(option?.textContent||select?.value||'Todos').trim()};
   }
+
+  function categoryMatches(cat,selected){
+    if(!cat)return false;
+    return (!!selected.value&&(cat.value===selected.value||cat.label===selected.value))||
+           (!!selected.label&&(cat.value===selected.label||cat.label===selected.label));
+  }
+
+  function mealCount(card){const m=(card.textContent||'').match(/(\d+)\s*refei/i);return m?Number(m[1]):999}
 
   function modelName(card){
     const els=[...card.querySelectorAll('strong,b,h3,h4')];
@@ -85,29 +96,54 @@
     let help=panel.querySelector('.nutrios-model-help');
     if(!help){
       help=document.createElement('div');help.className='nutrios-model-help';
-      const anchor=h.parentElement?.nextSibling;
-      h.parentElement?.parentElement?.insertBefore(help,anchor||h.parentElement.nextSibling);
-      if(!help.isConnected)h.insertAdjacentElement('afterend',help);
+      h.insertAdjacentElement('afterend',help);
     }
-    const selected=String(select?.selectedOptions?.[0]?.textContent||'Todas').trim();
-    help.innerHTML=`<b>Como funciona esta biblioteca?</b><span>Os modelos ficam organizados por categoria. Ao clicar em <strong>Aplicar</strong>, o modelo é carregado no editor mais abaixo para o nutricionista ajustar refeições, alimentos, porções e horários. <strong>Nada é publicado automaticamente.</strong></span><span class="nutrios-selected-category">Categoria selecionada: ${selected}</span>`;
+    const selected=selectedCategory(select).display||'Todos';
+    help.innerHTML=`<b>Biblioteca de modelos</b><span>Escolha uma categoria para ver <strong>somente</strong> os modelos correspondentes. Ao clicar em <strong>Aplicar</strong>, o modelo é carregado no editor para personalização. <strong>Nada é publicado automaticamente.</strong></span><span class="nutrios-selected-category">Mostrando: ${selected}</span>`;
     let result=panel.querySelector('.nutrios-model-result');
     if(!result){result=document.createElement('div');result.className='nutrios-model-result';help.insertAdjacentElement('afterend',result)}
+    let empty=panel.querySelector('.nutrios-model-empty');
+    if(!empty){empty=document.createElement('div');empty.className='nutrios-model-empty';result.insertAdjacentElement('afterend',empty)}
   }
 
-  function sortCards(panel,select){
-    const cards=modelCards(panel);if(cards.length<2||!select)return;
-    const options=optionMap(select),selected=norm(select.value||select.selectedOptions?.[0]?.textContent);
-    const parents=new Map();cards.forEach((c,i)=>{const p=c.parentElement;if(!parents.has(p))parents.set(p,[]);parents.get(p).push({card:c,index:i,cat:cardCategory(c,options)})});
+  function filterAndSortCards(panel,select){
+    const cards=modelCards(panel);if(!cards.length||!select)return;
+    const options=optionMap(select),selected=selectedCategory(select);
+    const showAll=isAll(selected.value)&&isAll(selected.label);
+    const seen=new Set();
+    const parents=new Map();
+    let visible=0;
+
+    cards.forEach((card,index)=>{
+      card.classList.remove('nutrios-model-filtered-out','nutrios-model-duplicate');
+      const cat=cardCategory(card,options);
+      const duplicateKey=[norm(modelName(card)),cat?.value||cat?.label||'',mealCount(card)].join('|');
+      if(seen.has(duplicateKey)){
+        card.classList.add('nutrios-model-duplicate');
+        return;
+      }
+      seen.add(duplicateKey);
+
+      const matches=showAll||categoryMatches(cat,selected);
+      if(!matches){card.classList.add('nutrios-model-filtered-out');return}
+      visible++;
+      const p=card.parentElement;if(!p)return;
+      if(!parents.has(p))parents.set(p,[]);
+      parents.get(p).push({card,index,cat});
+    });
+
     for(const [,items] of parents){
       items.sort((a,b)=>{
-        const aSelected=a.cat&&(a.cat.value===selected||a.cat.label===selected),bSelected=b.cat&&(b.cat.value===selected||b.cat.label===selected);
-        if(aSelected!==bSelected)return aSelected?-1:1;
-        const ar=a.cat?.i??999,br=b.cat?.i??999;if(ar!==br)return ar-br;
         const am=mealCount(a.card),bm=mealCount(b.card);if(am!==bm)return am-bm;
         return modelName(a.card).localeCompare(modelName(b.card),'pt-BR',{numeric:true});
       });
       const parent=items[0]?.card.parentElement;items.forEach(x=>parent?.appendChild(x.card));
+    }
+
+    const empty=panel.querySelector('.nutrios-model-empty');
+    if(empty){
+      empty.textContent=`Nenhum modelo ativo encontrado em “${selected.display||'esta categoria'}”.`;
+      empty.classList.toggle('show',visible===0);
     }
   }
 
@@ -134,10 +170,12 @@
     setTimeout(()=>target.classList.remove('nutrios-model-destination'),3000);
   }
 
+  function refresh(panel,select){ensureHelp(panel,select);filterAndSortCards(panel,select)}
+
   function wire(panel,select){
     if(select&&!select.dataset.nutriosOrderWired){
       select.dataset.nutriosOrderWired='1';
-      select.addEventListener('change',()=>{setTimeout(()=>{ensureHelp(panel,select);sortCards(panel,select)},0)});
+      select.addEventListener('change',()=>setTimeout(()=>refresh(panel,select),0));
     }
     panel.querySelectorAll('button').forEach(btn=>{
       const action=text(btn);if(!['aplicar','duplicar','arquivar','salvar'].includes(action)||btn.dataset.nutriosModelWired)return;
@@ -145,17 +183,14 @@
       btn.addEventListener('click',()=>{
         if(action==='aplicar'){
           const card=modelCards(panel).find(c=>c.contains(btn)),name=card?modelName(card):'Modelo';
-          setTimeout(()=>{
-            result(panel,`✓ ${name} aplicado`,`O modelo foi carregado no editor abaixo. Personalize alimentos, quantidades, horários e orientações antes de salvar ou publicar.`);
-            focusEditor(panel);
-          },120);
+          setTimeout(()=>{result(panel,`✓ ${name} aplicado`,'O modelo foi carregado no editor abaixo. Personalize alimentos, quantidades, horários e orientações antes de salvar ou publicar.');focusEditor(panel)},120);
         }else if(action==='salvar'){
-          const category=String(select?.selectedOptions?.[0]?.textContent||'categoria selecionada').trim();
-          setTimeout(()=>{sortCards(panel,select);result(panel,'✓ Modelo salvo',`O modelo foi incluído na Biblioteca em “${category}”. Os modelos dessa categoria aparecem primeiro para facilitar a conferência.`)},350);
+          const category=selectedCategory(select).display||'categoria selecionada';
+          setTimeout(()=>{refresh(panel,select);result(panel,'✓ Modelo salvo',`O modelo foi incluído em “${category}” e a lista foi filtrada novamente.`)},350);
         }else if(action==='duplicar'){
-          setTimeout(()=>{sortCards(panel,select);result(panel,'✓ Modelo duplicado','A cópia foi criada e reposicionada na ordem da categoria correspondente.')},350);
+          setTimeout(()=>{refresh(panel,select);result(panel,'✓ Modelo duplicado','A cópia foi criada. Repetições idênticas são ocultadas da visualização para não poluir a Biblioteca.')},350);
         }else if(action==='arquivar'){
-          setTimeout(()=>{sortCards(panel,select);result(panel,'Modelo arquivado','Ele saiu da lista ativa da Biblioteca e pode ser mantido no histórico conforme a regra do sistema.')},350);
+          setTimeout(()=>{refresh(panel,select);result(panel,'Modelo arquivado','Ele saiu da lista ativa da categoria selecionada.')},350);
         }
       },true);
     });
@@ -165,8 +200,8 @@
     if(applying)return;applying=true;
     try{
       installStyles();const panel=modelPanel();if(!panel)return;
-      const select=categorySelect(panel);ensureHelp(panel,select);sortCards(panel,select);wire(panel,select);
-      panel.dataset.nutriosDietModelsFixed='1';
+      const select=categorySelect(panel);refresh(panel,select);wire(panel,select);
+      panel.dataset.nutriosDietModelsFixed='2';
     }finally{applying=false}
   }
 
