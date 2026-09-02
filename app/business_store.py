@@ -3,10 +3,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from fastapi import HTTPException
+
 from app import saas_store
 
 
 def list_rows(table: str, client_id: str, *, order: str = "created_at.desc", extra: dict | None = None) -> list[dict]:
+    """Compatibilidade com módulos legados ainda baseados em client_id."""
     params = {"select": "*", "client_id": f"eq.{client_id}", "order": order}
     params.update(extra or {})
     return saas_store._request("GET", table, params=params) or []
@@ -31,6 +34,85 @@ def update_row(table: str, row_id: str, client_id: str, payload: dict) -> dict |
 
 def delete_row(table: str, row_id: str, client_id: str) -> None:
     saas_store._request("DELETE", table, params={"id": f"eq.{row_id}", "client_id": f"eq.{client_id}"}, prefer="return=minimal")
+
+
+def organization_id_for_user(user_id: str) -> str:
+    """Resolve a organização ativa do profissional autenticado."""
+    rows = saas_store._request(
+        "GET",
+        "organization_members",
+        params={
+            "select": "organization_id",
+            "user_id": f"eq.{user_id}",
+            "is_active": "eq.true",
+            "limit": "1",
+        },
+    ) or []
+    if rows:
+        return str(rows[0]["organization_id"])
+
+    owned = saas_store._request(
+        "GET",
+        "organizations",
+        params={
+            "select": "id",
+            "owner_user_id": f"eq.{user_id}",
+            "is_active": "eq.true",
+            "limit": "1",
+        },
+    ) or []
+    if owned:
+        return str(owned[0]["id"])
+    raise HTTPException(403, "Organização ativa não encontrada para este usuário")
+
+
+def list_org_rows(table: str, organization_id: str, *, order: str = "created_at.desc", extra: dict | None = None) -> list[dict]:
+    params = {"select": "*", "organization_id": f"eq.{organization_id}", "order": order}
+    params.update(extra or {})
+    return saas_store._request("GET", table, params=params) or []
+
+
+def get_org_row(table: str, row_id: str, organization_id: str) -> dict | None:
+    rows = saas_store._request(
+        "GET",
+        table,
+        params={
+            "select": "*",
+            "id": f"eq.{row_id}",
+            "organization_id": f"eq.{organization_id}",
+            "limit": "1",
+        },
+    ) or []
+    return rows[0] if rows else None
+
+
+def create_org_row(table: str, organization_id: str, payload: dict) -> dict:
+    data = dict(payload)
+    data["organization_id"] = organization_id
+    rows = saas_store._request("POST", table, payload=data, prefer="return=representation") or []
+    if not rows:
+        raise HTTPException(500, "Não foi possível criar o registro")
+    return rows[0]
+
+
+def update_org_row(table: str, row_id: str, organization_id: str, payload: dict) -> dict | None:
+    rows = saas_store._request(
+        "PATCH",
+        table,
+        params={"id": f"eq.{row_id}", "organization_id": f"eq.{organization_id}"},
+        payload=payload,
+        prefer="return=representation",
+    ) or []
+    return rows[0] if rows else None
+
+
+def delete_org_row(table: str, row_id: str, organization_id: str) -> None:
+    saas_store._request(
+        "DELETE",
+        table,
+        params={"id": f"eq.{row_id}", "organization_id": f"eq.{organization_id}"},
+        prefer="return=minimal",
+    )
 
 
 def upsert_anamnesis(client_id: str, session_id: str, payload: dict) -> dict:
