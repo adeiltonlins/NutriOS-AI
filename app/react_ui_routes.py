@@ -6,17 +6,38 @@ continua sendo servido por app.main.py. Isso permite rollout/rollback seguro.
 from pathlib import Path
 
 from fastapi import Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 
 from app import auth, clinical_extensions, patient_auth
 
 router = clinical_extensions.router
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 UI_INDEX = STATIC_DIR / "react-ui" / "index.html"
+DIET_MODELS_FIX = "/static/nutrios-diet-models-fix.js?v=20260902b"
 
 
 def _ui():
-    return FileResponse(UI_INDEX, headers={"Cache-Control": "no-store, max-age=0"})
+    html = UI_INDEX.read_text(encoding="utf-8")
+    tag = f'<script src="{DIET_MODELS_FIX}" defer></script>'
+    if "nutrios-diet-models-fix.js" not in html:
+        html = html.replace("</body>", f"{tag}</body>")
+    else:
+        # Troca versões antigas do patch para evitar cache de navegador/service worker.
+        import re
+        html = re.sub(
+            r'<script[^>]+src=["\'][^"\']*nutrios-diet-models-fix\.js[^"\']*["\'][^>]*></script>',
+            tag,
+            html,
+            flags=re.IGNORECASE,
+        )
+    return HTMLResponse(
+        html,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
 
 
 if UI_INDEX.exists():
